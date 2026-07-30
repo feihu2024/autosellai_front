@@ -1,0 +1,530 @@
+﻿<template>
+  <view class="detail-page" v-if="!loading && product">
+    <!-- 浮动返回按钮 -->
+    <view class="back-floater" @click="goBack">
+      <text class="back-arrow">‹</text>
+    </view>
+    <!-- 主图轮播 -->
+    <view class="swiper" v-if="imageList.length > 0">
+      <view class="swiper-track" :style="{ transform: `translateX(-${currentImage * 100}%)` }">
+        <view
+          v-for="(img, idx) in imageList"
+          :key="idx"
+          class="swiper-slide"
+          @click="previewImages(idx)"
+        >
+          <image :src="img" class="swiper-img" mode="aspectFill" />
+        </view>
+      </view>
+      <!-- 指示器 -->
+      <view class="swiper-dots" v-if="imageList.length > 1">
+        <view
+          v-for="(_, idx) in imageList"
+          :key="idx"
+          class="dot"
+          :class="{ active: currentImage === idx }"
+          @click="currentImage = idx"
+        ></view>
+      </view>
+      <!-- 来源标签 -->
+      <view v-if="product.source === 'saas_sync'" class="source-badge"><text>SAAS严选</text></view>
+    </view>
+
+    <!-- 商品基础信息 -->
+    <view class="info-card">
+      <view class="price-row">
+        <view class="price-main">
+          <text class="price-symbol">¥</text>
+          <text class="price-value">{{ minPrice }}</text>
+        </view>
+        <view class="price-member" v-if="minMemberPrice">
+          <text class="member-tag">会员</text>
+          <text class="member-value">¥{{ minMemberPrice }}</text>
+        </view>
+      </view>
+      <text class="product-name">{{ product.name }}</text>
+      <text class="product-subtitle" v-if="product.subtitle">{{ product.subtitle }}</text>
+    </view>
+
+    <!-- 规格选择区（点击弹出规格弹窗） -->
+    <view
+      class="spec-select-card"
+      v-if="product.spec1_name || product.spec2_name"
+      @click="openSpecSheet"
+    >
+      <text class="spec-label">选择</text>
+      <text class="spec-value">{{ selectedSpecText }}</text>
+      <text class="spec-arrow">›</text>
+    </view>
+
+    <!-- 富文本详情 -->
+    <view class="detail-card" v-if="product.detail_html">
+      <text class="card-title">商品详情</text>
+      <rich-text class="rich-content" :nodes="product.detail_html"></rich-text>
+    </view>
+
+    <!-- 详情长图（备选展示） -->
+    <view class="detail-card" v-else-if="detailImages.length > 0">
+      <text class="card-title">商品详情</text>
+      <view class="detail-images">
+        <image
+          v-for="(img, idx) in detailImages"
+          :key="idx"
+          :src="img"
+          class="detail-img"
+          mode="widthFix"
+        />
+      </view>
+    </view>
+
+    <!-- 底部操作栏：客服 + 立即购买 -->
+    <view class="action-bar">
+      <view class="action-icon-btn" @click="goCustomerService">
+        <text class="action-icon-glyph">💬</text>
+        <text class="action-icon-text">客服</text>
+      </view>
+      <view class="buy-btn" @click="openSpecSheet">
+        <text class="buy-btn-main">立即购买</text>
+        <text class="buy-btn-sub" v-if="minPrice">¥{{ minPrice }} 起</text>
+      </view>
+    </view>
+
+    <!-- 规格弹窗 -->
+    <PurchaseSpecSheet
+      v-if="specSheetVisible && product"
+      :product="product"
+      :visible="specSheetVisible"
+      @close="specSheetVisible = false"
+      @confirm="handleSpecConfirm"
+    />
+  </view>
+
+  <!-- 加载中 -->
+  <view class="loading-page" v-else-if="loading">
+    <text>加载中...</text>
+  </view>
+
+  <!-- 空状态 -->
+  <view class="empty-page" v-else>
+    <text class="empty-icon">📦</text>
+    <text>商品不存在或已下架</text>
+    <view class="back-btn" @click="goBack"><text>返回商城</text></view>
+  </view>
+</template>
+
+<script setup lang="ts">
+import { ref, computed } from 'vue'
+import { onLoad } from '@dcloudio/uni-app'
+import { getMiniappMallProduct } from '@/api/miniapp'
+import PurchaseSpecSheet from '@/components/PurchaseSpecSheet.vue'
+import { useShare } from '@/composables/useShare'
+import { navigator, previewImage, showToast } from '@/utils'
+
+// 注册商品分享：分享当前商品详情页 + 自动携带邀请参数
+useShare(() => ({
+  title: product.value?.name || '快来看看这个好商品',
+  path: '/pages/mall/detail',
+  pathParams: { id: productId.value },
+  imageUrl: product.value?.image_list?.[0],
+}))
+
+const productId = ref(0)
+const product = ref<any>(null)
+const loading = ref(true)
+const currentImage = ref(0)
+const specSheetVisible = ref(false)
+
+// 选中规格快照（供规格选择区展示）
+const selectedSkuSnapshot = ref<any>(null)
+
+// 主图列表（images 数组 + main_image 兜底）
+const imageList = computed<string[]>(() => {
+  if (!product.value) return []
+  const imgs = Array.isArray(product.value.images) ? product.value.images : []
+  if (imgs.length > 0) return imgs
+  if (product.value.main_image) return [product.value.main_image]
+  return []
+})
+
+// 详情长图
+const detailImages = computed<string[]>(() => {
+  if (!product.value) return []
+  return Array.isArray(product.value.detail_images) ? product.value.detail_images : []
+})
+
+// 最低售价
+const minPrice = computed(() => {
+  const skus = product.value?.skus || []
+  if (skus.length > 0) {
+    const prices = skus
+      .map((s: any) => Number(s.enterprise_price))
+      .filter((p: number) => !isNaN(p) && p > 0)
+    if (prices.length > 0) return Math.min(...prices).toFixed(2)
+  }
+  return Number(product.value?.retail_price || 0).toFixed(2)
+})
+
+// 最低会员价
+const minMemberPrice = computed(() => {
+  const skus = product.value?.skus || []
+  if (skus.length > 0) {
+    const prices = skus
+      .map((s: any) => Number(s.member_price))
+      .filter((p: number) => !isNaN(p) && p > 0)
+    if (prices.length > 0) return Math.min(...prices).toFixed(2)
+  }
+  const suggest = Number(product.value?.member_price_suggest || 0)
+  return !isNaN(suggest) && suggest > 0 ? suggest.toFixed(2) : null
+})
+
+// 规格选择区文案
+const selectedSpecText = computed(() => {
+  if (selectedSkuSnapshot.value) return selectedSkuSnapshot.value.sku_name
+  const parts: string[] = []
+  if (product.value?.spec1_name) parts.push(product.value.spec1_name)
+  if (product.value?.spec2_name) parts.push(product.value.spec2_name)
+  return parts.length > 0 ? `请选择 ${parts.join(' / ')}` : '请选择规格'
+})
+
+async function loadProduct() {
+  if (!productId.value) {
+    loading.value = false
+    return
+  }
+  loading.value = true
+  try {
+    const res: any = await getMiniappMallProduct(productId.value)
+    const data = res?.data?.data || res?.data || {}
+    product.value = data
+    currentImage.value = 0
+  } catch (e) {
+    console.error('加载商品详情失败', e)
+    product.value = null
+  } finally {
+    loading.value = false
+  }
+}
+
+function previewImages(idx: number) {
+  if (imageList.value.length > 0) {
+    previewImage(imageList.value, idx)
+  }
+}
+
+function openSpecSheet() {
+  specSheetVisible.value = true
+}
+
+function handleSpecConfirm(payload: { sku: any; qty: number }) {
+  specSheetVisible.value = false
+  selectedSkuSnapshot.value = payload.sku
+  navigator.push(`/m/mall/checkout?product_id=${productId.value}&sku_id=${payload.sku.id}&qty=${payload.qty}`)
+}
+
+function goCustomerService() {
+  navigator.push('/m/contacts')
+}
+
+function goBack() {
+  navigator.back()
+}
+
+onLoad((options: any) => {
+  productId.value = Number(options?.id) || 0
+  loadProduct()
+})
+</script>
+
+<style scoped lang="scss">
+.detail-page {
+  padding-bottom: 80px;
+  background: #f4f9ff;
+  min-height: 100vh;
+}
+
+/* 轮播 */
+.swiper {
+  position: relative;
+  width: 100%;
+  height: 0;
+  padding-bottom: 100%;
+  overflow: hidden;
+  background: #fff;
+}
+.swiper-track {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  transition: transform 0.3s ease-out;
+}
+.swiper-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 100%;
+}
+.swiper-img {
+  width: 100%;
+  height: 100%;
+}
+.swiper-dots {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+.dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.5);
+  transition: all 0.2s;
+}
+.dot.active {
+  width: 18px;
+  background: #fff;
+}
+.source-badge {
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 5;
+}
+.source-badge text {
+  background: linear-gradient(135deg, #ff8a4c 0%, #ff6e6e 100%);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  padding: 3px 10px;
+  border-radius: 12px;
+}
+
+/* 商品基础信息 */
+.info-card {
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.price-main {
+  color: #ff4d4f;
+  display: flex;
+  align-items: baseline;
+}
+.price-symbol {
+  font-size: 14px;
+  font-weight: 600;
+}
+.price-value {
+  font-size: 26px;
+  font-weight: 800;
+  margin-left: 2px;
+}
+.price-member {
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+.member-tag {
+  background: linear-gradient(135deg, #ffb84d 0%, #ff9a3c 100%);
+  color: #fff;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 2px 6px;
+  border-radius: 3px;
+}
+.member-value {
+  font-size: 14px;
+  color: #ff9a3c;
+  font-weight: 600;
+}
+.product-name {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a2332;
+  line-height: 1.4;
+}
+.product-subtitle {
+  display: block;
+  font-size: 13px;
+  color: #8d99aa;
+  line-height: 1.5;
+}
+
+/* 规格选择卡片 */
+.spec-select-card {
+  background: #fff;
+  padding: 14px 16px;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+}
+.spec-label {
+  font-size: 14px;
+  color: #8d99aa;
+  margin-right: 14px;
+}
+.spec-value {
+  flex: 1;
+  font-size: 14px;
+  color: #1a2332;
+  font-weight: 500;
+}
+.spec-arrow {
+  color: #c5cfdb;
+  font-size: 20px;
+  line-height: 1;
+}
+
+/* 详情卡 */
+.detail-card {
+  background: #fff;
+  padding: 16px;
+  margin-bottom: 10px;
+}
+.card-title {
+  display: block;
+  font-size: 15px;
+  font-weight: 700;
+  color: #1a2332;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f4fa;
+}
+.rich-content {
+  font-size: 14px;
+  line-height: 1.7;
+  color: #333;
+}
+.detail-images {
+  display: flex;
+  flex-direction: column;
+}
+.detail-img {
+  width: 100%;
+}
+
+/* 浮动返回按钮 */
+.back-floater {
+  position: fixed;
+  top: 12px;
+  left: 12px;
+  z-index: 30;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.32);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.back-arrow {
+  color: #fff;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1;
+  margin-top: -2px;
+}
+
+/* 底部操作栏 */
+.action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 20;
+  height: 66px;
+  padding-bottom: env(safe-area-inset-bottom);
+  background: rgba(255, 255, 255, 0.97);
+  border-top: 1px solid #e0eaf5;
+  display: flex;
+  align-items: center;
+  padding-left: 14px;
+  padding-right: 14px;
+  gap: 12px;
+}
+.action-icon-btn {
+  width: 54px;
+  height: 48px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.action-icon-glyph {
+  font-size: 20px;
+  line-height: 1;
+}
+.action-icon-text {
+  font-size: 11px;
+  color: #5a6878;
+}
+.buy-btn {
+  flex: 1;
+  height: 50px;
+  border-radius: 25px;
+  background: linear-gradient(135deg, #5b5cf0 0%, #7b6cf0 100%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1px;
+  box-shadow: 0 8px 18px rgba(91, 92, 240, 0.32);
+}
+.buy-btn-main {
+  font-size: 16px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 1px;
+}
+.buy-btn-sub {
+  font-size: 11px;
+  opacity: 0.9;
+  font-weight: 500;
+  color: #fff;
+}
+
+/* 加载/空状态 */
+.loading-page,
+.empty-page {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: #f4f9ff;
+  color: #8d99aa;
+  font-size: 14px;
+}
+.empty-icon {
+  font-size: 56px;
+  margin-bottom: 12px;
+  opacity: 0.5;
+}
+.back-btn {
+  margin-top: 16px;
+  padding: 8px 24px;
+  border: 1px solid #5b5cf0;
+  background: #fff;
+  border-radius: 20px;
+  font-size: 13px;
+}
+.back-btn text {
+  color: #5b5cf0;
+}
+</style>

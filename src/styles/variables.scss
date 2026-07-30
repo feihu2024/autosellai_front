@@ -1,0 +1,33 @@
+/**
+ * uni-app 小程序端 CSS 变量定义
+ *
+ * 注意：微信小程序不完全支持 CSS 变量在 page 级别定义，
+ * 这里同时在 page 和 :root 上声明，确保双端兼容。
+ */
+
+/* 紫色模板（模板1）主色调 */
+$primary: #5b5cf0;
+$primary-2: #7c7df5;
+$primary-soft: rgba(91, 92, 240, 0.1);
+
+$blue: #3b82f6;
+$cyan: #06b6d4;
+$orange: #f59e0b;
+$pink: #ec4899;
+$purple: #8b5cf6;
+$green: #10b981;
+$red: #ef4444;
+
+$text: #1e293b;
+$muted: #94a3b8;
+$bg: #f1f5f9;
+$card: #ffffff;
+$line: #e2e8f0;
+
+$radius: 14px;
+$shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+
+/* 金色模板（模板2）主色调 */
+$gold-primary: #f2a900;
+$gold-bg: #fffaf2;
+$gold-text: #15171b;
