@@ -6,6 +6,7 @@
  */
 
 import request from '@/utils/request'
+import { createWebSocket, getWsToken } from '@/utils/ws'
 
 // ========== 认证 ==========
 
@@ -72,7 +73,6 @@ export async function chatWithAgentStream(
   onDone?: () => void,
   onError?: (err: Error) => void,
 ): Promise<void> {
-  const { createWebSocket, getWsToken } = await import('@/utils/ws')
   const token = getWsToken()
 
   return new Promise<void>((resolve) => {

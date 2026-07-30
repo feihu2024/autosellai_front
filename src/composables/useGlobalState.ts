@@ -19,9 +19,10 @@ const SK_PENDING_REFERRER = 'pending_referrer_id'
 
 // ===== 模块级单例状态 =====
 const currentUserId = ref<number | null>(null)
-const currentEnterpriseId = ref<number | null>(null)
+const currentEnterpriseId = ref<number | null>(2)  // 默认企业ID
 const currentUserName = ref<string>('')
-const pendingReferrerId = ref<number | null>(null)
+const pendingReferrerId = ref<number | null>(null) // 待使用的邀请人ID
+const loginInitialized = ref<boolean>(false) // 登录初始化完成标志
 
 /** 从 storage 初始化（模块加载时自动执行） */
 function initFromStorage() {
@@ -119,10 +120,18 @@ export function useGlobalState() {
     currentEnterpriseId.value = null
     currentUserName.value = ''
     pendingReferrerId.value = null
+    loginInitialized.value = false
     storage.removeItem(SK_USER_ID)
     storage.removeItem(SK_ENTERPRISE_ID)
     storage.removeItem(SK_USERNAME)
     storage.removeItem(SK_PENDING_REFERRER)
+  }
+
+  /**
+   * 标记登录初始化完成
+   */
+  function setLoginInitialized() {
+    loginInitialized.value = true
   }
 
   return {
@@ -130,11 +139,13 @@ export function useGlobalState() {
     currentEnterpriseId,
     currentUserName,
     pendingReferrerId,
+    loginInitialized,
     setUserInfo,
     setInviteParams,
     consumePendingReferrer,
     getInviteQuery,
     getUserId,
     clearAll,
+    setLoginInitialized,
   }
 }

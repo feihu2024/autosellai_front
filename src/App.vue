@@ -44,11 +44,18 @@ function parseInviteParams(options: any) {
   const scene = options.scene
   if (scene && !referrerId) {
     const sceneStr = decodeURIComponent(String(scene))
-    const sceneParams = new URLSearchParams(sceneStr)
-    if (sceneParams.get('r')) referrerId = Number(sceneParams.get('r'))
-    if (sceneParams.get('e')) enterpriseId = Number(sceneParams.get('e'))
-    if (sceneParams.get('referrer_id')) referrerId = Number(sceneParams.get('referrer_id'))
-    if (sceneParams.get('enterprise_id')) enterpriseId = Number(sceneParams.get('enterprise_id'))
+    // 手动解析 URL 参数（小程序环境不支持 URLSearchParams）
+    const sceneParams: Record<string, string> = {}
+    sceneStr.split('&').forEach(param => {
+      const [key, value] = param.split('=')
+      if (key && value) {
+        sceneParams[key] = value
+      }
+    })
+    if (sceneParams['r']) referrerId = Number(sceneParams['r'])
+    if (sceneParams['e']) enterpriseId = Number(sceneParams['e'])
+    if (sceneParams['referrer_id']) referrerId = Number(sceneParams['referrer_id'])
+    if (sceneParams['enterprise_id']) enterpriseId = Number(sceneParams['enterprise_id'])
   }
 
   // 写入全局状态（只在有值时写入）
@@ -57,14 +64,17 @@ function parseInviteParams(options: any) {
   }
 }
 
-onLaunch((options: any) => {
+onLaunch(async (options: any) => {
   console.log('App Launch', JSON.stringify(options?.query || {}))
   // 1. 解析启动参数，提取邀请参数
   parseInviteParams(options)
   // 2. 全局初始化：加载模板变体
   loadTemplateVariant()
   // 3. 尝试静默登录（自动从全局状态读取邀请参数）
-  trySilentLogin()
+  await trySilentLogin()
+  // 4. 标记登录初始化完成
+  const { setLoginInitialized } = useGlobalState()
+  setLoginInitialized()
 })
 
 onShow((options: any) => {

@@ -28,7 +28,7 @@
   },
   "quickapp": {},
   "mp-weixin": {
-    "appid": "wxbf29933c8c4b5235",
+    "appid": "wx043a3709014eae8d",
     "setting": {
       "urlCheck": false,
       "es6": true,
@@ -38,7 +38,7 @@
       "packNpmRelationList": [
         {
           "packageJsonPath": "./package.json",
-          "miniprogramNpmDistDir": "./dist/build/mp-weixin/"
+          "miniprogramNpmDistDir": "./dist/dev/mp-weixin/"
         }
       ]
     },

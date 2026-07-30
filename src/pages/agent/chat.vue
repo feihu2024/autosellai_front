@@ -6,30 +6,17 @@
         <text class="back-icon">‹</text>
       </view>
       <text class="head-title">智能体</text>
-      <view
-        class="head-favorite"
-        :class="{ active: isFavorite }"
-        @click="toggleFavorite"
-      >
+      <view class="head-favorite" :class="{ active: isFavorite }" @click="toggleFavorite">
         <text class="star-icon">{{ isFavorite ? '★' : '☆' }}</text>
       </view>
     </view>
 
     <!-- ===== Scrollable Content ===== -->
-    <scroll-view
-      class="page-scroll"
-      scroll-y
-      :scroll-into-view="scrollTarget"
-      :scroll-with-animation="true"
-    >
+    <scroll-view class="page-scroll" scroll-y :scroll-into-view="scrollTarget" :scroll-with-animation="true">
       <!-- Agent Identity Card -->
       <view class="agent-identity-card">
-        <image
-          v-if="agentInfo?.icon_url || agentInfo?.icon"
-          class="identity-img"
-          :src="agentInfo.icon_url || agentInfo.icon"
-          mode="aspectFill"
-        />
+        <image v-if="agentInfo?.icon_url || agentInfo?.icon" class="identity-img"
+          :src="getImageUrl(agentInfo.icon_url || agentInfo.icon)" mode="aspectFill" />
         <view v-else class="identity-icon-placeholder">
           <text class="bot-icon">AI</text>
         </view>
@@ -41,15 +28,10 @@
         <!-- Sample Video Module -->
         <view class="detail-section module-card sample-module-card">
           <scroll-view scroll-x class="sample-video-scroll">
-            <view
-              v-for="(sample, idx) in sampleVideos"
-              :key="idx"
-              class="sample-video-card"
-              :class="sample.colorClass"
-              @click="playSample(sample)"
-            >
+            <view v-for="(sample, idx) in sampleVideos" :key="idx" class="sample-video-card" :class="sample.colorClass"
+              @click="playSample(sample)">
               <view class="sample-square" :class="{ 'sample-art': sample.isArt }">
-                <image v-if="sample.cover" class="sample-cover" :src="sample.cover" mode="aspectFill" />
+                <image v-if="sample.cover" class="sample-cover" :src="getImageUrl(sample.cover)" mode="aspectFill" />
                 <view v-if="sample.artText" class="sample-art-text">
                   <rich-text :nodes="sample.artText"></rich-text>
                 </view>
@@ -77,12 +59,8 @@
             <text class="section-hint">点击即可复制</text>
           </view>
           <view class="conversation-list">
-            <view
-              v-for="(ex, idx) in exampleConversations"
-              :key="'ex-' + idx"
-              class="chat-row"
-              :class="ex.role === 'user' ? 'user-row' : 'ai-row'"
-            >
+            <view v-for="(ex, idx) in exampleConversations" :key="'ex-' + idx" class="chat-row"
+              :class="ex.role === 'user' ? 'user-row' : 'ai-row'">
               <view v-if="ex.role === 'ai'" class="chat-avatar">
                 <text class="avatar-text">AI</text>
               </view>
@@ -103,10 +81,8 @@
         </view>
 
         <!-- Real Chat Messages -->
-        <view
-          class="detail-section conversation-section module-card"
-          v-if="messages.length > 0 || isTyping || dynamicGreeting || greetingLoading"
-        >
+        <view class="detail-section conversation-section module-card"
+          v-if="messages.length > 0 || isTyping || dynamicGreeting || greetingLoading">
           <view class="detail-section-title">
             <view class="title-left">
               <text class="eyebrow">实时对话</text>
@@ -140,7 +116,8 @@
             </view>
 
             <!-- Fallback static greeting -->
-            <view class="chat-row ai-row" v-if="messages.length === 0 && !dynamicGreeting && !greetingLoading && agentInfo?.greeting">
+            <view class="chat-row ai-row"
+              v-if="messages.length === 0 && !dynamicGreeting && !greetingLoading && agentInfo?.greeting">
               <view class="chat-avatar"><text class="avatar-text">AI</text></view>
               <view class="chat-bubble">
                 <view class="chat-label"><text class="label-text">智能体招呼</text></view>
@@ -152,23 +129,15 @@
             </view>
 
             <!-- Real messages -->
-            <view
-              v-for="(msg, idx) in messages"
-              :key="'msg-' + idx"
-              class="chat-row"
-              :class="msg.role === 'user' ? 'user-row' : 'ai-row'"
-            >
+            <view v-for="(msg, idx) in messages" :key="'msg-' + idx" class="chat-row"
+              :class="msg.role === 'user' ? 'user-row' : 'ai-row'">
               <view v-if="msg.role === 'ai'" class="chat-avatar"><text class="avatar-text">AI</text></view>
               <view class="chat-bubble">
                 <view class="chat-label">
                   <text class="label-text">{{ msg.role === 'user' ? '我的提问' : '智能体回复' }}</text>
                 </view>
                 <text class="chat-content">{{ msg.content }}</text>
-                <view
-                  v-if="msg.role === 'ai' && msg.content"
-                  class="copy-message"
-                  @click="copyText(msg.content)"
-                >
+                <view v-if="msg.role === 'ai' && msg.content" class="copy-message" @click="copyText(msg.content)">
                   <text class="copy-text">复制</text>
                 </view>
               </view>
@@ -199,33 +168,17 @@
     <!-- ===== Fixed Composer ===== -->
     <view class="agent-composer" :style="{ paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }">
       <view class="composer-input-wrap">
-        <textarea
-          class="composer-textarea"
-          v-model="inputText"
-          placeholder="请输入你的创作需求"
-          :auto-height="true"
-          :maxlength="-1"
-          :show-confirm-bar="false"
-          :adjust-position="false"
-          @input="onTextInput"
-          @confirm="sendMessage"
-        ></textarea>
+        <textarea class="composer-textarea" v-model="inputText" placeholder="请输入你的创作需求" :auto-height="true"
+          :maxlength="-1" :show-confirm-bar="false" :adjust-position="false" @input="onTextInput"
+          @confirm="sendMessage"></textarea>
       </view>
-      <view
-        class="composer-send"
-        :class="{ disabled: !inputText.trim() || isTyping }"
-        @click="sendMessage"
-      >
+      <view class="composer-send" :class="{ disabled: !inputText.trim() || isTyping }" @click="sendMessage">
         <text class="send-icon">➤</text>
       </view>
     </view>
 
     <!-- 套餐支付弹窗 -->
-    <PaySheet
-      :visible="paySheetVisible"
-      @close="paySheetVisible = false"
-      @paid="handlePaid"
-    />
+    <PaySheet :visible="paySheetVisible" @close="paySheetVisible = false" @paid="handlePaid" />
   </view>
 </template>
 
@@ -234,6 +187,7 @@ import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getMiniappAgentDetail, chatWithAgentStream, getAgentGreeting } from '@/api/miniapp'
 import { navigator, copyToClipboard, showToast } from '@/utils'
+import { getImageUrl } from '@/utils/image'
 import PaySheet from '@/components/PaySheet.vue'
 
 const agentId = ref(0)
@@ -398,6 +352,8 @@ async function sendMessage() {
         // done
       },
       (err) => {
+        console.log(err);
+
         if (err.message === 'COMPUTE_INSUFFICIENT') {
           messages.value[aiMsgIndex].content = '您的算力余额不足，请购买套餐后继续使用。'
           lastMessage.value = text
@@ -871,10 +827,14 @@ async function handlePaid(_data: { compute_balance: number }) {
 }
 
 @keyframes typing-bounce {
-  0%, 60%, 100% {
+
+  0%,
+  60%,
+  100% {
     opacity: 0.3;
     transform: translateY(0);
   }
+
   30% {
     opacity: 1;
     transform: translateY(-4px);
