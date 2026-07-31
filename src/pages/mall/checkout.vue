@@ -1,10 +1,5 @@
 ﻿<template>
   <view class="checkout-wrap" v-if="!loading">
-    <!-- 顶部标题栏 + 后退 -->
-    <view class="page-head">
-      <view class="back" @click="goBack"><text>‹</text></view>
-      <text class="page-title">确认订单</text>
-    </view>
 
     <view class="checkout-page">
       <!-- 收货地址卡（只读展示，修改地址请到地址簿） -->
@@ -21,7 +16,8 @@
             <text class="addr-phone">{{ currentAddress.phone || '—' }}</text>
           </view>
           <text class="addr-line addr-region">{{ regionText(currentAddress) }}</text>
-          <text class="addr-line addr-detail">{{ currentAddress.detail || (currentAddress.full_address || currentAddress.address || '') }}</text>
+          <text class="addr-line addr-detail">{{ currentAddress.detail || (currentAddress.full_address ||
+            currentAddress.address || '') }}</text>
         </view>
 
         <!-- 无地址空态 -->
@@ -36,12 +32,8 @@
       <view class="product-card" v-if="product">
         <view class="product-row">
           <view class="product-cover">
-            <image
-              v-if="product.main_image || currentSku?.sku_image"
-              :src="currentSku?.sku_image || product.main_image"
-              class="cover-img"
-              mode="aspectFill"
-            />
+            <image v-if="product.main_image || currentSku?.sku_image"
+              :src="getImageUrl(currentSku?.sku_image || product.main_image)" class="cover-img" mode="aspectFill" />
             <view v-else class="cover-placeholder"><text>📦</text></view>
           </view>
           <view class="product-info">
@@ -63,11 +55,7 @@
           <text class="balance-title">钱包余额支付</text>
           <text class="balance-amount">当前余额 ¥{{ userBalance.toFixed(2) }}</text>
         </view>
-        <view
-          class="switch"
-          :class="{ on: useBalance }"
-          @click="toggleUseBalance"
-        >
+        <view class="switch" :class="{ on: useBalance }" @click="toggleUseBalance">
           <view class="switch-knob"></view>
         </view>
       </view>
@@ -98,11 +86,7 @@
           <text class="submit-label">实付：</text>
           <text class="submit-value">¥{{ payAmount }}</text>
         </view>
-        <view
-          class="submit-btn"
-          :class="{ disabled: submitting }"
-          @click="submitOrder"
-        >
+        <view class="submit-btn" :class="{ disabled: submitting }" @click="submitOrder">
           <text>{{ submitting ? '提交中...' : '提交订单' }}</text>
         </view>
       </view>
@@ -121,6 +105,8 @@ import { onLoad, onShow } from '@dcloudio/uni-app'
 import { getMiniappMallProduct, createMallOrderV2, simulateMallPay } from '@/api/miniapp'
 import { getDefaultAddress, getAddresses, getUserProfile } from '@/api/miniapp'
 import { navigator, showToast } from '@/utils'
+import { useGlobalState } from '@/composables/useGlobalState'
+import { getImageUrl } from '@/utils/image'
 
 const loading = ref(true)
 const submitting = ref(false)
@@ -170,10 +156,19 @@ async function loadSelectedAddress(addressId: number) {
   }
 }
 
-/** 跳转地址簿，带 redirect 以便选择后返回结算页 */
+/** 跳转地址簿，使用状态管理传递上下文 */
 function goAddresses() {
-  const redirect = `/m/mall/checkout?product_id=${productId.value}&sku_id=${skuId.value}&qty=${qty.value}`
-  navigator.push(`/m/addresses?redirect=${encodeURIComponent(redirect)}`)
+  const { setAddressSelectContext } = useGlobalState()
+  // 保存当前上下文到全局状态
+  setAddressSelectContext({
+    productId: productId.value,
+    skuId: skuId.value,
+    qty: qty.value,
+  })
+  // 跳转到地址页，传递 select 参数
+  uni.navigateTo({
+    url: '/pages/user/addresses?select=1'
+  })
 }
 
 function goBack() {
@@ -427,6 +422,7 @@ onShow(() => {
   background: #fff;
   border-bottom: 1px solid #eef2f7;
 }
+
 .page-head .back {
   width: 36px;
   height: 36px;
@@ -434,10 +430,12 @@ onShow(() => {
   align-items: center;
   justify-content: center;
 }
+
 .page-head .back text {
   font-size: 26px;
   color: #1e293b;
 }
+
 .page-title {
   flex: 1;
   font-size: 17px;
@@ -462,11 +460,13 @@ onShow(() => {
   margin-bottom: 12px;
   box-shadow: 0 2px 10px rgba(40, 83, 129, 0.04);
 }
+
 .card-title {
   font-size: 14px;
   font-weight: 700;
   color: #1a2332;
 }
+
 .card-title-row {
   display: flex;
   align-items: center;
@@ -475,6 +475,7 @@ onShow(() => {
   padding-bottom: 10px;
   border-bottom: 1px solid #f0f4fa;
 }
+
 .use-default-btn text {
   color: #6366f1;
   font-size: 12px;
@@ -487,27 +488,33 @@ onShow(() => {
   flex-direction: column;
   gap: 4px;
 }
+
 .addr-line {
   line-height: 1.5;
 }
+
 .addr-line-main {
   display: flex;
   align-items: baseline;
   gap: 12px;
 }
+
 .addr-name {
   font-size: 15px;
   font-weight: 700;
   color: #1a2332;
 }
+
 .addr-phone {
   font-size: 13px;
   color: #475569;
 }
+
 .addr-region {
   font-size: 13px;
   color: #5a6878;
 }
+
 .addr-detail {
   font-size: 13px;
   color: #1a2332;
@@ -522,13 +529,16 @@ onShow(() => {
   gap: 8px;
   padding: 16px 0 8px;
 }
+
 .addr-empty-ico {
   font-size: 28px;
 }
+
 .addr-empty-text {
   font-size: 13px;
   color: #8d99aa;
 }
+
 .addr-empty-btn {
   margin-top: 4px;
   height: 32px;
@@ -539,6 +549,7 @@ onShow(() => {
   align-items: center;
   justify-content: center;
 }
+
 .addr-empty-btn text {
   color: #fff;
   font-size: 12px;
@@ -550,6 +561,7 @@ onShow(() => {
   display: flex;
   gap: 12px;
 }
+
 .product-cover {
   width: 80px;
   height: 80px;
@@ -558,10 +570,12 @@ onShow(() => {
   background: #f4f7fb;
   flex-shrink: 0;
 }
+
 .cover-img {
   width: 100%;
   height: 100%;
 }
+
 .cover-placeholder {
   width: 100%;
   height: 100%;
@@ -571,11 +585,13 @@ onShow(() => {
   font-size: 32px;
   color: #c5cfdb;
 }
+
 .product-info {
   flex: 1;
   display: flex;
   flex-direction: column;
 }
+
 .product-name {
   margin-bottom: 6px;
   font-size: 14px;
@@ -587,11 +603,13 @@ onShow(() => {
   -webkit-line-clamp: 2;
   -webkit-box-orient: vertical;
 }
+
 .product-sku {
   margin-bottom: 8px;
   font-size: 12px;
   color: #8d99aa;
 }
+
 .product-price-row {
   margin-top: auto;
   display: flex;
@@ -599,16 +617,19 @@ onShow(() => {
   gap: 6px;
   flex-wrap: wrap;
 }
+
 .unit-price {
   font-size: 15px;
   font-weight: 700;
   color: #ff4d4f;
 }
+
 .unit-original-price {
   font-size: 12px;
   color: #a8b3c2;
   text-decoration: line-through;
 }
+
 .member-badge {
   background: linear-gradient(135deg, #ffb84d 0%, #ff9a3c 100%);
   color: #fff;
@@ -617,6 +638,7 @@ onShow(() => {
   padding: 2px 6px;
   border-radius: 3px;
 }
+
 .qty {
   font-size: 13px;
   color: #8d99aa;
@@ -630,26 +652,32 @@ onShow(() => {
   align-items: center;
   padding: 6px 0;
 }
+
 .detail-label {
   font-size: 13px;
   color: #5a6878;
 }
+
 .detail-value {
   font-size: 13px;
   color: #1a2332;
 }
+
 .detail-value.free {
   color: #52c41a;
 }
+
 .detail-value.deduct {
   color: #ff4d4f;
   font-weight: 600;
 }
+
 .total-row {
   margin-top: 8px;
   padding-top: 10px;
   border-top: 1px solid #f0f4fa;
 }
+
 .total-value {
   font-size: 17px;
   font-weight: 800;
@@ -667,21 +695,25 @@ onShow(() => {
   justify-content: space-between;
   box-shadow: 0 2px 10px rgba(40, 83, 129, 0.04);
 }
+
 .balance-info {
   flex: 1;
 }
+
 .balance-title {
   display: block;
   font-size: 14px;
   font-weight: 600;
   color: #1a2332;
 }
+
 .balance-amount {
   display: block;
   margin-top: 4px;
   font-size: 12px;
   color: #8d99aa;
 }
+
 .switch {
   width: 46px;
   height: 26px;
@@ -691,9 +723,11 @@ onShow(() => {
   transition: background 0.2s;
   flex-shrink: 0;
 }
+
 .switch.on {
   background: linear-gradient(135deg, #5b5cf0 0%, #7b6cf0 100%);
 }
+
 .switch-knob {
   position: absolute;
   top: 2px;
@@ -705,6 +739,7 @@ onShow(() => {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.15);
   transition: transform 0.2s;
 }
+
 .switch.on .switch-knob {
   transform: translateX(20px);
 }
@@ -726,20 +761,24 @@ onShow(() => {
   padding-left: 16px;
   padding-right: 16px;
 }
+
 .submit-amount {
   display: flex;
   align-items: baseline;
   gap: 4px;
 }
+
 .submit-label {
   font-size: 13px;
   color: #5a6878;
 }
+
 .submit-value {
   font-size: 20px;
   font-weight: 800;
   color: #ff4d4f;
 }
+
 .submit-btn {
   height: 44px;
   padding: 0 36px;
@@ -749,11 +788,13 @@ onShow(() => {
   align-items: center;
   justify-content: center;
 }
+
 .submit-btn text {
   color: #fff;
   font-size: 15px;
   font-weight: 600;
 }
+
 .submit-btn.disabled {
   background: #c5cfdb;
 }

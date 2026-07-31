@@ -943,7 +943,7 @@ onUnmounted(() => {
 
 /* 广告横幅 */
 .ad-strip {
-  width: 100%;
+  // width: 100%;
   min-height: 60px;
   margin-top: 16px;
   padding: 10px 12px;

@@ -23,6 +23,11 @@ const currentEnterpriseId = ref<number | null>(2)  // 默认企业ID
 const currentUserName = ref<string>('')
 const pendingReferrerId = ref<number | null>(null) // 待使用的邀请人ID
 const loginInitialized = ref<boolean>(false) // 登录初始化完成标志
+const addressSelectContext = ref<{
+  productId: number
+  skuId: number
+  qty: number
+} | null>(null) // 地址选择上下文
 
 /** 从 storage 初始化（模块加载时自动执行） */
 function initFromStorage() {
@@ -134,6 +139,27 @@ export function useGlobalState() {
     loginInitialized.value = true
   }
 
+  /**
+   * 设置地址选择上下文（从结算页跳转到地址页时使用）
+   */
+  function setAddressSelectContext(context: { productId: number; skuId: number; qty: number }) {
+    addressSelectContext.value = context
+  }
+
+  /**
+   * 获取地址选择上下文
+   */
+  function getAddressSelectContext() {
+    return addressSelectContext.value
+  }
+
+  /**
+   * 清除地址选择上下文
+   */
+  function clearAddressSelectContext() {
+    addressSelectContext.value = null
+  }
+
   return {
     currentUserId,
     currentEnterpriseId,
@@ -147,5 +173,8 @@ export function useGlobalState() {
     getUserId,
     clearAll,
     setLoginInitialized,
+    setAddressSelectContext,
+    getAddressSelectContext,
+    clearAddressSelectContext,
   }
 }

@@ -1,9 +1,9 @@
 ﻿<template>
   <view class="detail-page" v-if="!loading && order">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">订单详情</text>
-    </view>
+    </view> -->
 
     <!-- 状态条 -->
     <view :class="['status-banner', statusClass(order.order_status)]">
@@ -53,7 +53,8 @@
       </view>
       <view class="goods-row">
         <view class="goods-cover">
-          <image v-if="order.product_image" :src="order.product_image" class="cover-img" mode="aspectFill" />
+          <image v-if="order.product_image" :src="getImageUrl(order.product_image)" class="cover-img"
+            mode="aspectFill" />
           <view v-else class="cover-placeholder"><text>📦</text></view>
         </view>
         <view class="goods-info">
@@ -118,16 +119,11 @@
 
     <!-- 底部操作栏 -->
     <view class="footer-bar" v-if="showFooter">
-      <view
-        v-if="order.order_status === 'pending_receive'"
-        class="footer-btn primary"
-        @click="onConfirm"
-      ><text>确认收货</text></view>
-      <view
-        v-if="order.order_status === 'pending_receive' && order.tracking_no"
-        class="footer-btn outline"
-        @click="goLogistics"
-      ><text>查看物流</text></view>
+      <view v-if="order.order_status === 'pending_receive'" class="footer-btn primary" @click="onConfirm">
+        <text>确认收货</text>
+      </view>
+      <view v-if="order.order_status === 'pending_receive' && order.tracking_no" class="footer-btn outline"
+        @click="goLogistics"><text>查看物流</text></view>
     </view>
   </view>
 
@@ -148,6 +144,7 @@ import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getMyMallOrderDetail, confirmMallReceive } from '@/api/miniapp'
 import { navigator, showToast, showConfirm, copyToClipboard } from '@/utils'
+import { getImageUrl } from '@/utils/image'
 
 const orderId = ref(0)
 const order = ref<any>(null)
@@ -238,6 +235,7 @@ onLoad((options: any) => {
   background: #f5f7fb;
   padding-bottom: 80px;
 }
+
 .page-head {
   position: sticky;
   top: 0;
@@ -249,6 +247,7 @@ onLoad((options: any) => {
   background: #fff;
   border-bottom: 1px solid #eef2f7;
 }
+
 .page-head .back {
   width: 36px;
   height: 36px;
@@ -256,10 +255,12 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .page-head .back text {
   font-size: 26px;
   color: #1e293b;
 }
+
 .page-title {
   flex: 1;
   font-size: 17px;
@@ -267,6 +268,7 @@ onLoad((options: any) => {
   text-align: center;
   padding-right: 36px;
 }
+
 /* 状态横幅 */
 .status-banner {
   display: flex;
@@ -274,39 +276,49 @@ onLoad((options: any) => {
   gap: 12px;
   padding: 18px 16px;
 }
+
 .status-banner.warn {
   background: linear-gradient(135deg, #f59e0b, #f97316);
 }
+
 .status-banner.info {
   background: linear-gradient(135deg, #3b82f6, #6366f1);
 }
+
 .status-banner.primary {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
 }
+
 .status-banner.done {
   background: linear-gradient(135deg, #10b981, #059669);
 }
+
 .status-banner.refund,
 .status-banner.closed {
   background: linear-gradient(135deg, #94a3b8, #64748b);
 }
+
 .status-ico {
   font-size: 32px;
 }
+
 .status-text {
   display: flex;
   flex-direction: column;
 }
+
 .status-title {
   font-size: 18px;
   font-weight: 700;
   color: #fff;
   margin-bottom: 2px;
 }
+
 .status-desc {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
 }
+
 /* 物流卡 */
 .logistics-card {
   display: flex;
@@ -318,33 +330,40 @@ onLoad((options: any) => {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(67, 109, 157, 0.05);
 }
+
 .logistics-left {
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 .logistics-ico {
   font-size: 22px;
 }
+
 .logistics-info {
   display: flex;
   flex-direction: column;
 }
+
 .logistics-company {
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
 }
+
 .logistics-no {
   font-size: 12px;
   color: #64748b;
   margin-top: 2px;
 }
+
 .logistics-arrow {
   font-size: 13px;
   color: #6366f1;
   font-weight: 500;
 }
+
 /* 地址卡 */
 .address-card,
 .goods-card,
@@ -355,51 +374,61 @@ onLoad((options: any) => {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(67, 109, 157, 0.05);
 }
+
 .card-title {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 10px;
 }
+
 .title-ico {
   font-size: 16px;
 }
+
 .title-text {
   flex: 1;
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
 }
+
 .shop-name {
   font-size: 12px;
   color: #6366f1;
   font-weight: 500;
 }
+
 .address-body .receiver {
   margin-bottom: 4px;
   display: flex;
   align-items: center;
   gap: 10px;
 }
+
 .address-body .receiver .name {
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
 }
+
 .address-body .receiver .phone {
   font-size: 14px;
   color: #475569;
 }
+
 .address-body .addr {
   font-size: 13px;
   color: #475569;
   line-height: 1.5;
 }
+
 /* 商品行 */
 .goods-row {
   display: flex;
   gap: 10px;
 }
+
 .goods-cover {
   width: 80px;
   height: 80px;
@@ -411,14 +440,17 @@ onLoad((options: any) => {
   justify-content: center;
   flex-shrink: 0;
 }
+
 .cover-img {
   width: 100%;
   height: 100%;
 }
+
 .cover-placeholder {
   font-size: 28px;
   color: #cbd5e1;
 }
+
 .goods-info {
   flex: 1;
   display: flex;
@@ -426,36 +458,43 @@ onLoad((options: any) => {
   justify-content: center;
   min-width: 0;
 }
+
 .goods-name {
   margin-bottom: 6px;
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
 }
+
 .goods-sku {
   font-size: 12px;
   color: #64748b;
 }
+
 .goods-side {
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 }
+
 .goods-side .price {
   font-size: 14px;
   font-weight: 700;
   color: #ef4444;
 }
+
 .goods-side .qty {
   font-size: 12px;
   color: #94a3b8;
   margin-top: 4px;
 }
+
 .price-detail {
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px dashed #eef2f7;
 }
+
 .price-detail .row {
   display: flex;
   justify-content: space-between;
@@ -463,6 +502,7 @@ onLoad((options: any) => {
   font-size: 13px;
   color: #64748b;
 }
+
 .price-detail .row.total {
   padding-top: 8px;
   margin-top: 4px;
@@ -471,18 +511,22 @@ onLoad((options: any) => {
   color: #1e293b;
   font-weight: 600;
 }
+
 .total-value {
   color: #ef4444;
   font-weight: 700;
   font-size: 16px;
 }
+
 .free {
   color: #10b981;
 }
+
 .deduct {
   color: #ef4444;
   font-weight: 600;
 }
+
 /* 订单信息 */
 .info-row {
   display: flex;
@@ -492,26 +536,32 @@ onLoad((options: any) => {
   font-size: 13px;
   border-bottom: 1px dashed #f1f5f9;
 }
+
 .info-row:last-child {
   border-bottom: none;
 }
+
 .info-label {
   color: #64748b;
 }
+
 .info-value {
   color: #1e293b;
   font-weight: 500;
   text-align: right;
 }
+
 .info-value-copy {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+
 .info-value-copy text {
   color: #6366f1;
   font-weight: 500;
 }
+
 .copy-badge {
   font-size: 11px;
   background: #e0e7ff;
@@ -520,6 +570,7 @@ onLoad((options: any) => {
   border-radius: 6px;
   font-weight: 500;
 }
+
 /* 底部操作 */
 .footer-bar {
   position: fixed;
@@ -534,6 +585,7 @@ onLoad((options: any) => {
   border-top: 1px solid #eef2f7;
   z-index: 20;
 }
+
 .footer-btn {
   flex: 1;
   height: 40px;
@@ -542,24 +594,30 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .footer-btn text {
   font-size: 14px;
   font-weight: 500;
 }
+
 .footer-btn.outline {
   background: #fff;
   border: 1px solid #cbd5e1;
 }
+
 .footer-btn.outline text {
   color: #475569;
 }
+
 .footer-btn.primary {
   background: #6366f1;
   border: 1px solid #6366f1;
 }
+
 .footer-btn.primary text {
   color: #fff;
 }
+
 /* 状态 */
 .loading-state,
 .empty-state {
@@ -571,6 +629,7 @@ onLoad((options: any) => {
   padding: 80px 16px;
   color: #94a3b8;
 }
+
 .back-btn {
   margin-top: 16px;
   height: 36px;
@@ -581,6 +640,7 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .back-btn text {
   color: #fff;
   font-size: 13px;

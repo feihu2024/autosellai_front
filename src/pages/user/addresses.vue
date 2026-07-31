@@ -1,11 +1,5 @@
 ﻿<template>
   <view class="addresses-page">
-    <view class="page-head">
-      <view class="back" @click="goBack"><text>‹</text></view>
-      <text class="page-title">地址管理</text>
-      <view v-if="!showForm && addresses.length" class="add-top" @click="addNew"><text>+ 新增</text></view>
-    </view>
-
     <!-- 地址列表 -->
     <view class="address-list" v-if="!loading && addresses.length > 0">
       <view class="address-card" v-for="item in addresses" :key="item.id">
@@ -65,10 +59,12 @@
           <picker mode="selector" :range="provinceList" @change="onProvinceChange" class="region-picker">
             <view class="picker-display">{{ form.province || '省份' }}</view>
           </picker>
-          <picker mode="selector" :range="cityOptions" @change="onCityChange" class="region-picker" :disabled="!form.province">
+          <picker mode="selector" :range="cityOptions" @change="onCityChange" class="region-picker"
+            :disabled="!form.province">
             <view class="picker-display" :class="{ disabled: !form.province }">{{ form.city || '城市' }}</view>
           </picker>
-          <picker mode="selector" :range="districtOptions" @change="onDistrictChange" class="region-picker" :disabled="!form.city">
+          <picker mode="selector" :range="districtOptions" @change="onDistrictChange" class="region-picker"
+            :disabled="!form.city">
             <view class="picker-display" :class="{ disabled: !form.city }">{{ form.district || '区/县' }}</view>
           </picker>
         </view>
@@ -76,12 +72,7 @@
 
       <view class="form-field">
         <text class="field-label">详细地址</text>
-        <textarea
-          v-model="form.detail"
-          class="form-textarea"
-          placeholder="街道、楼栋、门牌号等"
-          maxlength="200"
-        ></textarea>
+        <textarea v-model="form.detail" class="form-textarea" placeholder="街道、楼栋、门牌号等" maxlength="200"></textarea>
       </view>
 
       <view class="form-field checkbox-field">
@@ -112,9 +103,11 @@ import {
   updateAddress,
   deleteAddress,
   setDefaultAddress,
+  getAddresses as getAddressesList,
 } from '@/api/miniapp'
 import { provinceList, cityListOf, districtListOf } from '@/utils/region'
 import { navigator, showToast, showConfirm } from '@/utils'
+import { useGlobalState } from '@/composables/useGlobalState'
 
 const addresses = ref<any[]>([])
 const loading = ref(false)
@@ -122,15 +115,28 @@ const saving = ref(false)
 const showForm = ref(false)
 const editingId = ref<number | null>(null)
 
-// 从结算页带 redirect 参数进入时，为「选择地址」模式
-const redirectPath = ref('')
-const selectMode = computed(() => !!redirectPath.value)
+// 从结算页带 select 参数进入时，为「选择地址」模式
+const selectMode = ref(false)
 
 /** 选择该地址并返回结算页 */
 function selectAddress(item: any) {
-  if (!redirectPath.value) return
-  const sep = redirectPath.value.includes('?') ? '&' : '?'
-  navigator.replace(`${redirectPath.value}${sep}address_id=${item.id}`)
+  if (!selectMode.value) return
+
+  const { getAddressSelectContext, clearAddressSelectContext } = useGlobalState()
+  const context = getAddressSelectContext()
+
+  if (!context) {
+    showToast('页面状态异常', 'error')
+    return
+  }
+
+  // 清除上下文
+  clearAddressSelectContext()
+
+  // 跳转回结算页，带上地址ID
+  uni.redirectTo({
+    url: `/pages/mall/checkout?product_id=${context.productId}&sku_id=${context.skuId}&qty=${context.qty}&address_id=${item.id}`
+  })
 }
 
 const form = reactive({
@@ -287,7 +293,7 @@ async function loadList() {
 }
 
 onLoad((options: any) => {
-  redirectPath.value = options?.redirect ? decodeURIComponent(options.redirect) : ''
+  selectMode.value = options?.select === '1' || options?.select === 'true'
   loadList()
 })
 </script>
@@ -298,6 +304,7 @@ onLoad((options: any) => {
   background: #f5f7fb;
   padding-bottom: 24px;
 }
+
 .page-head {
   position: sticky;
   top: 0;
@@ -309,6 +316,7 @@ onLoad((options: any) => {
   background: #fff;
   border-bottom: 1px solid #eef2f7;
 }
+
 .page-head .back {
   width: 36px;
   height: 36px;
@@ -316,28 +324,34 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .page-head .back text {
   font-size: 26px;
   color: #1e293b;
 }
+
 .page-title {
   flex: 1;
   font-size: 17px;
   font-weight: 600;
   text-align: center;
 }
+
 .add-top {
   padding: 4px 8px;
 }
+
 .add-top text {
   color: #6366f1;
   font-size: 13px;
   font-weight: 500;
 }
+
 /* 地址卡片 */
 .address-list {
   padding: 12px;
 }
+
 .address-card {
   background: #fff;
   border-radius: 14px;
@@ -346,21 +360,25 @@ onLoad((options: any) => {
   box-shadow: 0 2px 8px rgba(67, 109, 157, 0.05);
   border: 1px solid #f0f4fa;
 }
+
 .address-top {
   display: flex;
   align-items: center;
   gap: 10px;
   margin-bottom: 6px;
 }
+
 .addr-name {
   font-size: 15px;
   font-weight: 700;
   color: #1e293b;
 }
+
 .addr-phone {
   font-size: 13px;
   color: #64748b;
 }
+
 .default-tag {
   font-size: 10px;
   font-weight: 600;
@@ -369,6 +387,7 @@ onLoad((options: any) => {
   padding: 2px 8px;
   border-radius: 8px;
 }
+
 .address-full {
   display: block;
   margin-bottom: 10px;
@@ -376,6 +395,7 @@ onLoad((options: any) => {
   color: #475569;
   line-height: 1.5;
 }
+
 .address-actions {
   display: flex;
   align-items: center;
@@ -383,37 +403,46 @@ onLoad((options: any) => {
   padding-top: 10px;
   border-top: 1px dashed #eef2f7;
 }
+
 .action-right {
   display: flex;
   gap: 8px;
 }
+
 .action-link {
   padding: 4px 8px;
 }
+
 .action-link text {
   font-size: 12px;
   font-weight: 500;
 }
+
 .action-link.select text {
   color: #6366f1;
 }
+
 .action-link.edit text {
   color: #3b82f6;
 }
+
 .action-link.delete text {
   color: #ef4444;
 }
+
 /* 默认地址开关（自定义滑块） */
 .default-switch-wrap {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .default-switch-label {
   font-size: 12px;
   color: #64748b;
   font-weight: 500;
 }
+
 .default-switch {
   position: relative;
   width: 40px;
@@ -423,9 +452,11 @@ onLoad((options: any) => {
   transition: background 0.2s ease;
   flex-shrink: 0;
 }
+
 .default-switch.on {
   background: #16a34a;
 }
+
 .default-switch-thumb {
   position: absolute;
   top: 2px;
@@ -437,9 +468,11 @@ onLoad((options: any) => {
   box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
   transition: transform 0.2s ease;
 }
+
 .default-switch.on .default-switch-thumb {
   transform: translateX(18px);
 }
+
 /* 表单 */
 .form-section {
   margin: 12px;
@@ -448,6 +481,7 @@ onLoad((options: any) => {
   border-radius: 14px;
   box-shadow: 0 2px 12px rgba(67, 109, 157, 0.08);
 }
+
 .form-title {
   display: block;
   margin-bottom: 16px;
@@ -455,9 +489,11 @@ onLoad((options: any) => {
   font-weight: 700;
   color: #1e293b;
 }
+
 .form-field {
   margin-bottom: 14px;
 }
+
 .field-label {
   display: block;
   font-size: 12px;
@@ -465,6 +501,7 @@ onLoad((options: any) => {
   margin-bottom: 6px;
   font-weight: 500;
 }
+
 .field-input {
   width: 100%;
   height: 42px;
@@ -475,6 +512,7 @@ onLoad((options: any) => {
   background: #fff;
   box-sizing: border-box;
 }
+
 .form-textarea {
   width: 100%;
   min-height: 80px;
@@ -485,13 +523,16 @@ onLoad((options: any) => {
   background: #fff;
   box-sizing: border-box;
 }
+
 .form-field-region .region-row {
   display: flex;
   gap: 6px;
 }
+
 .region-picker {
   flex: 1;
 }
+
 .picker-display {
   height: 40px;
   line-height: 40px;
@@ -506,15 +547,18 @@ onLoad((options: any) => {
   white-space: nowrap;
   text-overflow: ellipsis;
 }
+
 .picker-display.disabled {
   color: #cbd5e1;
 }
+
 /* 自定义复选框 */
 .checkbox-field .checkbox-row {
   display: flex;
   align-items: center;
   gap: 8px;
 }
+
 .custom-checkbox {
   width: 18px;
   height: 18px;
@@ -524,24 +568,29 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .custom-checkbox.checked {
   background: #6366f1;
   border-color: #6366f1;
 }
+
 .check-mark {
   font-size: 12px;
   color: #fff;
   font-weight: 700;
 }
+
 .checkbox-label {
   font-size: 13px;
   color: #475569;
 }
+
 .form-btns {
   display: flex;
   gap: 10px;
   margin-top: 16px;
 }
+
 .cancel-btn {
   flex: 1;
   height: 42px;
@@ -552,10 +601,12 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .cancel-btn text {
   color: #64748b;
   font-size: 14px;
 }
+
 .primary-btn {
   flex: 1;
   height: 42px;
@@ -565,14 +616,17 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .primary-btn text {
   color: #fff;
   font-size: 14px;
   font-weight: 600;
 }
+
 .primary-btn.disabled {
   opacity: 0.6;
 }
+
 /* 空状态 */
 .empty-state {
   display: flex;
@@ -580,15 +634,18 @@ onLoad((options: any) => {
   align-items: center;
   padding: 60px 16px;
 }
+
 .empty-icon {
   font-size: 48px;
   margin-bottom: 12px;
 }
+
 .empty-text {
   margin-bottom: 16px;
   font-size: 14px;
   color: #94a3b8;
 }
+
 .add-btn-empty {
   height: 38px;
   padding: 0 22px;
@@ -598,15 +655,18 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .add-btn-empty text {
   color: #fff;
   font-size: 13px;
   font-weight: 500;
 }
+
 .loading-state {
   text-align: center;
   padding: 60px 16px;
 }
+
 .loading-state text {
   font-size: 14px;
   color: #94a3b8;

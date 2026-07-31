@@ -7,13 +7,8 @@
 
     <!-- 状态 Tab -->
     <scroll-view scroll-x class="tabs-bar" :show-scrollbar="false">
-      <view
-        v-for="t in tabs"
-        :key="t.value"
-        class="tab"
-        :class="{ active: currentTab === t.value }"
-        @click="switchTab(t.value)"
-      >
+      <view v-for="t in tabs" :key="t.value" class="tab" :class="{ active: currentTab === t.value }"
+        @click="switchTab(t.value)">
         <text>{{ t.label }}</text>
         <text v-if="counts[t.value]" class="tab-badge">{{ counts[t.value] }}</text>
       </view>
@@ -34,12 +29,7 @@
         <!-- 商品行 -->
         <view class="goods-row">
           <view class="goods-cover">
-            <image
-              v-if="o.product_image"
-              :src="o.product_image"
-              class="cover-img"
-              mode="aspectFill"
-            />
+            <image v-if="o.product_image" :src="getImageUrl(o.product_image)" class="cover-img" mode="aspectFill" />
             <view v-else class="cover-placeholder"><text>📦</text></view>
           </view>
           <view class="goods-info">
@@ -56,16 +46,11 @@
         <view class="card-foot">
           <text class="order-no">单号 {{ o.order_no }}</text>
           <view class="actions">
-            <view
-              v-if="o.order_status === 'pending_receive'"
-              class="btn primary"
-              @click.stop="onConfirm(o)"
-            ><text>确认收货</text></view>
-            <view
-              v-if="o.order_status === 'pending_receive' && o.tracking_no"
-              class="btn outline"
-              @click.stop="goLogistics(o.id)"
-            ><text>查看物流</text></view>
+            <view v-if="o.order_status === 'pending_receive'" class="btn primary" @click.stop="onConfirm(o)">
+              <text>确认收货</text>
+            </view>
+            <view v-if="o.order_status === 'pending_receive' && o.tracking_no" class="btn outline"
+              @click.stop="goLogistics(o.id)"><text>查看物流</text></view>
             <view class="btn outline" @click.stop="goDetail(o.id)"><text>查看详情</text></view>
           </view>
         </view>
@@ -91,6 +76,7 @@ import { ref, reactive } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getMyMallOrders, confirmMallReceive } from '@/api/miniapp'
 import { navigator, showToast, showConfirm } from '@/utils'
+import { getImageUrl } from '@/utils/image'
 
 const tabs = [
   { label: '全部', value: 'all' },
@@ -160,11 +146,11 @@ async function loadData() {
 }
 
 function goDetail(id: number) {
-  navigator.push(`/m/order/${id}`)
+  navigator.push(`/m/orders/detail?id=${id}`)
 }
 
 function goLogistics(id: number) {
-  navigator.push(`/m/logistics/${id}`)
+  navigator.push(`/m/orders/logistics?id=${id}`)
 }
 
 function goMall() {
@@ -204,6 +190,7 @@ onLoad((options: any) => {
   background: #f5f7fb;
   padding-bottom: 24px;
 }
+
 .page-head {
   position: sticky;
   top: 0;
@@ -215,6 +202,7 @@ onLoad((options: any) => {
   background: #fff;
   border-bottom: 1px solid #eef2f7;
 }
+
 .page-head .back {
   width: 36px;
   height: 36px;
@@ -222,10 +210,12 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .page-head .back text {
   font-size: 26px;
   color: #1e293b;
 }
+
 .page-title {
   flex: 1;
   font-size: 17px;
@@ -233,6 +223,7 @@ onLoad((options: any) => {
   text-align: center;
   padding-right: 36px;
 }
+
 /* Tabs */
 .tabs-bar {
   position: sticky;
@@ -242,6 +233,7 @@ onLoad((options: any) => {
   background: #fff;
   border-bottom: 1px solid #eef2f7;
 }
+
 .tab {
   position: relative;
   display: inline-flex;
@@ -250,14 +242,17 @@ onLoad((options: any) => {
   padding: 12px 6px;
   white-space: nowrap;
 }
+
 .tab text {
   font-size: 13px;
   color: #64748b;
 }
+
 .tab.active text {
   color: #6366f1;
   font-weight: 600;
 }
+
 .tab.active::after {
   content: '';
   position: absolute;
@@ -269,6 +264,7 @@ onLoad((options: any) => {
   border-radius: 2px;
   background: #6366f1;
 }
+
 .tab-badge {
   min-width: 16px;
   height: 16px;
@@ -282,10 +278,12 @@ onLoad((options: any) => {
   border-radius: 8px;
   text-align: center;
 }
+
 /* 订单卡片 */
 .order-list {
   padding: 12px;
 }
+
 .order-card {
   background: #fff;
   border-radius: 14px;
@@ -294,60 +292,73 @@ onLoad((options: any) => {
   box-shadow: 0 2px 8px rgba(67, 109, 157, 0.05);
   border: 1px solid #f0f4fa;
 }
+
 .card-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
 }
+
 .head-left {
   display: flex;
   align-items: center;
   gap: 6px;
 }
+
 .shop-ico {
   font-size: 14px;
 }
+
 .shop-name {
   font-size: 13px;
   color: #1e293b;
   font-weight: 500;
 }
+
 .status-pill {
   font-size: 12px;
   font-weight: 600;
   padding: 3px 10px;
   border-radius: 12px;
 }
+
 .status-pill.warn {
   color: #f59e0b;
   background: #fef3c7;
 }
+
 .status-pill.info {
   color: #3b82f6;
   background: #dbeafe;
 }
+
 .status-pill.primary {
   color: #6366f1;
   background: #e0e7ff;
 }
+
 .status-pill.done {
   color: #10b981;
   background: #d1fae5;
 }
+
 .status-pill.refund {
   color: #ef4444;
   background: #fee2e2;
 }
+
 .status-pill.closed {
   color: #6b7280;
   background: #f3f4f6;
 }
+
 /* 商品行 */
 .goods-row {
   display: flex;
   gap: 10px;
 }
+
 .goods-cover {
   width: 72px;
   height: 72px;
@@ -359,14 +370,17 @@ onLoad((options: any) => {
   justify-content: center;
   flex-shrink: 0;
 }
+
 .cover-img {
   width: 100%;
   height: 100%;
 }
+
 .cover-placeholder {
   font-size: 26px;
   color: #cbd5e1;
 }
+
 .goods-info {
   flex: 1;
   display: flex;
@@ -374,6 +388,7 @@ onLoad((options: any) => {
   justify-content: center;
   min-width: 0;
 }
+
 .goods-name {
   margin-bottom: 4px;
   font-size: 14px;
@@ -384,21 +399,25 @@ onLoad((options: any) => {
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
+
 .goods-sku {
   margin-bottom: 2px;
   font-size: 12px;
   color: #64748b;
 }
+
 .goods-qty {
   font-size: 12px;
   color: #94a3b8;
 }
+
 .goods-price {
   align-self: center;
   font-size: 14px;
   font-weight: 700;
   color: #ef4444;
 }
+
 /* 底部 */
 .card-foot {
   display: flex;
@@ -408,14 +427,17 @@ onLoad((options: any) => {
   padding-top: 10px;
   border-top: 1px dashed #eef2f7;
 }
+
 .order-no {
   font-size: 11px;
   color: #94a3b8;
 }
+
 .actions {
   display: flex;
   gap: 6px;
 }
+
 .btn {
   height: 28px;
   padding: 0 10px;
@@ -424,24 +446,30 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .btn text {
   font-size: 12px;
   font-weight: 500;
 }
+
 .btn.outline {
   background: #fff;
   border: 1px solid #cbd5e1;
 }
+
 .btn.outline text {
   color: #475569;
 }
+
 .btn.primary {
   background: #6366f1;
   border: 1px solid #6366f1;
 }
+
 .btn.primary text {
   color: #fff;
 }
+
 /* 空状态 / 加载 */
 .empty-state,
 .loading-state {
@@ -452,14 +480,17 @@ onLoad((options: any) => {
   flex-direction: column;
   align-items: center;
 }
+
 .empty-icon {
   font-size: 48px;
   margin-bottom: 12px;
 }
+
 .empty-text {
   margin-bottom: 16px;
   font-size: 14px;
 }
+
 .go-mall-btn {
   height: 36px;
   padding: 0 20px;
@@ -469,6 +500,7 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .go-mall-btn text {
   color: #fff;
   font-size: 13px;
