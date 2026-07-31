@@ -19,7 +19,7 @@ let loaded = false
 export function useMiniappTemplate() {
   /** 是否为金色模板（模板2） */
   const isGoldTemplate = computed(() => uiVariant.value === 'gold')
-
+  // const isGoldTemplate = false
   /**
    * 异步拉取 config 并设置 uiVariant。
    * 全局只请求一次（单例缓存），后续调用直接返回，不重复发起网络请求。

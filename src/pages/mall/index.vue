@@ -120,7 +120,7 @@
             <view class="compact-price-line">
               <text class="price">¥<text class="price-strong">{{ getMinPrice(product) }}</text></text>
               <text v-if="getMinMemberPrice(product)" class="inline-member-price">会员 ¥{{ getMinMemberPrice(product)
-              }}</text>
+                }}</text>
             </view>
             <view class="mini-buy-btn" @click.stop="openPurchase(product)"><text>购买</text></view>
           </view>
@@ -487,6 +487,7 @@ onUnmounted(() => {
   background: #fff;
   border: 1px solid #e8edf5;
   box-shadow: 0 6px 18px rgba(55, 67, 104, 0.07);
+  box-sizing: border-box;
 }
 
 .square-media {

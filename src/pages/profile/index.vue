@@ -311,7 +311,7 @@ function goTo(path: string) {
 }
 
 function goOrders(status: string) {
-  navigator.push(status ? `/m/orders?status=${status}` : '/m/orders')
+  navigator.push(status ? `/m/orders/index?status=${status}` : '/m/orders/index')
 }
 
 async function loadOrderCounts() {
@@ -457,16 +457,47 @@ onMounted(async () => {
 }
 
 .stat-item {
-  width: calc(50% - 5px);
+  width: calc(33.33% - 8px);
   padding: 11px 12px;
   border-radius: 15px;
   background: rgba(255, 255, 255, 0.13);
   display: flex;
   flex-direction: column;
   gap: 5px;
+  box-sizing: border-box;
+  transition: all 0.2s ease;
 }
 
-.stat-clickable {}
+/* 第4、5项（算力余额、资金余额）各占50% */
+.stat-item:nth-child(4),
+.stat-item:nth-child(5) {
+  width: calc(50% - 5px);
+}
+
+/* 可点击项样式 - 更显眼 */
+.stat-clickable {
+  cursor: pointer;
+  background: rgba(255, 184, 0, 0.25);
+  border: 1px solid rgba(255, 184, 0, 0.4);
+  position: relative;
+}
+
+.stat-clickable:active {
+  background: rgba(255, 184, 0, 0.35);
+  transform: scale(0.98);
+}
+
+/* 可点击项的标签更突出 */
+.stat-clickable .stat-label {
+  color: #ffd700;
+  font-weight: 600;
+}
+
+/* 可点击项的数值更突出 */
+.stat-clickable .stat-value {
+  color: #ffd700;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+}
 
 .stat-label {
   font-size: 10px;

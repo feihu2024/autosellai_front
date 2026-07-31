@@ -251,8 +251,7 @@ import { getImageUrl } from '@/utils/image'
 // 注册页面分享：分享首页 + 自动携带邀请参数
 useShare()
 
-// const { isGoldTemplate } = useMiniappTemplate()
-const isGoldTemplate = false
+const { isGoldTemplate } = useMiniappTemplate()
 
 const { loginInitialized } = useGlobalState()
 
