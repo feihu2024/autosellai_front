@@ -192,6 +192,48 @@
       "style": {
         "navigationBarTitleText": "视频号带货授权"
       }
+    },
+    {
+      "path": "pages/aiAgent/linkParser",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "提取链接"
+      }
+    },
+    {
+      "path": "pages/aiAgent/linkParserResult",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "提取链接结果"
+      }
+    },
+    {
+      "path": "pages/aiAgent/promptReverse",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "反推提示词"
+      }
+    },
+    {
+      "path": "pages/aiAgent/textExtract",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "文案提取"
+      }
+    },
+    {
+      "path": "pages/aiAgent/highEndImage",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "高端制图"
+      }
+    },
+    {
+      "path": "pages/aiAgent/myWorks",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "我的作品"
+      }
     }
   ],
   "globalStyle": {

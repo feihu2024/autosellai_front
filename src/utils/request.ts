@@ -35,7 +35,7 @@ type ResponseInterceptor = (response: ApiResponse) => ApiResponse
 // ============ 配置 ============
 
 const BASE_URL = 'https://aiplatformsslapi.yxiaozhu.com/api'
-const DEFAULT_TIMEOUT = 15000
+const DEFAULT_TIMEOUT = 60000
 
 // ============ 拦截器 ============
 

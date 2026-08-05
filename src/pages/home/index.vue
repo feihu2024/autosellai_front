@@ -17,7 +17,9 @@
 
     <!-- 静态 Hero 回退 -->
     <view v-else class="g-hero">
-      <image src="/static/tpl-gold/home-hero.png" class="g-hero-img" mode="widthFix" />
+      <image
+        src="https://vipvideo.yxiaozhu.com/28da05ca-906d-11f1-9e37-00163e10b30d.png?e=1785907794&token=Mply7-4INH5tRfYBrYc8MTT-l2_0xhwUhXI4R7_i:Gng4X6XLmnkUsqn2XvYgtbkiwtY="
+        class="g-hero-img" mode="widthFix" />
     </view>
 
     <!-- 搜索框 -->
@@ -424,9 +426,22 @@ const TOOL_TRIGGER_MAP: Record<string, string> = {
 }
 
 function onToolClick(tool: any) {
+  // console.log('点击工具:', tool)
   const triggerKey = TOOL_TRIGGER_MAP[tool.name]
-  if (triggerKey && shouldShowAd(triggerKey)) {
-    console.debug('[ad] trigger:', triggerKey)
+  if (triggerKey == 'btn_extract_link') {
+    console.log('点击提取链接')
+    navigator.push('/m/aiAgent/linkParser')
+  } else if (triggerKey == 'btn_reverse_prompt') {
+    console.log('点击反推提示词')
+    navigator.push('/m/aiAgent/promptReverse')
+  } else if (triggerKey == 'btn_extract_text') {
+    console.log('点击文案提取')
+    navigator.push('/m/aiAgent/textExtract')
+  } else if (triggerKey == 'btn_image_gen') {
+    navigator.push('/m/aiAgent/highEndImage')
+    console.log('点击高端制图')
+  } else {
+    console.log('其他工具点击:', tool)
   }
 }
 

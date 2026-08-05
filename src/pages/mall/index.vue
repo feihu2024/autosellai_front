@@ -14,7 +14,9 @@
       </view>
     </view>
     <view v-else class="g-shop-hero">
-      <image src="/static/tpl-gold/shop-hero.png" mode="widthFix" />
+      <image
+        src="https://vipvideo.yxiaozhu.com/f78be498-906c-11f1-9e37-00163e10b30d.png?e=1785907711&token=Mply7-4INH5tRfYBrYc8MTT-l2_0xhwUhXI4R7_i:BhLF940tJCu3QqH9nh1FrYfkLrg="
+        mode="widthFix" />
     </view>
 
     <view class="g-shop-search">

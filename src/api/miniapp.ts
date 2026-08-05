@@ -351,3 +351,31 @@ export function getMcnAuthorization() { return request.get('/v1/miniapp/mcn/auth
 export function getTutorialArticle(articleId: number) {
   return request.get(`/v1/miniapp/tutorial-article/${articleId}`)
 }
+
+
+
+// 视频板块1
+
+export function postParseVideo(data: { url: string }) {
+  return request.post('/v1/miniapp/video/parse/', data)
+}
+
+export async function postDownloadVideo(data: { url: string }) {
+  return request.post('/v1/miniapp/video/download/', data)
+}
+
+export function postVideoToPrompt(data: { video_url: string }) {
+  return request.post('/v1/miniapp/video/to_prompt/', data)
+}
+
+export function postWenanExtract(data: { url: string }) {
+  return request.post('/v1/miniapp/video/wenan/', data)
+}
+
+export async function postGenerateImage(data: any) {
+  return request.post('/v1/miniapp/video/generate/', data)
+}
+
+export async function postGenerateImageQuery(data: { userid: string }) {
+  return request.post('/v1/miniapp/video/generate/query', data)
+}
