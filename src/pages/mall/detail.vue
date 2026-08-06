@@ -7,24 +7,14 @@
     <!-- 主图轮播 -->
     <view class="swiper" v-if="imageList.length > 0">
       <view class="swiper-track" :style="{ transform: `translateX(-${currentImage * 100}%)` }">
-        <view
-          v-for="(img, idx) in imageList"
-          :key="idx"
-          class="swiper-slide"
-          @click="previewImages(idx)"
-        >
-          <image :src="img" class="swiper-img" mode="aspectFill" />
+        <view v-for="(img, idx) in imageList" :key="idx" class="swiper-slide" @click="previewImages(idx)">
+          <image :src="getImageUrl(img)" class="swiper-img" mode="aspectFill" />
         </view>
       </view>
       <!-- 指示器 -->
       <view class="swiper-dots" v-if="imageList.length > 1">
-        <view
-          v-for="(_, idx) in imageList"
-          :key="idx"
-          class="dot"
-          :class="{ active: currentImage === idx }"
-          @click="currentImage = idx"
-        ></view>
+        <view v-for="(_, idx) in imageList" :key="idx" class="dot" :class="{ active: currentImage === idx }"
+          @click="currentImage = idx"></view>
       </view>
       <!-- 来源标签 -->
       <view v-if="product.source === 'saas_sync'" class="source-badge"><text>SAAS严选</text></view>
@@ -47,11 +37,7 @@
     </view>
 
     <!-- 规格选择区（点击弹出规格弹窗） -->
-    <view
-      class="spec-select-card"
-      v-if="product.spec1_name || product.spec2_name"
-      @click="openSpecSheet"
-    >
+    <view class="spec-select-card" v-if="product.spec1_name || product.spec2_name" @click="openSpecSheet">
       <text class="spec-label">选择</text>
       <text class="spec-value">{{ selectedSpecText }}</text>
       <text class="spec-arrow">›</text>
@@ -67,13 +53,7 @@
     <view class="detail-card" v-else-if="detailImages.length > 0">
       <text class="card-title">商品详情</text>
       <view class="detail-images">
-        <image
-          v-for="(img, idx) in detailImages"
-          :key="idx"
-          :src="img"
-          class="detail-img"
-          mode="widthFix"
-        />
+        <image v-for="(img, idx) in detailImages" :key="idx" :src="img" class="detail-img" mode="widthFix" />
       </view>
     </view>
 
@@ -90,13 +70,8 @@
     </view>
 
     <!-- 规格弹窗 -->
-    <PurchaseSpecSheet
-      v-if="specSheetVisible && product"
-      :product="product"
-      :visible="specSheetVisible"
-      @close="specSheetVisible = false"
-      @confirm="handleSpecConfirm"
-    />
+    <PurchaseSpecSheet v-if="specSheetVisible && product" :product="product" :visible="specSheetVisible"
+      @close="specSheetVisible = false" @confirm="handleSpecConfirm" />
   </view>
 
   <!-- 加载中 -->
@@ -119,6 +94,7 @@ import { getMiniappMallProduct } from '@/api/miniapp'
 import PurchaseSpecSheet from '@/components/PurchaseSpecSheet.vue'
 import { useShare } from '@/composables/useShare'
 import { navigator, previewImage, showToast } from '@/utils'
+import { getImageUrl } from '@/utils/image'
 
 // 注册商品分享：分享当前商品详情页 + 自动携带邀请参数
 useShare(() => ({
@@ -251,6 +227,7 @@ onLoad((options: any) => {
   overflow: hidden;
   background: #fff;
 }
+
 .swiper-track {
   position: absolute;
   top: 0;
@@ -260,15 +237,18 @@ onLoad((options: any) => {
   display: flex;
   transition: transform 0.3s ease-out;
 }
+
 .swiper-slide {
   flex: 0 0 100%;
   width: 100%;
   height: 100%;
 }
+
 .swiper-img {
   width: 100%;
   height: 100%;
 }
+
 .swiper-dots {
   position: absolute;
   bottom: 12px;
@@ -278,6 +258,7 @@ onLoad((options: any) => {
   gap: 6px;
   z-index: 5;
 }
+
 .dot {
   width: 6px;
   height: 6px;
@@ -285,16 +266,19 @@ onLoad((options: any) => {
   background: rgba(255, 255, 255, 0.5);
   transition: all 0.2s;
 }
+
 .dot.active {
   width: 18px;
   background: #fff;
 }
+
 .source-badge {
   position: absolute;
   top: 12px;
   left: 12px;
   z-index: 5;
 }
+
 .source-badge text {
   background: linear-gradient(135deg, #ff8a4c 0%, #ff6e6e 100%);
   color: #fff;
@@ -310,6 +294,7 @@ onLoad((options: any) => {
   padding: 16px;
   margin-bottom: 10px;
 }
+
 .price-row {
   display: flex;
   align-items: baseline;
@@ -317,25 +302,30 @@ onLoad((options: any) => {
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
+
 .price-main {
   color: #ff4d4f;
   display: flex;
   align-items: baseline;
 }
+
 .price-symbol {
   font-size: 14px;
   font-weight: 600;
 }
+
 .price-value {
   font-size: 26px;
   font-weight: 800;
   margin-left: 2px;
 }
+
 .price-member {
   display: flex;
   align-items: baseline;
   gap: 4px;
 }
+
 .member-tag {
   background: linear-gradient(135deg, #ffb84d 0%, #ff9a3c 100%);
   color: #fff;
@@ -344,11 +334,13 @@ onLoad((options: any) => {
   padding: 2px 6px;
   border-radius: 3px;
 }
+
 .member-value {
   font-size: 14px;
   color: #ff9a3c;
   font-weight: 600;
 }
+
 .product-name {
   display: block;
   margin-bottom: 6px;
@@ -357,6 +349,7 @@ onLoad((options: any) => {
   color: #1a2332;
   line-height: 1.4;
 }
+
 .product-subtitle {
   display: block;
   font-size: 13px;
@@ -372,17 +365,20 @@ onLoad((options: any) => {
   display: flex;
   align-items: center;
 }
+
 .spec-label {
   font-size: 14px;
   color: #8d99aa;
   margin-right: 14px;
 }
+
 .spec-value {
   flex: 1;
   font-size: 14px;
   color: #1a2332;
   font-weight: 500;
 }
+
 .spec-arrow {
   color: #c5cfdb;
   font-size: 20px;
@@ -395,6 +391,7 @@ onLoad((options: any) => {
   padding: 16px;
   margin-bottom: 10px;
 }
+
 .card-title {
   display: block;
   font-size: 15px;
@@ -404,15 +401,18 @@ onLoad((options: any) => {
   padding-bottom: 10px;
   border-bottom: 1px solid #f0f4fa;
 }
+
 .rich-content {
   font-size: 14px;
   line-height: 1.7;
   color: #333;
 }
+
 .detail-images {
   display: flex;
   flex-direction: column;
 }
+
 .detail-img {
   width: 100%;
 }
@@ -431,6 +431,7 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .back-arrow {
   color: #fff;
   font-size: 22px;
@@ -456,6 +457,7 @@ onLoad((options: any) => {
   padding-right: 14px;
   gap: 12px;
 }
+
 .action-icon-btn {
   width: 54px;
   height: 48px;
@@ -466,14 +468,17 @@ onLoad((options: any) => {
   gap: 2px;
   flex-shrink: 0;
 }
+
 .action-icon-glyph {
   font-size: 20px;
   line-height: 1;
 }
+
 .action-icon-text {
   font-size: 11px;
   color: #5a6878;
 }
+
 .buy-btn {
   flex: 1;
   height: 50px;
@@ -486,12 +491,14 @@ onLoad((options: any) => {
   gap: 1px;
   box-shadow: 0 8px 18px rgba(91, 92, 240, 0.32);
 }
+
 .buy-btn-main {
   font-size: 16px;
   font-weight: 700;
   color: #fff;
   letter-spacing: 1px;
 }
+
 .buy-btn-sub {
   font-size: 11px;
   opacity: 0.9;
@@ -511,11 +518,13 @@ onLoad((options: any) => {
   color: #8d99aa;
   font-size: 14px;
 }
+
 .empty-icon {
   font-size: 56px;
   margin-bottom: 12px;
   opacity: 0.5;
 }
+
 .back-btn {
   margin-top: 16px;
   padding: 8px 24px;
@@ -524,6 +533,7 @@ onLoad((options: any) => {
   border-radius: 20px;
   font-size: 13px;
 }
+
 .back-btn text {
   color: #5b5cf0;
 }

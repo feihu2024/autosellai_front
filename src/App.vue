@@ -68,10 +68,10 @@ onLaunch(async (options: any) => {
   console.log('App Launch', JSON.stringify(options?.query || {}))
   // 1. 解析启动参数，提取邀请参数
   parseInviteParams(options)
-  // 2. 全局初始化：加载模板变体
-  loadTemplateVariant()
-  // 3. 尝试静默登录（自动从全局状态读取邀请参数）
+  // 2. 尝试静默登录（自动从全局状态读取邀请参数）
   await trySilentLogin()
+  // 3. 登录成功后，加载模板变体（需要 token）
+  loadTemplateVariant()
   // 4. 标记登录初始化完成
   const { setLoginInitialized } = useGlobalState()
   setLoginInitialized()

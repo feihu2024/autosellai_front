@@ -15,7 +15,7 @@
     </view>
     <view v-else class="g-shop-hero">
       <image
-        src="https://vipvideo.yxiaozhu.com/f78be498-906c-11f1-9e37-00163e10b30d.png?e=1785907711&token=Mply7-4INH5tRfYBrYc8MTT-l2_0xhwUhXI4R7_i:BhLF940tJCu3QqH9nh1FrYfkLrg="
+        src="https://mlcfjihuaqn.yxiaozhu.com/saas/9545191dde834c92bc37ddd149eba6b8.png?e=1786247480&token=8HYKX7kOi_0yI5lbCm9L15PD17ROW4bDVRCIXtCA:hEbLfcndDUMkdPFoa_LtCC3rUFo="
         mode="widthFix" />
     </view>
 
@@ -232,7 +232,7 @@ function getMinMemberPrice(product: any): string | null {
 }
 
 function goDetail(product: any) {
-  navigator.push(`/m/mall/${product.id}`)
+  navigator.push(`/m/mall/detail?id=${product.id}`)
 }
 
 function openPurchase(product: any) {

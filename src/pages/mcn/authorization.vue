@@ -4,7 +4,7 @@
     <text class="g-auth-title">授权管理</text>
     <view class="g-auth-hero">
       <image
-        src="https://vipvideo.yxiaozhu.com/506e783c-906d-11f1-9e37-00163e10b30d.png?e=1785907860&token=Mply7-4INH5tRfYBrYc8MTT-l2_0xhwUhXI4R7_i:sZa86IgRZwO1BPdHoPgCEGF7FVA="
+        src="https://mlcfjihuaqn.yxiaozhu.com/saas/989eb5ea3d6445deb07491b14316c12b.png?e=1786247386&token=8HYKX7kOi_0yI5lbCm9L15PD17ROW4bDVRCIXtCA:JYHZsW0qP3cQizGgx6vM5L4pGGU="
         mode="widthFix" />
     </view>
 

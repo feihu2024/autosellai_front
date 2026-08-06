@@ -18,7 +18,7 @@
     <!-- 静态 Hero 回退 -->
     <view v-else class="g-hero">
       <image
-        src="https://vipvideo.yxiaozhu.com/28da05ca-906d-11f1-9e37-00163e10b30d.png?e=1785907794&token=Mply7-4INH5tRfYBrYc8MTT-l2_0xhwUhXI4R7_i:Gng4X6XLmnkUsqn2XvYgtbkiwtY="
+        src="https://mlcfjihuaqn.yxiaozhu.com/saas/180e0974d62e429ebf16dd1818f2872a.png?e=1786247524&token=8HYKX7kOi_0yI5lbCm9L15PD17ROW4bDVRCIXtCA:o9KGrYnDxlUsa2tWEqTwROeEQlM="
         class="g-hero-img" mode="widthFix" />
     </view>
 

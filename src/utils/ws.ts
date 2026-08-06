@@ -24,7 +24,7 @@ function getWsBaseUrl(): string {
   // #ifndef H5
   // 微信小程序：需配置真实后端域名（在微信后台添加 socket 合法域名）
   // 开发期可通过 manifest.json → mp-weixin → setting → urlCheck: false 跳过校验
-  return 'wss://demo.saas2.com/api'
+  return 'wss://aiplatformsslapi.yxiaozhu.com/api'
   // #endif
 }
 
@@ -63,7 +63,7 @@ export function createWebSocket(path: string, token?: string, options?: WsOption
 
   const socketTask = uni.connectSocket({
     url,
-    complete: () => {},
+    complete: () => { },
   }) as unknown as UniSocketTask
 
   if (options?.onOpen) {
