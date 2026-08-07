@@ -15,12 +15,14 @@ import { storage } from '@/utils/storage'
 const SK_USER_ID = 'miniapp_user_id'
 const SK_ENTERPRISE_ID = 'miniapp_enterprise_id'
 const SK_USERNAME = 'miniapp_username'
+const SK_USER_PHONE = 'miniapp_user_phone'
 const SK_PENDING_REFERRER = 'pending_referrer_id'
 
 // ===== 模块级单例状态 =====
 const currentUserId = ref<number | null>(null)
 const currentEnterpriseId = ref<number | null>(2)  // 默认企业ID
 const currentUserName = ref<string>('')
+const currentUserPhone = ref<string>('')
 const pendingReferrerId = ref<number | null>(null) // 待使用的邀请人ID
 const loginInitialized = ref<boolean>(false) // 登录初始化完成标志
 const addressSelectContext = ref<{
@@ -39,6 +41,9 @@ function initFromStorage() {
 
   const name = storage.getItem(SK_USERNAME)
   if (name) currentUserName.value = name
+
+  const phone = storage.getItem(SK_USER_PHONE)
+  if (phone) currentUserPhone.value = phone
 
   const pendingRef = storage.getItem(SK_PENDING_REFERRER)
   if (pendingRef) pendingReferrerId.value = Number(pendingRef)
@@ -62,6 +67,10 @@ export function useGlobalState() {
     if (user?.nickname) {
       currentUserName.value = user.nickname
       storage.setItem(SK_USERNAME, user.nickname)
+    }
+    if (user?.phone) {
+      currentUserPhone.value = user.phone
+      storage.setItem(SK_USER_PHONE, user.phone)
     }
   }
 
@@ -124,11 +133,13 @@ export function useGlobalState() {
     currentUserId.value = null
     currentEnterpriseId.value = null
     currentUserName.value = ''
+    currentUserPhone.value = ''
     pendingReferrerId.value = null
     loginInitialized.value = false
     storage.removeItem(SK_USER_ID)
     storage.removeItem(SK_ENTERPRISE_ID)
     storage.removeItem(SK_USERNAME)
+    storage.removeItem(SK_USER_PHONE)
     storage.removeItem(SK_PENDING_REFERRER)
   }
 
@@ -164,6 +175,7 @@ export function useGlobalState() {
     currentUserId,
     currentEnterpriseId,
     currentUserName,
+    currentUserPhone,
     pendingReferrerId,
     loginInitialized,
     setUserInfo,

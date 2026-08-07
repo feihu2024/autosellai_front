@@ -32,6 +32,7 @@ export {
   sendSmsCode,
   loginWithPhone,
   getMiniAppId,
+  checkPhoneRequired,
 } from './auth'
 
 export { pay, simulatePay, simulatePackagePay, wxPay } from './payment'

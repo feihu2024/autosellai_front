@@ -199,3 +199,23 @@ export async function trySilentLogin(): Promise<boolean> {
   return false
 }
 
+/**
+ * 检查用户是否已绑定手机号
+ * 如果没有手机号，显示提示
+ */
+export function checkPhoneRequired(): boolean {
+  const { currentUserPhone } = useGlobalState()
+
+  if (!currentUserPhone.value) {
+    uni.showToast({
+      title: '请先绑定手机号',
+      icon: 'none',
+      duration: 2000
+    })
+
+    return false
+  }
+
+  return true
+}
+

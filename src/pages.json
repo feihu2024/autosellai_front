@@ -11,6 +11,13 @@
         "navigationBarTitleText": "首页"
       }
     },
+      {
+      "path": "pages/login/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "登录"
+      }
+    },
     {
       "path": "pages/info/index",
       "style": {

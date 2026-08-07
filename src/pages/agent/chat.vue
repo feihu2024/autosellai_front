@@ -186,7 +186,7 @@
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import { getMiniappAgentDetail, chatWithAgentStream, getAgentGreeting } from '@/api/miniapp'
-import { navigator, copyToClipboard, showToast } from '@/utils'
+import { navigator, copyToClipboard, showToast, checkPhoneRequired } from '@/utils'
 import { getImageUrl } from '@/utils/image'
 import PaySheet from '@/components/PaySheet.vue'
 
@@ -327,6 +327,12 @@ async function fetchGreeting() {
 }
 
 async function sendMessage() {
+  // 检查用户是否已绑定手机号
+  if (!checkPhoneRequired()) {
+    navigator.push(`/m/login/index`)
+    return
+  }
+
   const text = inputText.value.trim()
   if (!text || isTyping.value) return
 

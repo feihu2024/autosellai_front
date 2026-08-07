@@ -22,6 +22,38 @@ export function getMiniappProfile() {
   return request.get('/v1/miniapp/auth/profile')
 }
 
+export function updateMiniappProfile(data: { nickname?: string; avatar?: string }) {
+  return request.post('/v1/miniapp/auth/update-profile', data)
+}
+
+export function uploadFile(filePath: string) {
+  return new Promise((resolve, reject) => {
+    uni.uploadFile({
+      url: 'https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/auth/upload-avatar',
+      filePath,
+      name: 'file',
+      header: {
+        'Authorization': `Bearer ${uni.getStorageSync('miniapp_token')}`
+      },
+      success: (res) => {
+        try {
+          const data = JSON.parse(res.data)
+          if (data.code === 200) {
+            resolve(data.data)
+          } else {
+            reject(new Error(data.message || '上传失败'))
+          }
+        } catch {
+          reject(new Error('解析上传结果失败'))
+        }
+      },
+      fail: (err) => {
+        reject(new Error(err.errMsg || '上传失败'))
+      }
+    })
+  })
+}
+
 export function wxLogin(data: { code: string; enterprise_id?: number; referrer_id?: number }) {
   return request.post('/v1/miniapp/auth/wx-login', data)
 }
