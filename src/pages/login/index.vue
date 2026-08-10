@@ -12,20 +12,10 @@
 
     <!-- 主要内容 -->
     <view class="content">
-      <!-- 头像区域 -->
-      <button class="avatar-wrap" :class="{ active: avatarActive }" open-type="chooseAvatar"
-        @chooseavatar="onChooseAvatar">
-        <view class="avatar-glow"></view>
-        <view class="avatar">
-          <image v-if="userAvatar" class="avatar-img" :src="userAvatar" mode="aspectFill" />
-          <text v-else class="avatar-mark">点击获取头像</text>
-        </view>
-      </button>
-
-      <!-- 昵称输入区域 -->
-      <view class="nickname-wrap">
-        <input class="nickname-input" type="nickname" v-model="userNickname" placeholder="点击获取微信昵称"
-          @input="onNicknameInput" />
+      <!-- 顶部图片 -->
+      <view class="login-banner">
+        <image class="banner-img"
+          src="https://mlcfjihuaqn.yxiaozhu.com/saas/4e0fde35ece441219973e6268959c44e.png?e=1786590050&token=8HYKX7kOi_0yI5lbCm9L15PD17ROW4bDVRCIXtCA:Qx2IFQyGxHULLJo7QG1Dr66wWRU=" />
       </view>
 
       <!-- 标题区域 -->
@@ -44,7 +34,7 @@
 
       <!-- 登录卡片 -->
       <view class="card">
-        <button class="login-button" open-type="getPhoneNumber" @getphonenumber="onGetPhoneNumber">
+        <button class="login-button" @click="handleLogin">
           <view class="wechat-logo">
             <view class="bubble big">
               <text class="dot-left"></text>
@@ -74,7 +64,8 @@
           <view class="checkbox" :class="{ checked: agreed }" @click="toggleAgreement">
             <text v-if="agreed">✓</text>
           </view>
-          <text>我已阅读并同意 <text class="link" @click="showPolicy('隐私政策')">《隐私政策》</text></text>
+          <text>我已阅读并同意 <text class="link" @click="showPolicy('privacy_policy')">《隐私政策》</text> 和 <text class="link"
+              @click="showPolicy('user_agreement')">《用户协议》</text></text>
         </view>
         <text class="tip">未注册的微信账号将自动创建并绑定</text>
       </view>
@@ -92,6 +83,43 @@
 
     <!-- Toast 提示 -->
     <view class="toast" :class="{ show: toastVisible }">{{ toastMessage }}</view>
+
+    <!-- 信息收集弹窗 -->
+    <view class="auth-popup-mask" v-if="showAuthPopup" @click.stop></view>
+    <view class="auth-popup" v-if="showAuthPopup">
+      <view class="auth-popup-content">
+        <text class="auth-popup-title">获取您的昵称、头像、手机号</text>
+        <text class="auth-popup-desc">获取用户头像、昵称、手机号信息，主要用于完善个人资料，向用户提供更好使用体验</text>
+
+        <!-- 头像 -->
+        <view class="auth-item">
+          <text class="auth-label">头像</text>
+          <button class="auth-avatar-btn" open-type="chooseAvatar" @chooseavatar="onChooseAvatar">
+            <image v-if="userAvatar" class="auth-avatar-img" :src="userAvatar" mode="aspectFill" />
+            <text v-else class="auth-placeholder">请选择头像</text>
+          </button>
+        </view>
+
+        <!-- 昵称 -->
+        <view class="auth-item">
+          <text class="auth-label">昵称</text>
+          <input class="auth-input" type="nickname" v-model="userNickname" placeholder="请输入昵称"
+            @blur="onNicknameInput" />
+        </view>
+
+        <!-- 按钮 -->
+        <view class="auth-buttons">
+          <button class="auth-cancel-btn" @click="closeAuthPopup" :disabled="loggingIn">取消</button>
+          <button v-if="!showPhoneBtn" class="auth-confirm-btn" @click="handleSave" :loading="loggingIn">
+            保存
+          </button>
+          <button v-else class="auth-confirm-btn" open-type="getPhoneNumber" @getphonenumber="onGetPhoneNumber"
+            :disabled="loggingIn">
+            <text :class="{ 'btn-loading': loggingIn }">{{ loggingIn ? '保存中...' : '保存' }}</text>
+          </button>
+        </view>
+      </view>
+    </view>
 
     <!-- 协议弹窗 -->
     <view class="dialog-mask" v-if="dialogVisible" @click="closeDialog"></view>
@@ -125,7 +153,9 @@ export default {
       toastTimer: null,
       dialogVisible: false,
       dialogTitle: '',
-      dialogContent: ''
+      dialogContent: '',
+      showAuthPopup: false,
+      showPhoneBtn: false
     }
   },
   methods: {
@@ -140,10 +170,32 @@ export default {
       }, 1700)
     },
 
+    handleLogin() {
+      // 验证是否已阅读隐私政策
+      const privacyPolicyRead = uni.getStorageSync('policy_read_隐私政策')
+
+      if (!privacyPolicyRead) {
+        this.showToast('请先阅读并同意《隐私政策》')
+        return
+      }
+
+      // 验证是否勾选协议
+      if (!this.agreed) {
+        this.showToast('请先勾选同意协议')
+        return
+      }
+
+      // 显示信息收集弹窗
+      this.showAuthPopup = true
+    },
+
+    closeAuthPopup() {
+      this.showAuthPopup = false
+    },
+
     async onChooseAvatar(e) {
       const { avatarUrl } = e.detail
       this.userAvatar = avatarUrl
-      this.avatarActive = true
 
       try {
         // 上传头像
@@ -151,21 +203,37 @@ export default {
         this.uploadedAvatarUrl = result.url
         this.showToast('头像已上传')
 
-        // 如果头像和昵称都存在，则更新用户信息
-        if (this.uploadedAvatarUrl && this.userNickname) {
-          await this.updateUserProfile()
-        }
+        // 检查是否显示手机号按钮
+        this.checkShowPhoneBtn()
       } catch (error) {
         console.error('上传头像失败：', error)
         this.showToast('头像上传失败')
       }
     },
 
-   async onNicknameInput(e) {
+    onNicknameInput(e) {
       this.userNickname = e.detail.value
-       if (this.uploadedAvatarUrl && this.userNickname) {
-          await this.updateUserProfile()
-        }
+      // 检查是否显示手机号按钮
+      this.checkShowPhoneBtn()
+    },
+
+    checkShowPhoneBtn() {
+      // 如果头像和昵称都有，显示手机号按钮
+      this.showPhoneBtn = !!(this.uploadedAvatarUrl && this.userNickname)
+    },
+
+    async handleSave() {
+      if (!this.userAvatar) {
+        this.showToast('请选择头像')
+        return
+      }
+
+      if (!this.userNickname) {
+        this.showToast('请输入昵称')
+        return
+      }
+
+      this.showToast('请点击保存按钮获取手机号')
     },
 
     async updateUserProfile() {
@@ -188,22 +256,6 @@ export default {
     },
 
     async onGetPhoneNumber(e) {
-      // 验证是否已阅读隐私政策
-      const privacyPolicyRead = uni.getStorageSync('policy_read_隐私政策')
-
-      console.log('隐私政策阅读状态:', privacyPolicyRead)
-
-      if (!privacyPolicyRead) {
-        this.showToast('请先阅读并同意《隐私政策》')
-        return
-      }
-
-      // 验证是否勾选协议
-      if (!this.agreed) {
-        this.showToast('请先勾选同意协议')
-        return
-      }
-
       // 验证是否已设置昵称
       if (!this.userNickname || !this.userNickname.trim()) {
         this.showToast('请先设置昵称')
@@ -232,11 +284,15 @@ export default {
       this.loginText = '正在绑定手机号...'
 
       try {
+        // 先更新用户信息
+        await this.updateUserProfile()
+
         // 调用绑定手机号接口
         const result = await bindPhoneWithWx(code)
         if (result.code === 200) {
           this.loginText = '绑定成功'
           this.loggedIn = true
+          this.showAuthPopup = false
           this.showToast('登录成功')
 
           // 跳转到首页
@@ -362,6 +418,22 @@ export default {
   z-index: 2;
   padding: 152rpx 52rpx 300rpx;
   min-height: 100vh;
+}
+
+/* 顶部图片 */
+.login-banner {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32rpx;
+  padding: 0 20rpx;
+}
+
+.banner-img {
+  width: 500rpx;
+  height: 300rpx;
+  border-radius: 32rpx;
+  box-shadow: 0 12rpx 32rpx rgba(255, 177, 30, 0.2);
 }
 
 /* 头像区域 */
@@ -664,11 +736,12 @@ export default {
 
 .agreement-main {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   color: #71624e;
-  font-size: 30rpx;
+  font-size: 26rpx;
   line-height: 42rpx;
+  white-space: nowrap;
 }
 
 .checkbox {
@@ -845,5 +918,139 @@ export default {
   font-weight: 700;
   font-size: 32rpx;
   background: linear-gradient(100deg, #ffc03d, #ff9510);
+}
+
+/* 信息收集弹窗 */
+.auth-popup-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, .5);
+  z-index: 99;
+}
+
+.auth-popup {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: white;
+  border-radius: 32rpx 32rpx 0 0;
+  z-index: 100;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.auth-popup-content {
+  padding: 40rpx 32rpx;
+}
+
+.auth-popup-title {
+  display: block;
+  font-size: 32rpx;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 16rpx;
+}
+
+.auth-popup-desc {
+  display: block;
+  font-size: 24rpx;
+  color: #94a3b8;
+  line-height: 1.6;
+  margin-bottom: 32rpx;
+}
+
+.auth-item {
+  display: flex;
+  align-items: center;
+  min-height: 100rpx;
+  padding: 16rpx 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.auth-label {
+  width: 120rpx;
+  font-size: 28rpx;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.auth-avatar-btn {
+  flex: 1;
+  padding: 0;
+  margin: 0;
+  border: none;
+  background: transparent;
+  display: flex;
+  align-items: center;
+}
+
+.auth-avatar-btn::after {
+  border: none;
+}
+
+.auth-avatar-img {
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 50%;
+}
+
+.auth-placeholder {
+  font-size: 28rpx;
+  color: #94a3b8;
+}
+
+.auth-input {
+  flex: 1;
+  height: 60rpx;
+  font-size: 28rpx;
+  color: #1e293b;
+}
+
+.auth-buttons {
+  display: flex;
+  gap: 24rpx;
+  margin-top: 32rpx;
+}
+
+.auth-cancel-btn,
+.auth-confirm-btn {
+  flex: 1;
+  height: 88rpx;
+  border-radius: 16rpx;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+  padding: 0;
+}
+
+.auth-cancel-btn {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.auth-confirm-btn {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+}
+
+.auth-confirm-btn[disabled] {
+  opacity: 0.6;
+}
+
+.btn-loading {
+  opacity: 0.7;
 }
 </style>

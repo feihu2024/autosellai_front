@@ -1,18 +1,18 @@
 ﻿<template>
   <view class="orders-page">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">我的订单</text>
-    </view>
+    </view> -->
 
     <!-- 状态 Tab -->
-    <scroll-view scroll-x class="tabs-bar" :show-scrollbar="false">
+    <view class="tabs-bar">
       <view v-for="t in tabs" :key="t.value" class="tab" :class="{ active: currentTab === t.value }"
         @click="switchTab(t.value)">
         <text>{{ t.label }}</text>
         <text v-if="counts[t.value]" class="tab-badge">{{ counts[t.value] }}</text>
       </view>
-    </scroll-view>
+    </view>
 
     <!-- 订单卡片列表 -->
     <view class="order-list" v-if="!loading && list.length > 0">
@@ -45,6 +45,8 @@
         <!-- 底部操作 -->
         <view class="card-foot">
           <text class="order-no">单号 {{ o.order_no }}</text>
+        </view>
+        <view class="card-actions-row">
           <view class="actions">
             <view v-if="o.order_status === 'pending_receive'" class="btn primary" @click.stop="onConfirm(o)">
               <text>确认收货</text>
@@ -80,7 +82,6 @@ import { getImageUrl } from '@/utils/image'
 
 const tabs = [
   { label: '全部', value: 'all' },
-  { label: '待付款', value: 'pending_payment' },
   { label: '待发货', value: 'pending_ship' },
   { label: '待收货', value: 'pending_receive' },
   { label: '已完成', value: 'completed' },
@@ -88,7 +89,6 @@ const tabs = [
 
 const STATUS_PARAM_MAP: Record<string, string> = {
   all: '',
-  pending_payment: 'pending_payment',
   pending_ship: 'pending_ship',
   pending_receive: 'pending_receive',
   completed: 'completed',
@@ -99,7 +99,6 @@ const list = ref<any[]>([])
 const loading = ref(false)
 const counts = reactive<Record<string, number>>({
   all: 0,
-  pending_payment: 0,
   pending_ship: 0,
   pending_receive: 0,
   completed: 0,
@@ -133,7 +132,6 @@ async function loadData() {
       list.value = data.list || data || []
       const c = data.counts || {}
       counts.all = c.all || 0
-      counts.pending_payment = c.pending_payment || 0
       counts.pending_ship = c.pending_ship || 0
       counts.pending_receive = c.pending_receive || 0
       counts.completed = c.completed || 0
@@ -189,6 +187,7 @@ onLoad((options: any) => {
   min-height: 100vh;
   background: #f5f7fb;
   padding-bottom: 24px;
+  padding-top: env(safe-area-inset-top);
 }
 
 .page-head {
@@ -227,17 +226,21 @@ onLoad((options: any) => {
 /* Tabs */
 .tabs-bar {
   position: sticky;
-  top: 48px;
+  top: 0;
   z-index: 9;
   white-space: nowrap;
   background: #fff;
   border-bottom: 1px solid #eef2f7;
+  display: flex;
+  justify-content: space-around;
 }
 
 .tab {
   position: relative;
   display: inline-flex;
   align-items: center;
+  justify-content: center;
+  flex: 1;
   min-width: 64px;
   padding: 12px 6px;
   white-space: nowrap;
@@ -420,9 +423,6 @@ onLoad((options: any) => {
 
 /* 底部 */
 .card-foot {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
   margin-top: 10px;
   padding-top: 10px;
   border-top: 1px dashed #eef2f7;
@@ -431,6 +431,12 @@ onLoad((options: any) => {
 .order-no {
   font-size: 11px;
   color: #94a3b8;
+}
+
+.card-actions-row {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 8px;
 }
 
 .actions {

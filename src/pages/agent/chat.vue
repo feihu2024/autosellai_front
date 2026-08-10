@@ -49,7 +49,7 @@
         </view>
 
         <!-- Example Conversation Module -->
-        <view class="detail-section conversation-section module-card">
+        <!-- <view class="detail-section conversation-section module-card">
           <view class="detail-section-title">
             <view class="title-left">
               <text class="eyebrow">快速上手</text>
@@ -78,7 +78,7 @@
               </view>
             </view>
           </view>
-        </view>
+        </view> -->
 
         <!-- Real Chat Messages -->
         <view class="detail-section conversation-section module-card"

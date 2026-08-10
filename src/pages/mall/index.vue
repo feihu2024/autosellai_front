@@ -122,7 +122,7 @@
             <view class="compact-price-line">
               <text class="price">¥<text class="price-strong">{{ getMinPrice(product) }}</text></text>
               <text v-if="getMinMemberPrice(product)" class="inline-member-price">会员 ¥{{ getMinMemberPrice(product)
-                }}</text>
+              }}</text>
             </view>
             <view class="mini-buy-btn" @click.stop="openPurchase(product)"><text>购买</text></view>
           </view>
@@ -274,7 +274,7 @@ onUnmounted(() => {
 <style scoped lang="scss">
 /* ===== 紫色模板 ===== */
 .mall-page {
-  padding: 12px 18px 0;
+  padding: 40px 18px 0;
 }
 
 .banner-carousel {
@@ -614,7 +614,7 @@ onUnmounted(() => {
 
 /* ===== 金色模板 F-3 ===== */
 .gold-mall {
-  padding: 12px 18px 0;
+  padding: 40px 18px 0;
   background: #fffaf2;
 }
 

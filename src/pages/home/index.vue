@@ -493,7 +493,7 @@ onUnmounted(() => {
 <style scoped lang="scss">
 /* ===== HomeView 紫色模板样式 ===== */
 .home-page {
-  padding: 12px 18px 0;
+  padding: 40px 18px 0;
 }
 
 /* Banner 轮播 */
@@ -1012,7 +1012,7 @@ onUnmounted(() => {
 
 /* ===== HomeView 金色模板样式 ===== */
 .gold-home {
-  padding: 0 15px 20px;
+  padding: 40px 15px 20px;
   background: #fffaf2;
 }
 

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!-- ===== 金色模板 F-5（模板2）个人中心 ===== -->
   <view v-if="isGoldTemplate" class="gold-profile">
     <view class="g-mine-header">
@@ -49,11 +49,6 @@
           <image src="/static/tpl-gold/order-1.png" mode="aspectFit" />
           <text class="g-order-label">全部</text>
           <text class="g-order-badge" v-if="totalOrders">{{ totalOrders }}</text>
-        </view>
-        <view class="g-order-item" @click="goOrders('pending_payment')">
-          <image src="/static/tpl-gold/order-2.png" mode="aspectFit" />
-          <text class="g-order-label">待付款</text>
-          <text class="g-order-badge" v-if="counts.pending_payment">{{ counts.pending_payment }}</text>
         </view>
         <view class="g-order-item" @click="goOrders('pending_ship')">
           <image src="/static/tpl-gold/order-3.png" mode="aspectFit" />
@@ -173,13 +168,6 @@
         </view>
       </view>
       <view class="order-grid">
-        <view class="order-btn" @click="goOrders('pending_payment')">
-          <view class="order-icon-box">
-            <image class="ui-icon" src="/static/icons/common/wallet.png" mode="aspectFit" /><text class="order-badge"
-              v-if="counts.pending_payment">{{ counts.pending_payment }}</text>
-          </view>
-          <text class="order-label">待付款</text>
-        </view>
         <view class="order-btn" @click="goOrders('pending_ship')">
           <view class="order-icon-box">
             <image class="ui-icon" src="/static/icons/common/box.png" mode="aspectFit" /><text class="order-badge"

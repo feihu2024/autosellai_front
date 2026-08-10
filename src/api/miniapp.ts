@@ -307,6 +307,8 @@ export function updateAddress(id: number, data: any) { return request.put(`/v1/m
 export function deleteAddress(id: number) { return request.delete(`/v1/miniapp/user/addresses/${id}`) }
 export function setDefaultAddress(id: number) { return request.post(`/v1/miniapp/user/addresses/${id}/default`) }
 
+export function getUserAgreements(params?: { type?: string }) { return request.get('/v1/miniapp/user/agreements', { params }) }
+
 // ========== 卡密（cardkey）==========
 
 export interface RecognizedCard {

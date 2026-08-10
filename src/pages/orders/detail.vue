@@ -1,10 +1,5 @@
 ﻿<template>
   <view class="detail-page" v-if="!loading && order">
-    <!-- <view class="page-head">
-      <view class="back" @click="goBack"><text>‹</text></view>
-      <text class="page-title">订单详情</text>
-    </view> -->
-
     <!-- 状态条 -->
     <view :class="['status-banner', statusClass(order.order_status)]">
       <text class="status-ico">{{ statusIcon(order.order_status) }}</text>
@@ -233,17 +228,18 @@ onLoad((options: any) => {
 .detail-page {
   min-height: 100vh;
   background: #f5f7fb;
-  padding-bottom: 80px;
+  /* 为微信小程序导航栏预留空间 */
 }
 
 .page-head {
   position: sticky;
-  top: 0;
+  top: 30px;
   z-index: 10;
   display: flex;
   align-items: center;
   height: 48px;
   padding: 0 12px;
+  padding-top: env(safe-area-inset-top);
   background: #fff;
   border-bottom: 1px solid #eef2f7;
 }
@@ -271,10 +267,14 @@ onLoad((options: any) => {
 
 /* 状态横幅 */
 .status-banner {
+  position: relative;
+  top: 0;
   display: flex;
   align-items: center;
   gap: 12px;
   padding: 18px 16px;
+  margin-top: 0;
+  /* 确保没有负margin */
 }
 
 .status-banner.warn {

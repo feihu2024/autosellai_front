@@ -46,7 +46,7 @@
     <!-- 富文本详情 -->
     <view class="detail-card" v-if="product.detail_html">
       <text class="card-title">商品详情</text>
-      <rich-text class="rich-content" :nodes="product.detail_html"></rich-text>
+      <rich-text class="rich-content" :nodes="processedDetailHtml"></rich-text>
     </view>
 
     <!-- 详情长图（备选展示） -->
@@ -59,9 +59,9 @@
 
     <!-- 底部操作栏：客服 + 立即购买 -->
     <view class="action-bar">
-      <view class="action-icon-btn" @click="goCustomerService">
-        <text class="action-icon-glyph">💬</text>
-        <text class="action-icon-text">客服</text>
+      <view class="action-icon-btn" @click="goHome">
+        <text class="action-icon-glyph">🏠</text>
+        <text class="action-icon-text">首页</text>
       </view>
       <view class="buy-btn" @click="openSpecSheet">
         <text class="buy-btn-main">立即购买</text>
@@ -153,6 +153,51 @@ const minMemberPrice = computed(() => {
   return !isNaN(suggest) && suggest > 0 ? suggest.toFixed(2) : null
 })
 
+// 处理富文本 HTML：给 img 和 image 标签添加宽度限制
+const processedDetailHtml = computed(() => {
+  if (!product.value?.detail_html) return ''
+
+  console.log('原始 HTML:', product.value.detail_html)
+
+  let html = product.value.detail_html
+
+  // 处理函数：给标签添加宽度和样式
+  const processTag = (tagHtml: string, tagName: string): string => {
+    // 1. 移除已有的 width 和 height 属性
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)\\s+width\\s*=\\s*["'][^"']*["']`, 'gi'), `<${tagName}$1`)
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)\\s+height\\s*=\\s*["'][^"']*["']`, 'gi'), `<${tagName}$1`)
+
+    // 2. 移除已有 style 中的 width 和 height（rich-text 不支持 max-width）
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)\\s+style\\s*=\\s*["']([^"']*?)width\\s*:\\s*[^;]+;?([^"']*)["']`, 'gi'), `<${tagName}$1 style="$2$3"`)
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)\\s+style\\s*=\\s*["']([^"']*?)height\\s*:\\s*[^;]+;?([^"']*)["']`, 'gi'), `<${tagName}$1 style="$2$3"`)
+
+    // 3. 给所有标签添加 width="100%" HTML 属性和 style（使用 width 而不是 max-width）
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)(\\s+style\\s*=\\s*["']([^"']*)["'])?([^>]*?)(\\/?)>`, 'gi'), (match, before, styleAttr, styleContent, after, selfClosing) => {
+      if (styleAttr) {
+        // 已有 style 属性，在前面添加 width 和 height
+        const newStyle = `width:100%;height:auto;display:block;${styleContent || ''}`
+        return `<${tagName}${before} width="100%" style="${newStyle}"${after}${selfClosing}>`
+      } else {
+        // 没有 style 属性，新增一个
+        return `<${tagName}${before} width="100%" style="width:100%;height:auto;display:block;"${after}${selfClosing}>`
+      }
+    })
+
+    return tagHtml
+  }
+
+  // 同时处理 img 和 image 标签
+  html = processTag(html, 'img')
+  html = processTag(html, 'image')
+
+  // 4. 处理父元素的固定宽度（将固定宽度改为 100%）
+  html = html.replace(/style\s*=\s*["']([^"']*?)width\s*:\s*\d+([^"';]*)px([^"']*)["']/gi, 'style="$1width:100%$3"')
+
+  console.log('处理后的 HTML:', html)
+
+  return html
+})
+
 // 规格选择区文案
 const selectedSpecText = computed(() => {
   if (selectedSkuSnapshot.value) return selectedSkuSnapshot.value.sku_name
@@ -197,8 +242,11 @@ function handleSpecConfirm(payload: { sku: any; qty: number }) {
   navigator.push(`/m/mall/checkout?product_id=${productId.value}&sku_id=${payload.sku.id}&qty=${payload.qty}`)
 }
 
-function goCustomerService() {
-  navigator.push('/m/contacts')
+function goHome() {
+  // 返回首页
+  uni.reLaunch({
+    url: '/pages/home/index'
+  })
 }
 
 function goBack() {
@@ -406,7 +454,17 @@ onLoad((options: any) => {
   font-size: 14px;
   line-height: 1.7;
   color: #333;
+  width: 100%;
+  overflow: hidden;
 }
+
+.rich-content img {
+  max-width: 100%;
+  height: auto;
+  display: block;
+  margin: 10px auto;
+}
+
 
 .detail-images {
   display: flex;
