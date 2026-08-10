@@ -122,19 +122,33 @@
     </view>
 
     <!-- 协议弹窗 -->
-    <view class="dialog-mask" v-if="dialogVisible" @click="closeDialog"></view>
-    <view class="dialog" v-if="dialogVisible">
-      <view class="dialog-body">
-        <text class="dialog-title">{{ dialogTitle }}</text>
-        <text class="dialog-content">{{ dialogContent }}</text>
-        <button class="dialog-btn" @click="closeDialog">我知道了</button>
+    <!-- 隐私政策弹窗 -->
+    <view class="dialog-mask" v-if="privacyDialogVisible" @click.stop></view>
+    <view class="privacy-dialog" v-if="privacyDialogVisible">
+      <view class="privacy-dialog-header">
+        <text class="privacy-dialog-title">{{ privacyDialogTitle }}</text>
+      </view>
+      <scroll-view class="privacy-dialog-content" scroll-y :scroll-top="scrollTop" @scroll="onScroll"
+        @scrolltolower="onScrollToLower">
+        <rich-text :nodes="privacyDialogContent"></rich-text>
+      </scroll-view>
+      <view class="privacy-dialog-footer">
+        <view class="scroll-hint" v-if="!canAgree && contentIsLong">
+          <text>请向下滚动阅读完整协议</text>
+        </view>
+        <view class="countdown-hint" v-if="!canAgree && !contentIsLong && countdown > 0">
+          <text>{{ countdown }}秒后可点击</text>
+        </view>
+        <button class="privacy-dialog-btn" :class="{ disabled: !canAgree }" :disabled="!canAgree" @click="agreePrivacy">
+          我已阅读并同意
+        </button>
       </view>
     </view>
   </view>
 </template>
 
 <script>
-import { uploadFile, updateMiniappProfile } from '@/api/miniapp'
+import { uploadFile, updateMiniappProfile, getUserAgreements } from '@/api/miniapp'
 import { bindPhoneWithWx } from '@/utils/auth'
 
 export default {
@@ -142,6 +156,17 @@ export default {
     return {
       userAvatar: '',
       userNickname: '',
+      agreed: false,
+      showPop: false,
+      privacyDialogVisible: false,
+      privacyDialogTitle: '隐私政策',
+      privacyDialogContent: '',
+      canAgree: false,
+      contentIsLong: false,
+      countdown: 5,
+      scrollTop: 0,
+      countdownTimer: null,
+      hasScrolledToBottom: false,
       uploadedAvatarUrl: '',
       avatarActive: false,
       agreed: false,
@@ -171,19 +196,100 @@ export default {
     },
 
     handleLogin() {
-      // 验证是否已阅读隐私政策
-      const privacyPolicyRead = uni.getStorageSync('policy_read_隐私政策')
-
-      if (!privacyPolicyRead) {
-        this.showToast('请先阅读并同意《隐私政策》')
-        return
-      }
-
       // 验证是否勾选协议
       if (!this.agreed) {
         this.showToast('请先勾选同意协议')
         return
       }
+
+      // 显示隐私政策弹窗
+      this.showPrivacyDialog()
+    },
+
+    async showPrivacyDialog() {
+      try {
+        // 调用接口获取隐私政策内容
+        const res = await getUserAgreements('privacy_policy')
+        if (res.code === 200 && res.data) {
+          this.privacyDialogTitle = res.data.title || '隐私政策'
+          this.privacyDialogContent = res.data.privacy_policy || ''
+
+          // 判断内容是否很长（简单判断：字符数大于500）
+          this.contentIsLong = this.privacyDialogContent.length > 500
+
+          // 显示弹窗
+          this.privacyDialogVisible = true
+          this.canAgree = false
+          this.hasScrolledToBottom = false
+
+          // 如果内容不长，开始倒计时
+          if (!this.contentIsLong) {
+            this.startCountdown()
+          }
+        } else {
+          this.showToast('获取隐私政策失败')
+        }
+      } catch (e) {
+        console.error('获取隐私政策失败', e)
+        this.showToast('获取隐私政策失败')
+      }
+    },
+
+    startCountdown() {
+      this.countdown = 5
+      if (this.countdownTimer) {
+        clearInterval(this.countdownTimer)
+      }
+      this.countdownTimer = setInterval(() => {
+        this.countdown--
+        if (this.countdown <= 0) {
+          this.canAgree = true
+          clearInterval(this.countdownTimer)
+        }
+      }, 1000)
+    },
+
+    onScroll(e) {
+      const { scrollTop: st, scrollHeight } = e.detail
+      this.scrollTop = st
+
+      // 获取 scroll-view 的实际高度
+      uni.createSelectorQuery()
+        .select('.privacy-dialog-content')
+        .boundingClientRect((rect) => {
+          if (rect) {
+            const scrollViewHeight = rect.height
+            // 如果滚动距离 + 可见高度 >= 内容高度 - 100px，认为到达底部
+            if (st + scrollViewHeight >= scrollHeight - 100) {
+              this.hasScrolledToBottom = true
+              this.canAgree = true
+            }
+          }
+        })
+        .exec()
+    },
+
+    onScrollToLower() {
+      // 滚动到底部
+      this.hasScrolledToBottom = true
+      this.canAgree = true
+    },
+
+    agreePrivacy() {
+      if (!this.canAgree) {
+        return
+      }
+
+      // 清除倒计时定时器
+      if (this.countdownTimer) {
+        clearInterval(this.countdownTimer)
+      }
+
+      // 保存隐私政策阅读状态
+      uni.setStorageSync('policy_read_隐私政策', true)
+
+      // 关闭隐私政策弹窗
+      this.privacyDialogVisible = false
 
       // 显示信息收集弹窗
       this.showAuthPopup = true
@@ -416,8 +522,7 @@ export default {
 .content {
   position: relative;
   z-index: 2;
-  padding: 152rpx 52rpx 300rpx;
-  min-height: 100vh;
+  padding: 152rpx 52rpx 30rpx;
 }
 
 /* 顶部图片 */
@@ -425,8 +530,11 @@ export default {
   width: 100%;
   display: flex;
   justify-content: center;
+  align-items: center;
   margin-bottom: 32rpx;
-  padding: 0 20rpx;
+  margin-left: -52rpx;
+  margin-right: -52rpx;
+  width: calc(100% + 104rpx);
 }
 
 .banner-img {
@@ -1052,5 +1160,84 @@ export default {
 
 .btn-loading {
   opacity: 0.7;
+}
+
+/* 隐私政策弹窗 */
+.privacy-dialog {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 70vh;
+  background: #fff;
+  border-radius: 32rpx 32rpx 0 0;
+  z-index: 1000;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.3s ease;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
+}
+
+.privacy-dialog-header {
+  padding: 32rpx 32rpx 16rpx;
+  border-bottom: 1rpx solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.privacy-dialog-title {
+  font-size: 36rpx;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.privacy-dialog-content {
+  flex: 1;
+  padding: 32rpx;
+  overflow-y: auto;
+}
+
+.privacy-dialog-content rich-text {
+  font-size: 28rpx;
+  color: #475569;
+  line-height: 1.8;
+}
+
+.privacy-dialog-footer {
+  padding: 24rpx 32rpx;
+  border-top: 1rpx solid #e5e7eb;
+  flex-shrink: 0;
+}
+
+.scroll-hint,
+.countdown-hint {
+  text-align: center;
+  margin-bottom: 16rpx;
+  font-size: 26rpx;
+  color: #94a3b8;
+}
+
+.privacy-dialog-btn {
+  width: 100%;
+  height: 88rpx;
+  border-radius: 16rpx;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: #fff;
+  font-size: 32rpx;
+  font-weight: 600;
+  border: none;
+}
+
+.privacy-dialog-btn.disabled {
+  background: #cbd5e1;
+  color: #94a3b8;
 }
 </style>

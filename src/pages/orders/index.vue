@@ -129,9 +129,9 @@ async function loadData() {
     const res: any = await getMyMallOrders(statusParam)
     if (res.code === 200 || res.code === 0) {
       const data = res.data?.data || res.data || {}
-      list.value = data.list || data || []
+      list.value = data.list.filter((o: any) => o.order_status !== 'pending_payment') || data || []
       const c = data.counts || {}
-      counts.all = c.all || 0
+      counts.all = c.all - c.pending_payment || 0
       counts.pending_ship = c.pending_ship || 0
       counts.pending_receive = c.pending_receive || 0
       counts.completed = c.completed || 0
