@@ -92,22 +92,23 @@
     </view>
   </view>
 
-  <!-- ===== 紫色模板（模板1，原授权页） ===== -->
-  <view v-else class="auth-page">
-    <view class="page-header">
-      <text class="eyebrow">账号与带货授权</text>
-      <text class="page-title">授权管理</text>
-      <text class="page-desc">统一管理账号授权、机构绑定与橱窗开通</text>
-    </view>
-
-    <view class="notice-card">
-      <view class="notice-icon">
-        <image class="ui-icon" src="/static/icons/common/shield.png" mode="aspectFit" />
+  <!-- ===== 紫色模板（模板1） ===== -->
+  <view v-else class="page-shell auth-page">
+    <!-- Hero -->
+    <view class="feature-hero surface">
+      <view>
+        <text class="eyebrow">一站式授权中心</text>
+        <view class="hero-title">快速开通<text>核心授权</text></view>
+        <view class="hero-sub">按步骤完成绑定，立即开始使用</view>
+        <!-- <view class="benefits">✓ 简单高效　✓ 安全可靠　✓ 快速生效</view> -->
       </view>
-      <text class="notice-text">授权或绑定前，请先确保对应账号或功能已完成开通，并处于正常可用状态；尚未开通可先查看开通教程。</text>
+      <image src="/static/icons/common/shield.png" mode="aspectFit" />
     </view>
 
-    <view class="auth-status-card" v-if="mcnOpen && authStatus.status !== 'none'">
+    <view class="section-title">授权列表</view>
+
+    <!-- 授权状态 -->
+    <view class="auth-status-card surface" v-if="mcnOpen && authStatus.status !== 'none'">
       <view class="auth-status-row">
         <text class="auth-status-label">带货机构授权</text>
         <text class="auth-status-tag" :class="authStatusClass">{{ authStatusText }}</text>
@@ -116,94 +117,62 @@
       <text class="auth-status-meta" v-else-if="authStatus.status === 'pending'">授权进行中，请在弹出的页面完成授权</text>
     </view>
 
-    <view class="auth-grid" v-if="visibleCards.length">
-      <view class="auth-card" v-if="tutorialVisible.mp">
-        <view class="auth-title">
-          <view class="auth-icon-box">
-            <image class="ui-icon" src="/static/icons/auth/official-account.png" mode="aspectFit" />
-          </view>
-          <view class="auth-title-text">
-            <text class="auth-sub">公众号</text>
-            <text class="auth-h3">公众号授权</text>
-          </view>
+    <!-- 功能列表 -->
+    <view class="feature-list surface" v-if="visibleCards.length">
+      <!-- 公众号 -->
+      <view class="feature" v-if="tutorialVisible.mp">
+        <image src="/static/icons/auth/official-account.png" mode="aspectFit" />
+        <view class="feature-copy">
+          <view class="feature-name">公众号授权<text v-if="authStatus.status === 'authorized'">已授权</text></view>
+          <view class="feature-desc">授权并绑定公众号账号，获取内容管理能力</view>
         </view>
-        <text class="auth-card-desc">授权并绑定公众号账号。</text>
-        <view class="prerequisite">
-          <text class="prereq-label">前置条件</text>
-          <text class="prereq-text">公众号需已完成注册并可正常使用。</text>
-        </view>
-        <view class="dual-actions">
-          <view class="tutorial-btn" @click="openTutorial('mp', '公众号开通教程')"><text>开通教程</text></view>
-          <view class="auth-main-btn" @click="onStaticClick('公众号授权')"><text>去授权</text></view>
+        <view class="feature-actions">
+          <button class="ghost" @tap="openTutorial('mp', '公众号开通教程')">教程</button>
+          <button class="primary" @tap="onStaticClick('公众号授权')">去授权</button>
         </view>
       </view>
 
-      <view class="auth-card" v-if="tutorialVisible.channels">
-        <view class="auth-title">
-          <view class="auth-icon-box">
-            <image class="ui-icon" src="/static/icons/auth/video-account.png" mode="aspectFit" />
-          </view>
-          <view class="auth-title-text">
-            <text class="auth-sub">视频号</text>
-            <text class="auth-h3">视频号授权</text>
-          </view>
+      <!-- 视频号 -->
+      <view class="feature" v-if="tutorialVisible.channels">
+        <image src="/static/icons/auth/video-account.png" mode="aspectFit" />
+        <view class="feature-copy">
+          <view class="feature-name">视频号授权<text v-if="authStatus.status === 'authorized'">已授权</text></view>
+          <view class="feature-desc">授权视频号，获取带货权限及数据分析能力</view>
         </view>
-        <text class="auth-card-desc">授权当前微信账号下的视频号。</text>
-        <view class="prerequisite">
-          <text class="prereq-label">前置条件</text>
-          <text class="prereq-text">视频号需已完成开通并可正常使用。</text>
-        </view>
-        <view class="dual-actions">
-          <view class="tutorial-btn" @click="openTutorial('channels', '视频号开通教程')"><text>开通教程</text></view>
-          <view class="auth-main-btn" @click="onStaticClick('视频号授权')"><text>去授权</text></view>
+        <view class="feature-actions">
+          <button class="ghost" @tap="openTutorial('channels', '视频号开通教程')">教程</button>
+          <button class="primary" @tap="onStaticClick('视频号授权')">去授权</button>
         </view>
       </view>
 
-      <view class="auth-card" v-if="tutorialVisible.mcn">
-        <view class="auth-title">
-          <view class="auth-icon-box">
-            <image class="ui-icon" src="/static/icons/auth/institution.png" mode="aspectFit" />
-          </view>
-          <view class="auth-title-text">
-            <text class="auth-sub">机构</text>
-            <text class="auth-h3">带货机构绑定</text>
-          </view>
+      <!-- 机构绑定 -->
+      <view class="feature" v-if="tutorialVisible.mcn">
+        <image src="/static/icons/auth/institution.png" mode="aspectFit" />
+        <view class="feature-copy">
+          <view class="feature-name">机构绑定<text v-if="authStatus.status === 'authorized'">已绑定</text></view>
+          <view class="feature-desc">绑定带货机构，进入带货合作流程</view>
         </view>
-        <text class="auth-card-desc">绑定对应带货机构，进入带货合作流程。</text>
-        <view class="prerequisite">
-          <text class="prereq-label">前置条件</text>
-          <text class="prereq-text">请先确保橱窗已开通并处于正常状态。</text>
-        </view>
-        <view class="dual-actions">
-          <view class="tutorial-btn" @click="openTutorial('mcn', '橱窗与带货机构开通教程')"><text>开通教程</text></view>
-          <view class="auth-main-btn" :class="{ disabled: binding }" @click="onBindMcn">
-            <text>{{ binding ? '生成链接...' : (authStatus.status === 'authorized' ? '重新绑定' : '去绑定') }}</text>
-          </view>
+        <view class="feature-actions">
+          <button class="ghost" @tap="openTutorial('mcn', '橱窗与带货机构开通教程')">教程</button>
+          <button :class="['primary', { done: binding }]" @tap="onBindMcn">{{ binding ? '生成中' : '去绑定' }}</button>
         </view>
       </view>
 
-      <view class="auth-card" v-if="tutorialVisible.window">
-        <view class="auth-title">
-          <view class="auth-icon-box">
-            <image class="ui-icon" src="/static/icons/auth/showcase.png" mode="aspectFit" />
-          </view>
-          <view class="auth-title-text">
-            <text class="auth-sub">橱窗</text>
-            <text class="auth-h3">橱窗开通</text>
-          </view>
+      <!-- 橱窗开通 -->
+      <view class="feature" v-if="tutorialVisible.window">
+        <image src="/static/icons/auth/showcase.png" mode="aspectFit" />
+        <view class="feature-copy">
+          <view class="feature-name">橱窗开通</view>
+          <view class="feature-desc">开通商品橱窗，解锁带货能力</view>
         </view>
-        <text class="auth-card-desc">尚未开通橱窗时，可以在这里进入开通流程。</text>
-        <view class="prerequisite">
-          <text class="prereq-label">前置条件</text>
-          <text class="prereq-text">需完成视频号实名认证。</text>
-        </view>
-        <view class="dual-actions">
-          <view class="tutorial-btn" @click="openTutorial('window', '橱窗开通教程')"><text>开通教程</text></view>
-          <view class="auth-main-btn secondary" @click="onStaticClick('橱窗开通')"><text>去开通</text></view>
+        <view class="feature-actions">
+          <button class="ghost" @tap="openTutorial('window', '橱窗开通教程')">教程</button>
+          <button class="primary" @tap="onStaticClick('橱窗开通')">去开通</button>
         </view>
       </view>
     </view>
 
+    <!-- 状态提示 -->
     <view class="status-note" v-if="!mcnOpen">
       <view class="note-dot"></view>
       <text class="status-note-text">当前企业暂未开启视频号带货机构功能</text>
@@ -317,81 +286,171 @@ onMounted(() => {
   flex: 0 0 auto;
 }
 
-/* ===== 紫色模板 ===== */
+/* ===== 紫色模板（对齐 features 风格） ===== */
 .auth-page {
-  padding: 12px 18px 0;
+  padding: 18rpx 24rpx 0;
+  box-sizing: border-box;
 }
 
-.page-header {
-  padding: 20px 2px 18px;
+/* surface 卡片通用背景 */
+.surface {
+  background: white;
+  border-radius: 28rpx;
+  box-shadow: 0 10rpx 30rpx rgba(39, 54, 75, 0.06);
+}
+
+/* Hero */
+.feature-hero {
+  min-height: 330rpx;
+  padding: 42rpx;
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+  background: linear-gradient(135deg, #f8fbff, #e2edff);
+}
+
+.feature-hero>view {
+  width: 68%;
+  z-index: 2;
 }
 
 .eyebrow {
-  display: block;
-  color: #6658f5;
-  font-size: 13px;
-  font-weight: 800;
-  letter-spacing: 0.7px;
-  margin-bottom: 7px;
+  color: #3277e9;
+  font-size: 23rpx;
 }
 
-.page-title {
-  display: block;
-  font-size: 34px;
-  line-height: 1.16;
-  margin-bottom: 9px;
-  color: #202a42;
+.hero-title {
+  margin-top: 20rpx;
+  font-size: 50rpx;
   font-weight: 800;
 }
 
-.page-desc {
-  display: block;
-  font-size: 15px;
-  line-height: 1.65;
-  color: #75829c;
+.hero-title text {
+  margin-left: 8rpx;
+  color: #2f70ed;
 }
 
-.notice-card {
+.hero-sub {
+  margin-top: 22rpx;
+  color: #718096;
+  font-size: 30rpx;
+}
+
+.benefits {
+  margin-top: 25rpx;
+  color: #6e7c91;
+  font-size: 22rpx;
+}
+
+.feature-hero image {
+  width: 230rpx;
+  height: 230rpx;
+  margin-right: -75rpx;
+  border-radius: 50%;
+}
+
+/* 区块标题 */
+.section-title {
+  margin: 34rpx 4rpx 20rpx;
+  padding-left: 16rpx;
+  border-left: 8rpx solid #2f7df3;
+  font-size: 38rpx;
+  font-weight: 800;
+}
+
+/* 功能列表 */
+.feature-list {
+  padding: 0 24rpx;
+}
+
+.feature {
+  min-height: 220rpx;
+  padding: 30rpx 0;
   display: flex;
-  align-items: flex-start;
-  gap: 13px;
-  padding: 16px;
-  border-radius: 20px;
-  background: #eef4ff;
-  border: 1px solid #dce6fa;
-  margin-bottom: 16px;
+  align-items: center;
+  border-bottom: 1rpx solid #e8edf5;
 }
 
-.notice-icon {
-  flex: 0 0 40px;
-  width: 40px;
-  height: 40px;
-  border-radius: 14px;
-  background: #fff;
+.feature:last-child {
+  border-bottom: 0;
+}
+
+.feature>image {
+  width: 110rpx;
+  height: 110rpx;
+  flex: 0 0 auto;
+  border-radius: 26rpx;
+  background: #eaf2ff;
+}
+
+.feature-copy {
+  flex: 1;
+  min-width: 0;
+  margin-left: 22rpx;
+}
+
+.feature-name {
+  font-size: 35rpx;
+  font-weight: 750;
+}
+
+.feature-name text {
+  margin-left: 10rpx;
+  color: #15a574;
+  font-size: 21rpx;
+}
+
+.feature-desc {
+  margin-top: 17rpx;
+  color: #748197;
+  font-size: 27rpx;
+  line-height: 1.5;
+}
+
+.feature-actions {
+  width: 112rpx;
+  margin-left: 10rpx;
+  display: flex;
+  flex-direction: column;
+  gap: 14rpx;
+}
+
+.feature-actions button {
+  width: 112rpx;
+  height: 60rpx;
+  margin: 0;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  border-radius: 16rpx;
+  font-size: 24rpx;
 }
 
-.notice-icon .ui-icon {
-  width: 21px;
-  height: 21px;
+.feature-actions button::after {
+  border: none;
 }
 
-.notice-text {
-  font-size: 14px;
-  line-height: 1.72;
-  color: #62708c;
-  flex: 1;
+.ghost {
+  color: #3377ed;
+  background: white;
+  border: 2rpx solid #6b9bff;
 }
 
+.primary {
+  color: white;
+  background: #337bef;
+}
+
+.primary.done {
+  color: #738198;
+  background: #eff3f8;
+}
+
+/* 授权状态卡 */
 .auth-status-card {
-  background: #fff;
-  border: 1px solid #e2e8f0;
-  border-radius: 22px;
-  padding: 15px;
-  margin-bottom: 14px;
-  box-shadow: 0 8px 24px rgba(57, 70, 112, 0.07);
+  padding: 22rpx 24rpx;
+  margin-bottom: 20rpx;
 }
 
 .auth-status-row {
@@ -401,15 +460,15 @@ onMounted(() => {
 }
 
 .auth-status-label {
-  font-size: 14px;
+  font-size: 30rpx;
   color: #202a42;
   font-weight: 600;
 }
 
 .auth-status-tag {
-  padding: 4px 12px;
-  border-radius: 10px;
-  font-size: 12px;
+  padding: 6rpx 16rpx;
+  border-radius: 10rpx;
+  font-size: 22rpx;
   font-weight: 600;
 }
 
@@ -435,173 +494,34 @@ onMounted(() => {
 
 .auth-status-meta {
   display: block;
-  margin-top: 10px;
-  font-size: 12px;
+  margin-top: 10rpx;
+  font-size: 24rpx;
   color: #64748b;
 }
 
-.auth-grid {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-.auth-card {
-  background: #fff;
-  border: 1px solid #e5eaf4;
-  border-radius: 24px;
-  padding: 18px;
-  box-shadow: 0 8px 24px rgba(57, 70, 112, 0.07);
-  display: flex;
-  flex-direction: column;
-}
-
-.auth-title {
-  display: flex;
-  align-items: center;
-  gap: 13px;
-}
-
-.auth-icon-box {
-  width: 48px;
-  height: 48px;
-  border-radius: 16px;
-  background: linear-gradient(145deg, #edf1ff, #f5efff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.auth-icon-box .ui-icon {
-  width: 25px;
-  height: 25px;
-}
-
-.auth-title-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.auth-sub {
-  font-size: 12px;
-  color: #6658f5;
-  font-weight: 800;
-}
-
-.auth-h3 {
-  font-size: 19px;
-  line-height: 1.35;
-  margin-top: 3px;
-  color: #202a42;
-  font-weight: 700;
-}
-
-.auth-card-desc {
-  font-size: 15px;
-  color: #75829c;
-  line-height: 1.65;
-  margin: 15px 0 13px;
-}
-
-.prerequisite {
-  border-radius: 15px;
-  background: #f6f8fc;
-  padding: 13px 14px;
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
-  margin-bottom: 14px;
-}
-
-.prereq-label {
-  font-size: 13px;
-  color: #6658f5;
-  font-weight: 700;
-}
-
-.prereq-text {
-  font-size: 14px;
-  line-height: 1.62;
-  color: #64718b;
-}
-
-.dual-actions {
-  display: flex;
-  gap: 10px;
-  margin-top: auto;
-}
-
-.tutorial-btn {
-  flex: 1;
-  height: 46px;
-  border-radius: 15px;
-  background: #f5f3ff;
-  color: #6658f5;
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.tutorial-btn:active {
-  opacity: 0.85;
-}
-
-.auth-main-btn {
-  flex: 1;
-  height: 46px;
-  border-radius: 15px;
-  background: linear-gradient(135deg, #6658f5, #8377fb);
-  color: #fff;
-  font-size: 15px;
-  font-weight: 700;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  box-shadow: 0 8px 18px rgba(102, 88, 245, 0.2);
-}
-
-.auth-main-btn:active {
-  opacity: 0.85;
-}
-
-.auth-main-btn.secondary {
-  background: #f0f5fb;
-  color: #6658f5;
-  box-shadow: none;
-}
-
-.auth-main-btn.disabled {
-  opacity: 0.6;
-}
-
+/* 状态提示 */
 .status-note {
-  min-height: 54px;
-  border-radius: 16px;
-  background: rgba(255, 255, 255, 0.58);
+  min-height: 100rpx;
+  margin-top: 20rpx;
+  padding: 20rpx 24rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 8px;
-  color: #98a3b8;
-  font-size: 13px;
-  margin-top: 16px;
-  padding: 10px 14px;
-  text-align: center;
+  gap: 10rpx;
+  border-radius: 28rpx;
+  background: rgba(255, 255, 255, 0.58);
 }
 
 .note-dot {
-  width: 7px;
-  height: 7px;
+  width: 12rpx;
+  height: 12rpx;
   border-radius: 50%;
   background: #b9c2d3;
 }
 
 .status-note-text {
   color: #98a3b8;
-  font-size: 13px;
+  font-size: 26rpx;
 }
 
 /* ===== 金色模板 F-4 ===== */

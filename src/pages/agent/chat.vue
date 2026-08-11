@@ -1,180 +1,116 @@
 ﻿<template>
-  <view class="agent-detail-page">
+  <view class="assistant-page">
     <!-- ===== Sticky Header ===== -->
     <view class="detail-sticky-head" :style="{ paddingTop: statusBarHeight + 'px' }">
       <view class="head-back" @click="goBack">
         <text class="back-icon">‹</text>
       </view>
-      <text class="head-title">智能体</text>
+      <text class="head-title">{{ agentInfo?.name || '智能体' }}</text>
       <view class="head-favorite" :class="{ active: isFavorite }" @click="toggleFavorite">
         <text class="star-icon">{{ isFavorite ? '★' : '☆' }}</text>
       </view>
     </view>
 
-    <!-- ===== Scrollable Content ===== -->
-    <scroll-view class="page-scroll" scroll-y :scroll-into-view="scrollTarget" :scroll-with-animation="true">
-      <!-- Agent Identity Card -->
-      <view class="agent-identity-card">
-        <image v-if="agentInfo?.icon_url || agentInfo?.icon" class="identity-img"
-          :src="getImageUrl(agentInfo.icon_url || agentInfo.icon)" mode="aspectFill" />
-        <view v-else class="identity-icon-placeholder">
-          <text class="bot-icon">AI</text>
+    <scroll-view class="content" scroll-y :scroll-into-view="scrollTarget" :scroll-with-animation="true">
+      <!-- Agent Profile Card -->
+      <view class="profile surface">
+        <image v-if="agentInfo?.icon_url || agentInfo?.icon" :src="getImageUrl(agentInfo.icon_url || agentInfo.icon)"
+          mode="aspectFill" />
+        <image v-else src="/static/icons/common/robot.png" mode="aspectFit" />
+        <view class="profile-copy">
+          <view class="name-row">
+            <text class="agent-name">{{ agentInfo?.name || '智能体' }}</text>
+            <text class="online">● 在线</text>
+          </view>
+          <view class="agent-desc">{{ agentInfo?.description || '智能创作助手' }}</view>
+          <view class="tags" v-if="agentInfo?.category">
+            <text>{{ agentInfo.category }}</text>
+          </view>
         </view>
-        <text class="identity-name">{{ agentInfo?.name || '智能体' }}</text>
-        <text class="identity-desc">{{ agentInfo?.description || '智能创作助手' }}</text>
       </view>
 
-      <view class="page-inner">
-        <!-- Sample Video Module -->
-        <view class="detail-section module-card sample-module-card">
-          <scroll-view scroll-x class="sample-video-scroll">
-            <view v-for="(sample, idx) in sampleVideos" :key="idx" class="sample-video-card" :class="sample.colorClass"
-              @click="playSample(sample)">
-              <view class="sample-square" :class="{ 'sample-art': sample.isArt }">
-                <image v-if="sample.cover" class="sample-cover" :src="getImageUrl(sample.cover)" mode="aspectFill" />
-                <view v-if="sample.artText" class="sample-art-text">
-                  <rich-text :nodes="sample.artText"></rich-text>
-                </view>
-                <view v-if="sample.artIcon" class="sample-art-icon-box">
-                  <text class="sample-art-icon">▣</text>
-                </view>
-                <view class="play-overlay">
-                  <text class="play-icon">▶</text>
-                </view>
-              </view>
-              <text class="sample-title">{{ sample.title }}</text>
-              <text class="sample-meta">{{ sample.meta }}</text>
-            </view>
-          </scroll-view>
+      <!-- Sample Videos -->
+      <view class="samples surface" v-if="sampleVideos.length">
+        <view class="sample-head">
+          <text>样例视频</text>
+          <!-- <text class="more" @tap="showMoreSamples">查看更多 ›</text> -->
         </view>
-
-        <!-- Example Conversation Module -->
-        <!-- <view class="detail-section conversation-section module-card">
-          <view class="detail-section-title">
-            <view class="title-left">
-              <text class="eyebrow">快速上手</text>
-              <text class="section-h2">示例对话</text>
-              <text class="section-sub">复制示例后可直接修改使用</text>
-            </view>
-            <text class="section-hint">点击即可复制</text>
+        <view class="sample-list">
+          <view v-for="(sample, idx) in sampleVideos" :key="idx" class="sample" @tap="playSample(sample)">
+            <image v-if="sample.cover" :src="getImageUrl(sample.cover)" mode="aspectFill" />
+            <view v-else class="sample-placeholder" :class="sample.colorClass"></view>
+            <view class="play">▶</view>
           </view>
-          <view class="conversation-list">
-            <view v-for="(ex, idx) in exampleConversations" :key="'ex-' + idx" class="chat-row"
-              :class="ex.role === 'user' ? 'user-row' : 'ai-row'">
-              <view v-if="ex.role === 'ai'" class="chat-avatar">
-                <text class="avatar-text">AI</text>
-              </view>
-              <view class="chat-bubble">
-                <view class="chat-label">
-                  <text class="label-text">{{ ex.label }}</text>
-                </view>
-                <text class="chat-content">{{ ex.text }}</text>
-                <view class="copy-message" @click="copyText(ex.text)">
-                  <text class="copy-text">复制</text>
-                </view>
-              </view>
-              <view v-if="ex.role === 'user'" class="chat-avatar user-avatar">
-                <text class="avatar-text">我</text>
-              </view>
-            </view>
-          </view>
-        </view> -->
+        </view>
+      </view>
 
-        <!-- Real Chat Messages -->
-        <view class="detail-section conversation-section module-card"
-          v-if="messages.length > 0 || isTyping || dynamicGreeting || greetingLoading">
-          <view class="detail-section-title">
-            <view class="title-left">
-              <text class="eyebrow">实时对话</text>
-              <text class="section-h2">对话记录</text>
-              <text class="section-sub">与智能体的实时交流</text>
-            </view>
-          </view>
-          <view class="conversation-list">
-            <!-- Dynamic greeting -->
-            <view class="chat-row ai-row" v-if="messages.length === 0 && dynamicGreeting">
-              <view class="chat-avatar"><text class="avatar-text">AI</text></view>
-              <view class="chat-bubble">
-                <view class="chat-label"><text class="label-text">智能体招呼</text></view>
-                <text class="chat-content">{{ dynamicGreeting }}</text>
-                <view class="copy-message" @click="copyText(dynamicGreeting)">
-                  <text class="copy-text">复制</text>
-                </view>
-              </view>
-            </view>
+      <!-- Chat Messages -->
+      <view class="chat surface"
+        v-if="messages.length > 0 || isTyping || dynamicGreeting || greetingLoading || agentInfo?.greeting">
+        <text class="time">实时对话</text>
 
-            <!-- Greeting loading -->
-            <view class="chat-row ai-row" v-if="messages.length === 0 && !dynamicGreeting && greetingLoading">
-              <view class="chat-avatar"><text class="avatar-text">AI</text></view>
-              <view class="chat-bubble">
-                <view class="typing-dots">
-                  <view class="dot"></view>
-                  <view class="dot"></view>
-                  <view class="dot"></view>
-                </view>
-              </view>
-            </view>
-
-            <!-- Fallback static greeting -->
-            <view class="chat-row ai-row"
-              v-if="messages.length === 0 && !dynamicGreeting && !greetingLoading && agentInfo?.greeting">
-              <view class="chat-avatar"><text class="avatar-text">AI</text></view>
-              <view class="chat-bubble">
-                <view class="chat-label"><text class="label-text">智能体招呼</text></view>
-                <text class="chat-content">{{ agentInfo.greeting }}</text>
-                <view class="copy-message" @click="copyText(agentInfo.greeting)">
-                  <text class="copy-text">复制</text>
-                </view>
-              </view>
-            </view>
-
-            <!-- Real messages -->
-            <view v-for="(msg, idx) in messages" :key="'msg-' + idx" class="chat-row"
-              :class="msg.role === 'user' ? 'user-row' : 'ai-row'">
-              <view v-if="msg.role === 'ai'" class="chat-avatar"><text class="avatar-text">AI</text></view>
-              <view class="chat-bubble">
-                <view class="chat-label">
-                  <text class="label-text">{{ msg.role === 'user' ? '我的提问' : '智能体回复' }}</text>
-                </view>
-                <text class="chat-content">{{ msg.content }}</text>
-                <view v-if="msg.role === 'ai' && msg.content" class="copy-message" @click="copyText(msg.content)">
-                  <text class="copy-text">复制</text>
-                </view>
-              </view>
-              <view v-if="msg.role === 'user'" class="chat-avatar user-avatar">
-                <text class="avatar-text">我</text>
-              </view>
-            </view>
-
-            <!-- AI typing indicator -->
-            <view class="chat-row ai-row" v-if="isTyping">
-              <view class="chat-avatar"><text class="avatar-text">AI</text></view>
-              <view class="chat-bubble">
-                <view class="typing-dots">
-                  <view class="dot"></view>
-                  <view class="dot"></view>
-                  <view class="dot"></view>
-                </view>
-              </view>
+        <!-- Dynamic greeting -->
+        <view v-if="messages.length === 0 && dynamicGreeting" class="message-row bot">
+          <image class="avatar" src="/static/icons/common/robot.png" mode="aspectFit" />
+          <view class="message-body response">
+            <view class="bubble">{{ dynamicGreeting }}</view>
+            <view class="reply-actions">
+              <button @tap="copyText(dynamicGreeting)">▣ 复制</button>
             </view>
           </view>
         </view>
 
-        <!-- Scroll anchor -->
-        <view id="chat-bottom" style="height: 1px;"></view>
+        <!-- Greeting loading -->
+        <view v-if="messages.length === 0 && !dynamicGreeting && greetingLoading" class="message-row bot">
+          <image class="avatar" src="/static/icons/common/robot.png" mode="aspectFit" />
+          <view class="typing"><text></text><text></text><text></text></view>
+        </view>
+
+        <!-- Fallback static greeting -->
+        <view v-if="messages.length === 0 && !dynamicGreeting && !greetingLoading && agentInfo?.greeting"
+          class="message-row bot">
+          <image class="avatar" src="/static/icons/common/robot.png" mode="aspectFit" />
+          <view class="message-body response">
+            <view class="bubble">{{ agentInfo.greeting }}</view>
+            <view class="reply-actions">
+              <button @tap="copyText(agentInfo.greeting)">▣ 复制</button>
+            </view>
+          </view>
+        </view>
+
+        <!-- Real messages -->
+        <template v-for="(msg, idx) in messages" :key="'msg-' + idx">
+          <view :class="['message-row', msg.role === 'user' ? 'user' : 'bot']">
+            <image v-if="msg.role === 'ai'" class="avatar" src="/static/icons/common/robot.png" mode="aspectFit" />
+            <view class="message-body" :class="{ response: msg.role === 'ai' }">
+              <view class="bubble">{{ msg.content }}</view>
+              <view v-if="msg.role === 'ai' && msg.content" class="reply-actions">
+                <button @tap="copyText(msg.content)">▣ 复制</button>
+                <button :class="{ favorited: msg.favorited }" @tap="toggleMessageFavorite(msg)">
+                  {{ msg.favorited ? '★ 已收藏' : '☆ 收藏' }}</button>
+              </view>
+            </view>
+            <view v-if="msg.role === 'user'" class="user-avatar">你</view>
+          </view>
+        </template>
+
+        <!-- AI typing indicator -->
+        <view v-if="isTyping" class="message-row bot">
+          <image class="avatar" src="/static/icons/common/robot.png" mode="aspectFit" />
+          <view class="typing"><text></text><text></text><text></text></view>
+        </view>
+
+        <view id="chat-bottom" class="msg-end"></view>
       </view>
     </scroll-view>
 
-    <!-- ===== Fixed Composer ===== -->
-    <view class="agent-composer" :style="{ paddingBottom: 'calc(10px + env(safe-area-inset-bottom))' }">
-      <view class="composer-input-wrap">
-        <textarea class="composer-textarea" v-model="inputText" placeholder="请输入你的创作需求" :auto-height="true"
-          :maxlength="-1" :show-confirm-bar="false" :adjust-position="false" @input="onTextInput"
-          @confirm="sendMessage"></textarea>
-      </view>
-      <view class="composer-send" :class="{ disabled: !inputText.trim() || isTyping }" @click="sendMessage">
-        <text class="send-icon">➤</text>
-      </view>
+    <!-- ===== Composer ===== -->
+    <view class="composer surface">
+      <!-- <button class="voice" @tap="voiceHint">◉</button> -->
+      <textarea v-model="inputText" class="chat-input" placeholder="请输入你的问题..." :maxlength="-1" auto-height
+        :show-confirm-bar="false" :adjust-position="true" :cursor-spacing="24" confirm-type="send"
+        @confirm="sendMessage" />
+      <button :class="['send', { ready: inputText.trim() && !isTyping }]" @tap="sendMessage">发送</button>
     </view>
 
     <!-- 套餐支付弹窗 -->
@@ -192,7 +128,7 @@ import PaySheet from '@/components/PaySheet.vue'
 
 const agentId = ref(0)
 const agentInfo = ref<any>(null)
-const messages = ref<{ role: string; content: string }[]>([])
+const messages = ref<{ role: string; content: string; favorited?: boolean }[]>([])
 const inputText = ref('')
 const isTyping = ref(false)
 const isFavorite = ref(false)
@@ -239,24 +175,8 @@ const sampleVideos = ref([
   },
 ])
 
-// 静态示例对话
-const exampleConversations = ref([
-  {
-    role: 'ai',
-    label: '智能体示例',
-    text: '你好！请告诉我产品名称、核心卖点和目标用户，我会帮你生成一套短视频文案。',
-  },
-  {
-    role: 'user',
-    label: '用户提问',
-    text: '帮我写一个15秒的产品介绍视频，开头要有吸引力。',
-  },
-  {
-    role: 'ai',
-    label: '智能体回复',
-    text: '开场：还在为内容没人看发愁吗？\n中段：把产品卖点用一句话讲清楚，再配合真实使用场景。\n结尾：现在就试试，让创作更轻松。',
-  },
-])
+// 静态示例对话（预留，当前模板未使用）
+// const exampleConversations = ref([...])
 
 function goBack() {
   navigator.back()
@@ -267,11 +187,20 @@ function toggleFavorite() {
 }
 
 function playSample(_sample: any) {
-  // 样例视频点击 - 预留
+  showToast('正在播放样例', 'none')
 }
 
-function onTextInput(e: any) {
-  inputText.value = e.detail.value
+function voiceHint() {
+  showToast('按住说话功能开发中', 'none')
+}
+
+function showMoreSamples() {
+  showToast('更多样例持续更新中', 'none')
+}
+
+function toggleMessageFavorite(msg: any) {
+  msg.favorited = !msg.favorited
+  showToast(msg.favorited ? '已收藏' : '已取消收藏', 'none')
 }
 
 function scrollToBottom() {
@@ -403,14 +332,14 @@ async function handlePaid(_data: { compute_balance: number }) {
 </script>
 
 <style scoped>
-.agent-detail-page {
+.assistant-page {
+  min-height: 100vh;
+  padding: 22rpx 24rpx 0;
+  background: #f4f8fe;
   display: flex;
   flex-direction: column;
   height: 100vh;
-  background:
-    radial-gradient(circle at 50% -10%, rgba(128, 118, 250, 0.12), transparent 32%),
-    #f4f7fc;
-  color: #202a42;
+  box-sizing: border-box;
 }
 
 /* ===== Sticky Header ===== */
@@ -421,6 +350,7 @@ async function handlePaid(_data: { compute_balance: number }) {
   padding-left: 16px;
   padding-right: 16px;
   padding-bottom: 10px;
+  margin: 0 -24rpx;
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -458,11 +388,11 @@ async function handlePaid(_data: { compute_balance: number }) {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #f5f3ff;
+  background: #edf3ff;
 }
 
 .star-icon {
-  color: #9aa4b8;
+  color: #8190a7;
   font-size: 20px;
 }
 
@@ -471,364 +401,265 @@ async function handlePaid(_data: { compute_balance: number }) {
 }
 
 /* ===== Scroll Area ===== */
-.page-scroll {
+.content {
   flex: 1;
-  overflow: hidden;
+  height: 0;
+  padding-bottom: 24rpx;
 }
 
-/* ===== Agent Identity Card ===== */
-.agent-identity-card {
-  margin: 10px 18px 0;
-  padding: 11px 16px 10px;
-  border-radius: 21px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  background:
-    radial-gradient(circle at 80% 10%, rgba(255, 255, 255, 0.9), transparent 34%),
-    linear-gradient(145deg, #f3f1ff, #f8f9ff 58%, #eef4ff);
-  border: 1px solid rgba(205, 211, 239, 0.85);
-  box-shadow: 0 14px 36px rgba(70, 79, 126, 0.08);
+/* ===== Surface 卡片通用背景 ===== */
+.surface {
+  background: white;
+  border-radius: 28rpx;
+  box-shadow: 0 10rpx 30rpx rgba(39, 54, 75, 0.06);
 }
 
-.identity-img {
-  width: 64px;
-  height: 64px;
-  border-radius: 17px;
-  border: 2px solid rgba(255, 255, 255, 0.9);
-}
-
-.identity-icon-placeholder {
-  width: 64px;
-  height: 64px;
-  border-radius: 17px;
+/* ===== Profile Card ===== */
+.profile {
+  padding: 28rpx;
   display: flex;
   align-items: center;
-  justify-content: center;
-  background: #efedff;
-  border: 2px solid rgba(255, 255, 255, 0.9);
 }
 
-.bot-icon {
-  color: #6658f5;
-  font-size: 18px;
-  font-weight: 800;
+.profile>image {
+  width: 150rpx;
+  height: 150rpx;
+  border-radius: 50%;
+  background: #eaf2ff;
 }
 
-.identity-name {
-  margin-top: 7px;
-  font-size: 17px;
-  font-weight: 800;
-  color: #202a42;
-}
-
-.identity-desc {
-  margin-top: 2px;
-  color: #75829c;
-  font-size: 11px;
-}
-
-/* ===== Page Inner ===== */
-.page-inner {
-  padding: 10px 18px 20px;
-}
-
-.detail-section {
-  margin-top: 16px;
-}
-
-.detail-section:first-child {
-  margin-top: 0;
-}
-
-/* ===== Module Card ===== */
-.module-card {
-  margin-top: 16px;
-  padding: 18px;
-  border-radius: 28px;
-  background: #fff;
-  border: 1px solid rgba(224, 230, 241, 0.98);
-  box-shadow: 0 12px 30px rgba(57, 70, 112, 0.07);
-}
-
-/* ===== Section Title ===== */
-.detail-section-title {
-  display: flex;
-  flex-direction: row;
-  align-items: flex-end;
-  justify-content: space-between;
-  gap: 12px;
-  margin-bottom: 16px;
-  padding-bottom: 14px;
-  border-bottom: 1px solid #edf0f6;
-}
-
-.title-left {
+.profile-copy {
   min-width: 0;
   flex: 1;
+  margin-left: 28rpx;
 }
 
-.eyebrow {
-  color: #6658f5;
-  font-size: 10px;
+.name-row {
+  display: flex;
+  align-items: center;
+  gap: 16rpx;
+}
+
+.agent-name {
+  font-size: 38rpx;
   font-weight: 800;
-  display: block;
+  color: #243142;
 }
 
-.section-h2 {
-  margin-top: 4px;
-  font-size: 19px;
-  font-weight: 800;
-  color: #202a42;
-  display: block;
+.online {
+  padding: 7rpx 13rpx;
+  border-radius: 10rpx;
+  color: #18a974;
+  background: #edf8f4;
+  font-size: 22rpx;
 }
 
-.section-sub {
-  color: #75829c;
-  font-size: 11px;
-  display: block;
-  margin-top: 4px;
+.agent-desc {
+  margin-top: 14rpx;
+  color: #7e899b;
+  font-size: 27rpx;
 }
 
-.section-hint {
-  flex-shrink: 0;
-  padding: 5px 8px;
-  border-radius: 999px;
-  background: #f5f6fa;
-  color: #8d98ae;
-  font-size: 10px;
+.tags {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 16rpx;
 }
 
-/* ===== Sample Video Module ===== */
-.sample-module-card {
-  padding: 14px;
+.tags text {
+  padding: 8rpx 18rpx;
+  border-radius: 10rpx;
+  color: #3c79e5;
+  background: #edf4ff;
+  font-size: 23rpx;
 }
 
-.sample-video-scroll {
-  white-space: nowrap;
-  padding: 1px 1px 9px;
+/* ===== Sample Videos ===== */
+.samples {
+  margin-top: 20rpx;
+  padding: 24rpx;
 }
 
-.sample-video-card {
-  display: inline-flex;
-  flex-direction: column;
-  width: 138px;
-  padding: 8px;
-  border-radius: 20px;
-  background: #fbfcff;
-  border: 1px solid #e8ecf4;
-  margin-right: 12px;
-  vertical-align: top;
+.sample-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 32rpx;
+  font-weight: 750;
+  color: #243142;
 }
 
-.sample-square {
-  width: 100%;
-  aspect-ratio: 1;
+.more {
+  color: #8b96a8;
+  font-size: 25rpx;
+  font-weight: 400;
+}
+
+.sample-list {
+  display: flex;
+  gap: 14rpx;
+  margin-top: 20rpx;
+}
+
+.sample {
+  width: 33.33%;
+  height: 160rpx;
   position: relative;
   overflow: hidden;
-  border-radius: 15px;
-  background: #eef2fb;
-  border: 1px solid rgba(226, 231, 241, 0.9);
+  border-radius: 22rpx;
+  background: #eaf2ff;
 }
 
-.sample-cover {
+.sample image {
   width: 100%;
   height: 100%;
 }
 
-.play-overlay {
-  position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  width: 40px;
-  height: 40px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(255, 255, 255, 0.9);
-  box-shadow: 0 8px 22px rgba(31, 42, 67, 0.18);
+.sample-placeholder {
+  width: 100%;
+  height: 100%;
 }
 
-.play-icon {
-  color: #6658f5;
-  font-size: 16px;
-}
-
-/* Sample Art */
-.sample-art {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  text-align: center;
-  color: #fff;
-  background: linear-gradient(145deg, #7164f6, #a692ff);
-}
-
-.sample-purple .sample-art {
+.sample-placeholder.sample-purple {
   background: linear-gradient(145deg, #6a5af2, #a176f8);
 }
 
-.sample-blue .sample-art {
+.sample-placeholder.sample-blue {
   background: linear-gradient(145deg, #4f8df7, #77c2ff);
 }
 
-.sample-orange .sample-art {
+.sample-placeholder.sample-orange {
   background: linear-gradient(145deg, #ff9b5e, #ff6f6f);
 }
 
-.sample-art-text {
-  position: relative;
-  z-index: 1;
-}
-
-.sample-art-icon-box {
-  position: relative;
-  z-index: 1;
-}
-
-.sample-art-icon {
-  font-size: 40px;
-}
-
-.sample-title {
-  display: block;
-  margin: 10px 3px 3px;
-  font-size: 13px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  color: #202a42;
-}
-
-.sample-meta {
-  display: block;
-  margin: 0 3px 3px;
-  color: #75829c;
-  font-size: 10px;
-}
-
-/* ===== Conversation List ===== */
-.conversation-list {
-  display: flex;
-  flex-direction: column;
-  gap: 14px;
-}
-
-/* ===== Chat Row ===== */
-.chat-row {
-  display: flex;
-  align-items: flex-start;
-  gap: 9px;
-  padding: 12px;
-  border-radius: 18px;
-  background: #f8f9fc;
-  border: 1px solid #edf0f6;
-}
-
-.user-row {
-  justify-content: flex-end;
-  background: #f7f4ff;
-  border-color: #e7e1ff;
-}
-
-/* ===== Chat Avatar ===== */
-.chat-avatar {
-  flex-shrink: 0;
-  width: 38px;
-  height: 38px;
-  border-radius: 14px;
+.sample .play {
+  position: absolute;
+  inset: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: #efedff;
+  color: white;
+  font-size: 38rpx;
+  text-shadow: 0 3rpx 10rpx rgba(0, 0, 0, .45);
 }
 
-.avatar-text {
-  color: #6658f5;
-  font-size: 12px;
-  font-weight: 800;
+/* ===== Chat Messages ===== */
+.chat {
+  margin-top: 20rpx;
+  padding: 26rpx 20rpx;
+}
+
+.time {
+  display: block;
+  text-align: center;
+  color: #8e98a8;
+  font-size: 23rpx;
+}
+
+.message-row {
+  margin: 26rpx 0;
+  display: flex;
+  align-items: flex-start;
+}
+
+.message-row.user {
+  justify-content: flex-end;
+}
+
+.avatar,
+.user-avatar {
+  width: 62rpx;
+  height: 62rpx;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #eaf2ff;
 }
 
 .user-avatar {
-  background: linear-gradient(135deg, #6658f5, #8377fb);
-}
-
-.user-avatar .avatar-text {
-  color: #fff;
-}
-
-/* ===== Chat Bubble ===== */
-.chat-bubble {
-  max-width: calc(100% - 49px);
-  flex: 1;
-}
-
-.chat-label {
-  margin-bottom: 8px;
-}
-
-.label-text {
-  color: #75829c;
-  font-size: 10px;
-  font-weight: 700;
-}
-
-.chat-content {
-  margin-bottom: 10px;
-  font-size: 13px;
-  line-height: 1.72;
-  color: #34405a;
-  white-space: pre-wrap;
-  word-break: break-word;
-}
-
-/* ===== Copy Button ===== */
-.copy-message {
-  width: max-content;
-  min-height: 30px;
-  margin-top: 10px;
-  padding: 0 10px;
-  border-radius: 10px;
   display: flex;
   align-items: center;
-  gap: 4px;
-  background: #f1efff;
-  border: 1px solid rgba(102, 88, 245, 0.12);
+  justify-content: center;
+  color: white;
+  background: #347bed;
+  font-size: 22rpx;
 }
 
-.copy-text {
-  color: #6658f5;
-  font-size: 10px;
-  font-weight: 700;
+.message-body {
+  max-width: 78%;
+  margin: 0 14rpx;
 }
 
-.user-row .copy-message {
-  margin-left: auto;
+.bubble {
+  padding: 20rpx 23rpx;
+  border: 1rpx solid #e5ebf4;
+  border-radius: 10rpx 27rpx 27rpx 27rpx;
+  color: #243142;
+  background: white;
+  white-space: pre-wrap;
+  font-size: 27rpx;
+  line-height: 1.6;
+  box-shadow: 0 8rpx 20rpx rgba(50, 76, 111, .08);
 }
 
-/* ===== Typing Dots ===== */
-.typing-dots {
+.user .bubble {
+  color: white;
+  border: 0;
+  border-radius: 27rpx 10rpx 27rpx 27rpx;
+  background: linear-gradient(135deg, #3b91ff, #2269ef);
+}
+
+.reply-actions {
   display: flex;
-  gap: 4px;
-  padding: 4px 0;
+  gap: 12rpx;
+  margin-top: 10rpx;
 }
 
-.dot {
-  width: 6px;
-  height: 6px;
+.reply-actions button {
+  margin: 0;
+  height: 54rpx;
+  padding: 0 18rpx;
+  display: flex;
+  align-items: center;
+  border: 1rpx solid #dfe7f2;
+  border-radius: 27rpx;
+  color: #718098;
+  background: rgba(255, 255, 255, .9);
+  font-size: 23rpx;
+}
+
+.reply-actions button::after {
+  border: none;
+}
+
+.reply-actions button.favorited {
+  color: #e69b23;
+  border-color: #f3d39b;
+  background: #fff8e9;
+}
+
+/* ===== Typing Indicator ===== */
+.typing {
+  margin-left: 14rpx;
+  padding: 22rpx;
+  display: flex;
+  gap: 8rpx;
+  border-radius: 10rpx 26rpx 26rpx 26rpx;
+  background: white;
+}
+
+.typing text {
+  width: 10rpx;
+  height: 10rpx;
   border-radius: 50%;
-  background: #75829c;
+  background: #6e8fbd;
   animation: typing-bounce 1.2s infinite;
 }
 
-.dot:nth-child(2) {
+.typing text:nth-child(2) {
   animation-delay: 0.2s;
 }
 
-.dot:nth-child(3) {
+.typing text:nth-child(3) {
   animation-delay: 0.4s;
 }
 
@@ -847,60 +678,76 @@ async function handlePaid(_data: { compute_balance: number }) {
   }
 }
 
+.msg-end {
+  height: 8rpx;
+}
+
 /* ===== Composer ===== */
-.agent-composer {
+.composer {
   flex-shrink: 0;
-  z-index: 40;
-  min-height: 78px;
-  padding: 10px 14px;
-  padding-top: 10px;
+  z-index: 20;
+  margin: 0 -24rpx;
+  min-height: 116rpx;
+  padding: 12rpx 24rpx;
+  padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
   display: flex;
-  flex-direction: row;
   align-items: flex-end;
-  gap: 9px;
   background: rgba(255, 255, 255, 0.96);
   border-top: 1px solid #dfe5f0;
-  box-shadow: 0 -12px 32px rgba(40, 52, 89, 0.1);
+  box-shadow: 0 -12rpx 32rpx rgba(40, 52, 89, 0.1);
 }
 
-.composer-input-wrap {
-  flex: 1;
-  min-height: 44px;
-  max-height: 122px;
-  padding: 10px 13px;
-  border-radius: 16px;
-  background: #f3f5fa;
-  border: 1px solid #e7ebf3;
-  overflow: hidden;
-}
-
-.composer-textarea {
-  width: 100%;
-  min-height: 22px;
-  max-height: 100px;
-  font-size: 13px;
-  line-height: 1.55;
-  color: #202a42;
-}
-
-.composer-send {
-  width: 42px;
-  height: 42px;
-  border-radius: 14px;
+.voice {
+  width: 64rpx;
+  height: 70rpx;
+  padding: 0;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: linear-gradient(135deg, #6658f5, #8377fb);
-  box-shadow: 0 8px 18px rgba(102, 88, 245, 0.22);
+  color: #26374d;
+  background: transparent;
+  font-size: 36rpx;
+}
+
+.voice::after {
+  border: none;
+}
+
+.chat-input {
+  flex: 1;
+  width: auto;
+  min-height: 70rpx;
+  max-height: 190rpx;
+  padding: 16rpx 20rpx;
+  border-radius: 32rpx;
+  color: #1b2a3d;
+  background: #f3f6fa;
+  font-size: 27rpx;
+  line-height: 39rpx;
+  overflow-y: auto;
+}
+
+.send {
+  width: 108rpx;
+  height: 70rpx;
+  margin: 0 0 0 8rpx;
+  padding: 0;
   flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 35rpx;
+  color: white;
+  background: #a9c9fa;
+  font-size: 27rpx;
 }
 
-.send-icon {
-  color: #fff;
-  font-size: 18px;
+.send::after {
+  border: none;
 }
 
-.composer-send.disabled {
-  opacity: 0.5;
+.send.ready {
+  background: linear-gradient(135deg, #3e93ff, #2168ef);
 }
 </style>

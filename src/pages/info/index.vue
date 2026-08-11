@@ -37,69 +37,48 @@
   </view>
 
   <!-- ===== 紫色模板（模板1） ===== -->
-  <view v-else class="info-page">
-    <view class="page-header">
-      <text class="eyebrow">内容中心</text>
-      <text class="page-title">信息</text>
-      <text class="page-desc">查看平台动态、运营指南与实用技巧</text>
+  <view v-else class="page-shell info-page">
+    <!-- 搜索栏 -->
+    <view class="search-bar surface">
+      <text class="search-icon">⌕</text>
+      <input v-model.trim="keyword" type="text" confirm-type="search" placeholder="搜索资讯、文章、动态" @input="onSearch" />
+      <button v-if="keyword" class="clear-btn" @tap="keyword = ''; onSearch()">×</button>
     </view>
 
-    <view class="search-field" :class="{ 'has-value': keyword }">
-      <image class="ui-icon search-ico" src="/static/icons/common/search.png" mode="aspectFit" />
-      <input v-model.trim="keyword" type="text" confirm-type="search" placeholder="搜索信息" @input="onSearch" />
-      <view v-if="keyword" class="search-clear" @click="keyword = ''; onSearch()"><text>×</text></view>
-    </view>
-
-    <scroll-view scroll-x class="chip-scroll" :show-scrollbar="false">
-      <view v-for="item in categories" :key="item" class="chip" :class="{ active: currentCategory === item }"
-        @click="switchCategory(item)"><text>{{ item }}</text></view>
+    <!-- 分类（纵向图标 + 文字） -->
+    <scroll-view class="categories surface" scroll-x :show-scrollbar="false">
+      <button v-for="item in categories" :key="item" :class="{ active: currentCategory === item }" @tap="switchCategory(item)">
+        <!-- <text class="category-icon">{{ categoryIcon(item) }}</text> -->
+        <text>{{ item }}</text>
+      </button>
     </scroll-view>
 
-    <view class="section-heading">
-      <view>
-        <text class="eyebrow">精选内容</text>
-        <text class="heading-title">实用信息，一看就懂</text>
-      </view>
-    </view>
-
-    <view class="article-list" v-if="infoList.length">
-      <view class="article-card" :class="{ locked: item.locked }" v-for="item in infoList" :key="item.id"
-        @click="goDetail(item)">
+    <!-- 资讯列表 -->
+    <view v-if="infoList.length">
+      <view v-for="item in infoList" :key="item.id" class="article-card surface" @tap="goDetail(item)">
+        <view class="article-copy">
+          <view class="article-title ellipsis">{{ item.title }}</view>
+          <view class="article-sub ellipsis">{{ item.summary || '点击查看详情' }}</view>
+          <view class="article-meta">
+            <text v-if="item.category" class="article-tag">{{ item.category }}</text>
+            <text v-if="item.locked" class="lock-tag">🔒 {{ item.require_level }}</text>
+            <text class="article-date">▣ {{ (item.created_at || item.publish_date || '').slice(0, 10) }}</text>
+          </view>
+        </view>
         <view class="article-cover">
           <image v-if="item.cover_url" :src="item.cover_url" mode="aspectFill" />
           <view v-else class="cover-placeholder"></view>
-          <view class="cover-lock-overlay" v-if="item.locked">
+          <view v-if="item.locked" class="cover-lock-overlay">
             <view class="lock-badge">
               <text class="lock-emoji">🔒</text>
               <text class="lock-text">{{ item.require_level }}可读</text>
             </view>
           </view>
         </view>
-        <view class="article-copy">
-          <view>
-            <text class="micro-tag" v-if="item.category">{{ item.category }}</text>
-            <text class="lock-tag" v-if="item.locked">🔒 {{ item.require_level }}</text>
-            <text class="article-title">{{ item.title }}</text>
-            <text class="article-summary">{{ item.summary || '点击查看详情' }}</text>
-          </view>
-          <view class="article-meta">
-            <view v-if="item.locked" class="detail-btn locked-btn">
-              <text>升级解锁</text>
-            </view>
-            <view v-else class="detail-btn">
-              <text>查看详情</text>
-              <image class="ui-icon" src="/static/icons/common/chevron-purple.png" mode="aspectFit" />
-            </view>
-          </view>
-        </view>
       </view>
     </view>
 
-    <view class="empty-state" v-if="!infoList.length">
-      <image class="ui-icon empty-icon" src="/static/icons/common/news-empty.png" mode="aspectFit" />
-      <text class="empty-title">没有找到相关信息</text>
-      <text class="empty-desc">试试其他关键词</text>
-    </view>
+    <view v-else class="empty surface">没有找到相关资讯</view>
   </view>
 </template>
 
@@ -125,6 +104,18 @@ const categories = ref<string[]>(['全部'])
 const currentCategory = ref('全部')
 const keyword = ref('')
 const infoList = ref<any[]>([])
+
+/** 分类图标映射（参考 discover.vue 风格） */
+function categoryIcon(name: string): string {
+  const map: Record<string, string> = {
+    全部: '▦',
+    行业动态: '✈',
+    政策解读: '♨',
+    技术干货: '▣',
+    热门活动: '⌂',
+  }
+  return map[name] || '▣'
+}
 
 async function fetchCategories() {
   try {
@@ -174,306 +165,51 @@ onMounted(() => {
 </script>
 
 <style scoped lang="scss">
-/* ===== 紫色模板 ===== */
-.info-page {
-  padding: 12px 18px 0;
-}
+/* ===== 紫色模板（对齐 discover 风格） ===== */
+.info-page { padding: 18rpx 24rpx 0; box-sizing: border-box; }
 
-.ui-icon {
-  display: block;
-  flex: 0 0 auto;
-}
+/* surface 卡片通用背景 */
+.surface { background: white; border-radius: 28rpx; box-shadow: 0 10rpx 30rpx rgba(39, 54, 75, 0.06); }
 
-.page-header {
-  padding: 18px 2px 16px;
-}
+/* 搜索栏 */
+.search-bar { height: 108rpx; padding: 12rpx 16rpx 12rpx 26rpx; display: flex; align-items: center; margin-bottom: 20rpx; }
+.search-icon { color: #58708e; font-size: 42rpx; }
+.search-bar input { flex: 1; min-width: 0; padding: 0 18rpx; font-size: 27rpx; }
+.clear-btn { width: 70rpx; height: 70rpx; line-height: 66rpx; padding: 0; border-radius: 22rpx; color: white; background: #3479ed; font-size: 38rpx; }
+.clear-btn::after { border: none; }
 
-.eyebrow {
-  display: block;
-  color: #6658f5;
-  font-size: 11px;
-  font-weight: 800;
-  letter-spacing: 0.7px;
-  margin-bottom: 5px;
-}
+/* 分类（纵向图标 + 文字） */
+.categories { margin-bottom: 20rpx; padding: 10rpx 8rpx; white-space: nowrap; }
+.categories button { width: 112rpx; height: 110rpx; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; margin: 0; padding: 0; color: #8190a7; background: transparent; font-size: 24rpx; border-radius: 20rpx; }
+.categories button::after { border: none; }
+.categories button.active { color: #2f76ef; background: #edf3ff; }
+.category-icon { margin-bottom: 8rpx; font-size: 38rpx; }
 
-.page-title {
-  display: block;
-  font-size: 29px;
-  line-height: 1.15;
-  margin-bottom: 7px;
-  color: #202a42;
-  font-weight: 800;
-}
+/* 资讯卡片（横向：左文字 右封面） */
+.article-card { min-height: 210rpx; margin-bottom: 20rpx; padding: 22rpx; display: flex; align-items: center; }
+.article-copy { width: 52%; padding: 6rpx 12rpx 6rpx 4rpx; }
+.article-title { font-size: 32rpx; font-weight: 750; }
+.article-sub { margin-top: 14rpx; color: #8590a5; font-size: 26rpx; }
+.article-meta { margin-top: 20rpx; display: flex; align-items: center; flex-wrap: wrap; gap: 10rpx; }
+.article-tag { padding: 4rpx 12rpx; border-radius: 8rpx; color: #2f76ef; background: #edf3ff; font-size: 20rpx; }
+.lock-tag { padding: 4rpx 12rpx; border-radius: 8rpx; color: #b45309; background: #fef3c7; font-size: 20rpx; }
+.article-date { color: #8794aa; font-size: 24rpx; }
 
-.page-desc {
-  display: block;
-  font-size: 13px;
-  color: #75829c;
-}
+.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 
-.search-field {
-  height: 52px;
-  border: 1px solid #e5eaf4;
-  background: rgba(255, 255, 255, 0.95);
-  border-radius: 17px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 0 13px;
-  box-shadow: 0 8px 20px rgba(58, 69, 110, 0.04);
-  margin-bottom: 16px;
-}
+/* 封面图 */
+.article-cover { width: 48%; height: 170rpx; position: relative; overflow: hidden; border-radius: 23rpx; background: linear-gradient(145deg, #edf0ff, #f8efff); }
+.article-cover image { width: 100%; height: 100%; }
+.cover-placeholder { width: 100%; height: 100%; }
 
-.search-ico {
-  width: 19px;
-  height: 19px;
-  flex-shrink: 0;
-}
+/* 锁定遮罩 */
+.cover-lock-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(20, 25, 45, 0.45); }
+.lock-badge { display: flex; flex-direction: column; align-items: center; gap: 4rpx; background: rgba(255, 255, 255, 0.92); border-radius: 12rpx; padding: 8rpx 16rpx; }
+.lock-emoji { font-size: 30rpx; }
+.lock-text { font-size: 20rpx; font-weight: 700; color: #6b5a1e; }
 
-.search-field input {
-  flex: 1;
-  font-size: 14px;
-  min-width: 0;
-}
-
-.search-clear {
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  color: #a2abc0;
-  flex-shrink: 0;
-}
-
-.chip-scroll {
-  white-space: nowrap;
-  padding: 1px 1px 8px;
-  margin-bottom: 8px;
-}
-
-.chip {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 66px;
-  height: 36px;
-  padding: 0 15px;
-  border-radius: 999px;
-  background: #fff;
-  color: #75829c;
-  border: 1px solid #e5eaf4;
-  font-size: 13px;
-  margin-right: 9px;
-}
-
-.chip.active {
-  background: #6658f5;
-  color: #fff;
-  border-color: #6658f5;
-  box-shadow: 0 8px 18px rgba(102, 88, 245, 0.24);
-}
-
-.section-heading {
-  display: flex;
-  justify-content: space-between;
-  align-items: flex-end;
-  margin: 24px 0 14px;
-}
-
-.heading-title {
-  font-size: 19px;
-  font-weight: 800;
-  color: #202a42;
-}
-
-.article-list {
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-}
-
-.article-card {
-  display: flex;
-  gap: 13px;
-  min-height: 128px;
-  padding: 10px;
-  background: #fff;
-  border-radius: 22px;
-  border: 1px solid #e5eaf4;
-  box-shadow: 0 8px 24px rgba(57, 70, 112, 0.07);
-}
-
-.article-card.locked .article-cover {
-  position: relative;
-}
-
-.article-card.locked .article-cover image {
-  opacity: 0.6;
-}
-
-.cover-lock-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  background: rgba(20, 25, 45, 0.45);
-  border-radius: 16px;
-}
-
-.lock-badge {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  background: rgba(255, 255, 255, 0.92);
-  border-radius: 12px;
-  padding: 8px 12px;
-}
-
-.lock-emoji {
-  font-size: 22px;
-}
-
-.lock-text {
-  font-size: 10px;
-  font-weight: 700;
-  color: #6b5a1e;
-}
-
-.lock-tag {
-  align-self: flex-start;
-  padding: 4px 8px;
-  border-radius: 999px;
-  color: #b45309;
-  background: #fef3c7;
-  font-size: 10px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.article-cover {
-  width: 112px;
-  height: 112px;
-  border-radius: 16px;
-  overflow: hidden;
-  background: linear-gradient(145deg, #edf0ff, #f8efff);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-}
-
-.article-cover image {
-  width: 100%;
-  height: 100%;
-}
-
-.cover-placeholder {
-  width: 100%;
-  height: 100%;
-}
-
-.article-copy {
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  min-width: 0;
-  padding: 4px 2px;
-  flex: 1;
-}
-
-.micro-tag {
-  align-self: flex-start;
-  padding: 4px 7px;
-  border-radius: 999px;
-  color: #6658f5;
-  background: #efedff;
-  font-size: 10px;
-  font-weight: 700;
-  margin-bottom: 4px;
-}
-
-.article-title {
-  font-size: 16px;
-  margin: 7px 0 5px;
-  color: #202a42;
-  font-weight: 600;
-  display: block;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.article-summary {
-  font-size: 11px;
-  color: #75829c;
-  line-height: 1.5;
-  display: block;
-  overflow: hidden;
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-}
-
-.article-meta {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-top: 8px;
-}
-
-.detail-btn {
-  display: flex;
-  align-items: center;
-  color: #6658f5;
-  font-size: 11px;
-}
-
-.detail-btn .ui-icon {
-  width: 13px;
-  height: 13px;
-  margin-left: 3px;
-}
-
-.locked-btn {
-  color: #f59e0b !important;
-}
-
-.empty-state {
-  min-height: 220px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-direction: column;
-  text-align: center;
-  color: #75829c;
-}
-
-.empty-icon {
-  width: 42px;
-  height: 42px;
-  margin-bottom: 12px;
-}
-
-.empty-title {
-  font-size: 14px;
-  color: #69758e;
-  font-weight: 600;
-}
-
-.empty-desc {
-  font-size: 11px;
-  margin-top: 6px;
-}
+/* 空状态 */
+.empty { padding: 70rpx; text-align: center; color: #8b97a9; }
 
 /* ===== 金色模板 F-2 ===== */
 .gold-info {

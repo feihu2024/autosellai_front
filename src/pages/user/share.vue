@@ -1,11 +1,5 @@
 <template>
-  <view class="share-page">
-    <!-- 装饰元素 -->
-    <view class="decor decor--top"></view>
-    <view class="decor decor--left"></view>
-    <view class="dot-cloud dot-cloud--left"></view>
-    <view class="dot-cloud dot-cloud--right"></view>
-
+  <view class="poster-page">
     <!-- 顶部导航 -->
     <view class="nav-bar">
       <view class="icon-button back-button" @click="goBack">
@@ -14,30 +8,48 @@
       <text class="nav-title">分享海报</text>
     </view>
 
-    <!-- 海报展示区 -->
-    <view class="poster-stage" v-if="posters.length > 0">
-      <view class="poster-frame" @touchstart="onTouchStart" @touchend="onTouchEnd">
-        <view v-for="(poster, idx) in posters" :key="poster.id || idx" class="poster-card" :class="{
-          'is-active': currentIdx === idx,
-          'is-before': idx < currentIdx,
-        }">
+    <!-- 标题 -->
+    <view class="poster-heading">
+      <text>SHARE POSTER</text>
+      <view>为此刻挑一张海报</view>
+      <text class="subtitle">左右滑动，选择你喜欢的风格</text>
+    </view>
+
+    <!-- 海报轮播（coverflow 风格） -->
+    <swiper
+      v-if="posters.length > 0"
+      class="coverflow"
+      :current="currentIdx"
+      circular
+      previous-margin="112rpx"
+      next-margin="112rpx"
+      @change="onSwiperChange"
+    >
+      <swiper-item v-for="(poster, index) in posters" :key="poster.id || index">
+        <view :class="['poster-card', { active: currentIdx === index }]">
           <template v-if="poster.image_url">
-            <image :src="poster.image_url" class="poster-bg-img" mode="aspectFill" />
+            <image :src="poster.image_url" mode="aspectFill" />
+            <view class="shade"></view>
             <view class="qr-overlay" :style="qrStyle(poster)">
-              <image v-if="qrImages[idx]" :src="qrImages[idx]" class="qr-img" mode="aspectFit" />
+              <image v-if="qrImages[index]" :src="qrImages[index]" class="qr-img" mode="aspectFit" />
+            </view>
+            <view class="poster-copy">
+              <text>0{{ index + 1 }}</text>
+              <view>{{ poster.share_title || '邀请你一起体验' }}</view>
+              <text>扫码一起体验</text>
             </view>
           </template>
           <view v-else class="poster-empty">
-            <text class="empty-icon-big">📱</text>
+            <text class="empty-icon-big">📭</text>
             <text class="empty-small">该海报暂无背景图</text>
           </view>
         </view>
-      </view>
-    </view>
+      </swiper-item>
+    </swiper>
 
     <!-- 无海报空状态 -->
-    <view class="poster-stage" v-else>
-      <view class="poster-frame">
+    <view v-else class="empty-stage">
+      <view class="poster-card empty-card">
         <view class="poster-empty">
           <text class="empty-icon-big">📭</text>
           <text class="empty-small">暂无分享海报</text>
@@ -46,60 +58,35 @@
       </view>
     </view>
 
-    <!-- 缩略图轮播区 -->
-    <view class="carousel-area" v-if="posters.length > 0">
-      <view class="carousel-arrow carousel-arrow--left" @click="prevPoster" v-if="posters.length > 1">
-        <view class="arrow-left"></view>
-      </view>
+    <!-- 圆点指示器 -->
+    <view class="dots" v-if="posters.length > 1">
+      <text v-for="(_, index) in posters" :key="index" :class="{ active: currentIdx === index }"></text>
+    </view>
 
-      <view class="thumbnail-list" v-if="posters.length > 1">
-        <view v-for="(poster, idx) in posters" :key="idx" class="thumbnail" :class="{ 'is-active': currentIdx === idx }"
-          @click="goToPoster(idx)">
-          <image v-if="poster.image_url" :src="poster.image_url" class="thumb-img" mode="aspectFill" />
-          <text v-else class="thumb-placeholder">📱</text>
-          <view class="selected-mark" v-if="currentIdx === idx"></view>
-        </view>
-      </view>
-
-      <view class="carousel-arrow carousel-arrow--right" @click="nextPoster" v-if="posters.length > 1">
-        <view class="arrow-right"></view>
-      </view>
-
-      <view class="pagination" v-if="posters.length > 1">
-        <view v-for="(poster, idx) in posters" :key="idx" class="page-dot" :class="{ 'is-active': currentIdx === idx }"
-          @click="goToPoster(idx)"></view>
-      </view>
-      <view class="swipe-hint" v-if="posters.length > 1">
-        <text class="swipe-arrow">‹</text>
-        <text class="swipe-text">左右滑动切换海报</text>
-        <text class="swipe-arrow">›</text>
-      </view>
+    <!-- 当前海报名称 -->
+    <view class="current-name" v-if="posters.length > 0">
+      {{ currentPoster.share_title || '邀请你一起体验' }}
+      <text v-if="currentPoster.share_desc"> · {{ currentPoster.share_desc }}</text>
     </view>
 
     <!-- 分享操作面板 -->
-    <view class="share-panel" v-if="posters.length > 0">
-      <view class="share-action save-action" @click="handleSaveAlbum">
-        <view class="share-icon download-icon"></view>
-        <text class="action-label">保存相册</text>
-      </view>
-      <!-- 微信小程序：open-type="share" 触发真实转发 -->
+    <view class="poster-actions surface" v-if="posters.length > 0">
+      <button class="save" @click="handleSaveAlbum">
+        <text class="action-emoji">💾</text>保存相册
+      </button>
       <!-- #ifdef MP-WEIXIN -->
-      <button class="share-action share-btn-reset" open-type="share" hover-class="none">
-        <view class="share-icon wechat-icon"></view>
-        <text class="action-label">微信好友</text>
+      <button class="friend" open-type="share" hover-class="none">
+        <text class="action-emoji">💬</text>分享好友
       </button>
       <!-- #endif -->
-      <!-- H5：降级为预览卡片 -->
       <!-- #ifndef MP-WEIXIN -->
-      <view class="share-action" @click="handleShareFriend">
-        <view class="share-icon wechat-icon"></view>
-        <text class="action-label">微信好友</text>
-      </view>
+      <button class="friend" @click="handleShareFriend">
+        <text class="action-emoji">💬</text>分享好友
+      </button>
       <!-- #endif -->
-      <view class="share-action" @click="handleShareMoments">
-        <view class="share-icon moments-icon"></view>
-        <text class="action-label">朋友圈</text>
-      </view>
+      <button class="moments" @click="handleShareMoments">
+        <text class="action-emoji">🌐</text>朋友圈
+      </button>
     </view>
 
     <!-- Toast 提示 -->
@@ -299,40 +286,9 @@ watch(posters, async () => {
   }
 }, { flush: 'post' })
 
-// 切换海报
-function prevPoster() {
-  if (currentIdx.value > 0) currentIdx.value--
-}
-
-function nextPoster() {
-  if (currentIdx.value < posters.value.length - 1) currentIdx.value++
-}
-
-function goToPoster(idx: number) {
-  currentIdx.value = idx
-}
-
-// 触摸滑动
-let touchStartX = 0
-let touchStartY = 0
-
-function onTouchStart(e: any) {
-  const touch = e.changedTouches?.[0] || e.touches?.[0]
-  if (touch) {
-    touchStartX = touch.clientX
-    touchStartY = touch.clientY
-  }
-}
-
-function onTouchEnd(e: any) {
-  const touch = e.changedTouches?.[0] || e.touches?.[0]
-  if (!touch) return
-  const deltaX = touch.clientX - touchStartX
-  const deltaY = touch.clientY - touchStartY
-  if (Math.abs(deltaX) > 36 && Math.abs(deltaX) > Math.abs(deltaY)) {
-    if (deltaX < 0) nextPoster()
-    else prevPoster()
-  }
+// swiper 切换
+function onSwiperChange(e: any) {
+  currentIdx.value = e.detail.current
 }
 
 // 数据加载
@@ -395,665 +351,93 @@ function goBack() {
 </script>
 
 <style scoped lang="scss">
-.share-page {
-  position: relative;
-  min-height: 100vh;
-  overflow: hidden;
-  background:
-    radial-gradient(circle at 82% 16%, rgba(255, 231, 166, 0.26), transparent 16%),
-    linear-gradient(180deg, #fff 0%, #fffdfa 76%, #fff 100%);
-}
+.poster-page { min-height: 100vh; padding: 0 0 190rpx; color: #16263c; background: linear-gradient(180deg, #f7faff, #edf3fd); }
 
-/* 装饰元素 */
-.decor {
-  position: absolute;
-  z-index: 1;
-  background: radial-gradient(circle at 30% 30%, rgba(255, 226, 143, 0.55), rgba(255, 245, 214, 0.12));
-}
+/* ===== 导航栏 ===== */
+.nav-bar { position: relative; z-index: 4; display: flex; align-items: center; justify-content: center; height: 50px; }
+.nav-title { font-size: 17px; font-weight: 700; letter-spacing: 0.5px; color: #16263c; }
+.icon-button { position: absolute; left: 17px; display: flex; width: 28px; height: 28px; align-items: center; justify-content: center; }
+.back-arrow { width: 11px; height: 11px; border-bottom: 2.5px solid #111; border-left: 2.5px solid #111; border-radius: 1px; transform: rotate(45deg); }
 
-.decor--top {
-  top: 68px;
-  right: -23px;
-  width: 83px;
-  height: 65px;
-  border-radius: 0 0 0 100%;
-}
+/* ===== 标题 ===== */
+.poster-heading { padding: 18rpx 42rpx 0; }
+.poster-heading > text:first-child { color: #3878df; font-size: 20rpx; font-weight: 700; letter-spacing: 5rpx; }
+.poster-heading > view { margin-top: 16rpx; font-size: 46rpx; font-weight: 800; }
+.poster-heading .subtitle { display: block; margin-top: 12rpx; color: #7c899d; font-size: 27rpx; letter-spacing: 0; }
 
-.decor--left {
-  top: 284px;
-  left: -39px;
-  width: 82px;
-  height: 69px;
-  border-radius: 0 100% 100% 0;
-  opacity: 0.65;
-}
+/* ===== Coverflow 轮播 ===== */
+.coverflow { height: 742rpx; margin-top: 28rpx; }
+.poster-card { height: 668rpx; margin: 28rpx 18rpx 46rpx; position: relative; overflow: hidden; border-radius: 34rpx; transform: scale(.84); opacity: .58; transition: transform .3s, opacity .3s; box-shadow: 0 18rpx 50rpx rgba(30,59,96,.12); }
+.poster-card.active { transform: scale(.94); opacity: 1; box-shadow: 0 28rpx 64rpx rgba(24,54,94,.24); }
+.poster-card > image { width: 100%; height: 100%; }
+.shade { position: absolute; inset: 0; background: linear-gradient(180deg, rgba(6,22,40,.05) 45%, rgba(8,24,43,.76)); }
 
-.dot-cloud {
-  position: absolute;
-  z-index: 1;
-  width: 26px;
-  height: 26px;
-  opacity: 0.8;
-  background-image: radial-gradient(#ffcc45 1px, transparent 1px);
-  background-size: 4px 4px;
-  border-radius: 50%;
-}
-
-.dot-cloud--left {
-  top: 151px;
-  left: 32px;
-}
-
-.dot-cloud--right {
-  top: 273px;
-  right: 28px;
-}
-
-/* 导航栏 */
-.nav-bar {
-  position: relative;
-  z-index: 4;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 50px;
-}
-
-.nav-title {
-  font-size: 17px;
-  font-weight: 700;
-  letter-spacing: 0.5px;
-  color: #181818;
-}
-
-.icon-button {
-  position: absolute;
-  left: 17px;
-  display: flex;
-  width: 28px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-}
-
-.back-arrow {
-  width: 11px;
-  height: 11px;
-  border-bottom: 2.5px solid #111;
-  border-left: 2.5px solid #111;
-  border-radius: 1px;
-  transform: rotate(45deg);
-}
-
-/* 海报展示区 */
-.poster-stage {
-  position: relative;
-  z-index: 2;
-  display: flex;
-  justify-content: center;
-  height: 460px;
-  padding-top: 10px;
-}
-
-.poster-frame {
-  position: relative;
-  width: 226px;
-  height: 402px;
-  overflow: hidden;
-  border: 5px solid rgba(255, 255, 255, 0.98);
-  border-radius: 18px;
-  background: #fff;
-  box-shadow: 0 8px 20px rgba(124, 85, 9, 0.16), 0 0 12px rgba(79, 51, 0, 0.07);
-}
-
-.poster-card {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  opacity: 0;
-  transform: translateX(14%);
-  transition: opacity 0.36s ease, transform 0.42s cubic-bezier(0.22, 1, 0.36, 1);
-}
-
-.poster-card.is-active {
-  z-index: 1;
-  opacity: 1;
-  transform: translateX(0);
-}
-
-.poster-card.is-before {
-  transform: translateX(-14%);
-}
-
-.poster-bg-img {
-  width: 100%;
-  height: 100%;
-}
-
-.poster-empty {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-}
-
-.empty-icon-big {
-  font-size: 40px;
-  opacity: 0.4;
-}
-
-.empty-small {
-  font-size: 12px;
-  color: #94a3b8;
-  margin-top: 4px;
-}
+/* 海报文案 */
+.poster-copy { position: absolute; left: 34rpx; right: 34rpx; bottom: 38rpx; color: white; }
+.poster-copy > text:first-child { font-size: 22rpx; letter-spacing: 5rpx; opacity: .75; }
+.poster-copy > view { margin-top: 10rpx; font-size: 48rpx; font-weight: 800; letter-spacing: 5rpx; }
+.poster-copy > text:last-child { display: block; margin-top: 12rpx; font-size: 25rpx; letter-spacing: 2rpx; opacity: .88; }
 
 /* 二维码叠加 */
-.qr-overlay {
-  position: absolute;
-  z-index: 5;
-  border-radius: 6px;
-  background: #fff;
-  padding: 3px;
-  border: 1.5px solid #fff;
-  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.2);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  overflow: hidden;
-}
+.qr-overlay { position: absolute; z-index: 5; border-radius: 6px; background: #fff; padding: 3px; border: 1.5px solid #fff; box-shadow: 0 3px 12px rgba(0,0,0,.2); display: flex; align-items: center; justify-content: center; overflow: hidden; }
+.qr-img { width: 100%; height: 100%; }
 
-.qr-img {
-  width: 100%;
-  height: 100%;
-}
+/* 空状态 */
+.empty-stage { display: flex; justify-content: center; padding-top: 40rpx; }
+.empty-card { width: 60%; margin: 0; transform: none; opacity: 1; }
+.poster-empty { width: 100%; height: 100%; display: flex; flex-direction: column; align-items: center; justify-content: center; background: #fff; }
+.empty-icon-big { font-size: 40px; opacity: 0.4; }
+.empty-small { font-size: 12px; color: #94a3b8; margin-top: 4px; }
 
-/* 缩略图轮播区 */
-.carousel-area {
-  position: relative;
-  z-index: 3;
-  padding-top: 16px;
-  min-height: 140px;
-}
+/* ===== 圆点指示器 ===== */
+.dots { height: 24rpx; margin-top: 18rpx; display: flex; align-items: center; justify-content: center; gap: 12rpx; }
+.dots text { width: 10rpx; height: 10rpx; border-radius: 10rpx; background: #bdc9da; }
+.dots text.active { width: 34rpx; background: #2f76ec; }
 
-.thumbnail-list {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
+/* ===== 当前海报名称 ===== */
+.current-name { height: 44rpx; margin-top: 18rpx; padding: 0 28rpx; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; font-size: 30rpx; font-weight: 700; }
+.current-name text { color: #8591a4; font-size: 24rpx; font-weight: 400; }
 
-.thumbnail {
-  position: relative;
-  width: 62px;
-  height: 99px;
-  margin: 0 8px;
-  overflow: visible;
-  border: 2px solid #e1e4e9;
-  border-radius: 7px;
-  background: #fff;
-  box-shadow: 0 2px 4px rgba(30, 35, 45, 0.08);
-  transition: border-color 0.2s ease;
-}
+/* ===== 分享操作面板（底部固定） ===== */
+.surface { background: white; border-radius: 28rpx; box-shadow: 0 10rpx 30rpx rgba(39,54,75,.06); }
+.poster-actions { position: fixed; z-index: 20; left: 24rpx; right: 24rpx; bottom: calc(env(safe-area-inset-bottom) + 20rpx); padding: 13rpx; display: flex; gap: 12rpx; }
+.poster-actions button { flex: 1; height: 92rpx; padding: 0 8rpx; display: flex; align-items: center; justify-content: center; gap: 8rpx; border-radius: 24rpx; color: white; font-size: 23rpx; font-weight: 650; margin: 0; }
+.poster-actions button::after { border: none; }
+.action-emoji { font-size: 28rpx; }
+.save { background: linear-gradient(135deg, #242f48, #101829); }
+.friend { background: linear-gradient(135deg, #5a9dff, #2e6bec); }
+.moments { background: linear-gradient(135deg, #32d29f, #10a87a); }
 
-.thumbnail.is-active {
-  border-color: #f6b900;
-}
+/* ===== Toast ===== */
+.toast { position: fixed; z-index: 100; bottom: 140rpx; left: 50%; max-width: 580rpx; padding: 16rpx 28rpx; border-radius: 40rpx; background: rgba(25,25,25,.88); opacity: 0; transform: translate(-50%, 24rpx); transition: opacity .2s ease, transform .2s ease; }
+.toast.is-visible { opacity: 1; transform: translate(-50%, 0); }
+.toast-text { color: #fff; font-size: 26rpx; }
 
-.thumb-img {
-  width: 100%;
-  height: 100%;
-  border-radius: 4px;
-}
-
-.thumb-placeholder {
-  width: 100%;
-  height: 100%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 20px;
-  color: #94a3b8;
-}
-
-.selected-mark {
-  position: absolute;
-  top: -7px;
-  right: -8px;
-  width: 18px;
-  height: 18px;
-  border: 1.5px solid #fff;
-  border-radius: 50%;
-  background: #ffc400;
-  box-shadow: 0 1px 3px rgba(143, 105, 0, 0.22);
-}
-
-.carousel-arrow {
-  position: absolute;
-  top: 40px;
-  display: flex;
-  width: 26px;
-  height: 28px;
-  align-items: center;
-  justify-content: center;
-}
-
-.carousel-arrow--left {
-  left: 16px;
-}
-
-.carousel-arrow--right {
-  right: 16px;
-}
-
-.arrow-left {
-  width: 9px;
-  height: 9px;
-  border-bottom: 1.5px solid #686d75;
-  border-left: 1.5px solid #686d75;
-  transform: rotate(45deg);
-}
-
-.arrow-right {
-  width: 9px;
-  height: 9px;
-  border-bottom: 1.5px solid #686d75;
-  border-left: 1.5px solid #686d75;
-  transform: rotate(225deg);
-}
-
-.pagination {
-  display: flex;
-  justify-content: center;
-  padding-top: 2px;
-}
-
-.page-dot {
-  width: 6px;
-  height: 6px;
-  margin: 0 4px;
-  border-radius: 50%;
-  background: #c8c8c8;
-  transition: background 0.2s ease, transform 0.2s ease;
-}
-
-.page-dot.is-active {
-  background: #ffc000;
-  transform: scale(1.08);
-}
-
-.swipe-hint {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-top: 4px;
-}
-
-.swipe-arrow {
-  padding: 0 4px;
-  color: #a1a1a4;
-  font-size: 14px;
-}
-
-.swipe-text {
-  color: #85858a;
-  font-size: 11px;
-  letter-spacing: 0.5px;
-}
-
-/* 分享操作面板 */
-.share-panel {
-  position: relative;
-  z-index: 4;
-  display: flex;
-  width: calc(100% - 50px);
-  max-width: 325px;
-  height: 88px;
-  margin: 16px auto 0;
-  border-radius: 20px;
-  background: rgba(255, 255, 255, 0.96);
-  box-shadow: 0 5px 20px rgba(101, 75, 24, 0.13);
-}
-
-.share-action {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: center;
-}
-
-/* <button open-type="share"> 重置默认样式，与 .share-action 视觉一致 */
-.share-btn-reset {
-  position: relative;
-  flex: 1;
-  display: flex;
-  align-items: center;
-  flex-direction: column;
-  justify-content: center;
-  padding: 0;
-  margin: 0;
-  background: transparent;
-  border: none;
-  line-height: normal;
-}
-
-.share-btn-reset::after {
-  border: none;
-}
-
-.share-action+.share-action::before,
-.share-action+.share-btn-reset::before,
-.share-btn-reset+.share-action::before,
-.share-btn-reset+.share-btn-reset::before {
-  position: absolute;
-  top: 16px;
-  left: 0;
-  width: 1px;
-  height: 44px;
-  content: "";
-  background: #dedede;
-}
-
-.action-label {
-  margin-top: 6px;
-  font-size: 12px;
-  color: #181818;
-}
-
-/* CSS 图标 */
-.share-icon {
-  width: 38px;
-  height: 38px;
-  border-radius: 50%;
-}
-
-/* 下载图标 */
-.download-icon {
-  background: linear-gradient(145deg, #ffc900, #ffad00);
-  position: relative;
-}
-
-.download-icon::before {
-  position: absolute;
-  top: 11px;
-  left: 17px;
-  width: 4px;
-  height: 13px;
-  content: "";
-  border-radius: 1px;
-  background: #fff;
-}
-
-.download-icon::after {
-  position: absolute;
-  top: 18px;
-  left: 13px;
-  width: 9px;
-  height: 9px;
-  content: "";
-  border-bottom: 4px solid #fff;
-  border-right: 4px solid #fff;
-  transform: rotate(45deg);
-}
-
-/* 微信图标 */
-.wechat-icon {
-  background: linear-gradient(145deg, #3ed54a, #21b936);
-  position: relative;
-}
-
-/* 朋友圈图标 */
-.moments-icon {
-  border: 1px solid #e4e4e4;
-  background: #fff;
-  position: relative;
-  overflow: hidden;
-}
-
-.moments-icon::before {
-  position: absolute;
-  top: 6px;
-  left: 6px;
-  right: 6px;
-  bottom: 6px;
-  content: "";
-  border-radius: 50%;
-  background: conic-gradient(#8358dc 0 12.5%, #e94f72 12.5% 25%, #f28b24 25% 37.5%,
-      #f4cb2f 37.5% 50%, #63bf48 50% 62.5%, #25b2b9 62.5% 75%,
-      #3e80dc 75% 87.5%, #6a59c8 87.5% 100%);
-}
-
-.moments-icon::after {
-  position: absolute;
-  top: 13px;
-  left: 13px;
-  right: 13px;
-  bottom: 13px;
-  content: "";
-  border-radius: 50%;
-  background: #fff;
-}
-
-/* Toast */
-.toast {
-  position: fixed;
-  z-index: 20;
-  bottom: 30px;
-  left: 50%;
-  max-width: 290px;
-  padding: 8px 14px;
-  border-radius: 20px;
-  background: rgba(25, 25, 25, 0.88);
-  opacity: 0;
-  transform: translate(-50%, 12px);
-  transition: opacity 0.2s ease, transform 0.2s ease;
-}
-
-.toast.is-visible {
-  opacity: 1;
-  transform: translate(-50%, 0);
-}
-
-.toast-text {
-  color: #fff;
-  font-size: 13px;
-}
-
-/* 分享卡片预览弹窗 */
-.card-preview-mask {
-  position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.6);
-  z-index: 1000;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.card-preview-box {
-  position: relative;
-  width: 100%;
-  max-width: 320px;
-  background: #fff;
-  border-radius: 16px;
-  padding: 24px 20px 20px;
-}
-
-.card-close {
-  position: absolute;
-  top: 12px;
-  right: 12px;
-  width: 28px;
-  height: 28px;
-  border-radius: 50%;
-  background: #f1f5f9;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-close text {
-  color: #64748b;
-  font-size: 14px;
-}
-
-.preview-header {
-  text-align: center;
-  margin-bottom: 20px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.preview-badge {
-  font-size: 15px;
-  font-weight: 700;
-  color: #1e293b;
-  margin-bottom: 6px;
-}
-
-.preview-tip-text {
-  font-size: 12px;
-  color: #94a3b8;
-  line-height: 1.5;
-}
-
-.wechat-card {
-  background: #f7f7f7;
-  border-radius: 8px;
-  padding: 12px;
-  margin-bottom: 16px;
-}
-
-.card-row {
-  display: flex;
-  gap: 10px;
-  align-items: center;
-}
-
-.card-cover {
-  width: 64px;
-  height: 64px;
-  border-radius: 6px;
-  overflow: hidden;
-  background: #e2e8f0;
-  flex-shrink: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.cover-img {
-  width: 100%;
-  height: 100%;
-}
-
-.card-cover-placeholder {
-  font-size: 24px;
-  color: #94a3b8;
-}
-
-.card-text {
-  flex: 1;
-  min-width: 0;
-}
-
-.card-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1e293b;
-  margin-bottom: 4px;
-}
-
-.card-source {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.moments-card {
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-}
-
-.moments-cover {
-  width: 100%;
-  border-radius: 8px;
-  overflow: hidden;
-  background: #e2e8f0;
-  margin-bottom: 8px;
-}
-
-.cover-img-wide {
-  width: 100%;
-  height: 160px;
-}
-
-.moments-title {
-  font-size: 14px;
-  font-weight: 500;
-  color: #1e293b;
-  margin-bottom: 4px;
-}
-
-.moments-source {
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.share-params-info {
-  background: #f8fafc;
-  border-radius: 8px;
-  padding: 10px 12px;
-  margin-bottom: 16px;
-}
-
-.param-row {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 4px 0;
-}
-
-.param-label {
-  font-size: 12px;
-  color: #64748b;
-  flex-shrink: 0;
-}
-
-.param-value {
-  font-size: 12px;
-  color: #1e293b;
-  text-align: right;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-  margin-left: 12px;
-}
-
-.card-confirm-btn {
-  width: 100%;
-  height: 44px;
-  border-radius: 10px;
-  background: #6366f1;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.card-confirm-btn text {
-  color: #fff;
-  font-size: 15px;
-  font-weight: 600;
-}
+/* ===== 分享卡片预览弹窗 ===== */
+.card-preview-mask { position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,.6); z-index: 1000; display: flex; align-items: center; justify-content: center; padding: 48rpx; }
+.card-preview-box { position: relative; width: 100%; max-width: 640rpx; background: #fff; border-radius: 32rpx; padding: 48rpx 40rpx 40rpx; }
+.card-close { position: absolute; top: 24rpx; right: 24rpx; width: 56rpx; height: 56rpx; border-radius: 50%; background: #f1f5f9; display: flex; align-items: center; justify-content: center; }
+.card-close text { color: #64748b; font-size: 28rpx; }
+.preview-header { text-align: center; margin-bottom: 40rpx; display: flex; flex-direction: column; align-items: center; }
+.preview-badge { font-size: 30rpx; font-weight: 700; color: #1e293b; margin-bottom: 12rpx; }
+.preview-tip-text { font-size: 24rpx; color: #94a3b8; line-height: 1.5; }
+.wechat-card { background: #f7f7f7; border-radius: 16rpx; padding: 24rpx; margin-bottom: 32rpx; }
+.card-row { display: flex; gap: 20rpx; align-items: center; }
+.card-cover { width: 128rpx; height: 128rpx; border-radius: 12rpx; overflow: hidden; background: #e2e8f0; flex-shrink: 0; display: flex; align-items: center; justify-content: center; }
+.cover-img { width: 100%; height: 100%; }
+.card-cover-placeholder { font-size: 48rpx; color: #94a3b8; }
+.card-text { flex: 1; min-width: 0; }
+.card-title { font-size: 28rpx; font-weight: 500; color: #1e293b; margin-bottom: 8rpx; }
+.card-source { font-size: 24rpx; color: #94a3b8; }
+.moments-card { text-align: center; display: flex; flex-direction: column; align-items: center; }
+.moments-cover { width: 100%; border-radius: 16rpx; overflow: hidden; background: #e2e8f0; margin-bottom: 16rpx; }
+.cover-img-wide { width: 100%; height: 320rpx; }
+.moments-title { font-size: 28rpx; font-weight: 500; color: #1e293b; margin-bottom: 8rpx; }
+.moments-source { font-size: 24rpx; color: #94a3b8; }
+.share-params-info { background: #f8fafc; border-radius: 16rpx; padding: 20rpx 24rpx; margin-bottom: 32rpx; }
+.param-row { display: flex; justify-content: space-between; align-items: center; padding: 8rpx 0; }
+.param-label { font-size: 24rpx; color: #64748b; flex-shrink: 0; }
+.param-value { font-size: 24rpx; color: #1e293b; text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-left: 24rpx; }
+.card-confirm-btn { width: 100%; height: 88rpx; border-radius: 20rpx; background: #2f76ec; display: flex; align-items: center; justify-content: center; }
+.card-confirm-btn text { color: #fff; font-size: 30rpx; font-weight: 600; }
 </style>

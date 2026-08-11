@@ -413,3 +413,8 @@ export async function postGenerateImage(data: any) {
 export async function postGenerateImageQuery(data: { userid: string }) {
   return request.post('/v1/miniapp/video/generate/query', data)
 }
+
+// 广告
+export function getAdUnits(id: number) {
+  return request.get('/v1/miniapp/ad-units', { params: { enterprise_id: id} })
+}

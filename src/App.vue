@@ -70,8 +70,9 @@ onLaunch(async (options: any) => {
   parseInviteParams(options)
   // 2. 尝试静默登录（自动从全局状态读取邀请参数）
   await trySilentLogin()
-  // 3. 登录成功后，加载模板变体（需要 token）
-  loadTemplateVariant()
+  // 3. 登录成功后，加载模板变体（需要 token）—— 等待完成后再标记初始化完成，
+  //    避免首页先渲染默认模板再切换导致的闪动
+  await loadTemplateVariant()
   // 4. 标记登录初始化完成
   const { setLoginInitialized } = useGlobalState()
   setLoginInitialized()
