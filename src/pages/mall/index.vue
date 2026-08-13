@@ -147,10 +147,15 @@ import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getMiniappMallProducts, getMiniappConfig } from '@/api/miniapp'
 import PurchaseSpecSheet from '@/components/PurchaseSpecSheet.vue'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
+import { useAdManager } from '@/composables/useAdManager'
 import { navigator } from '@/utils'
 import { getImageUrl } from '@/utils/image'
 
 const { isGoldTemplate, loadTemplateVariant } = useMiniappTemplate()
+const { shouldShowAdByScene, initFromConfig } = useAdManager()
+
+// 插屏广告实例
+let interstitialAd: any = null
 
 const keyword = ref('')
 const products = ref<any[]>([])
@@ -253,6 +258,47 @@ function onBannerClick(banner: any) {
 
 onMounted(async () => {
   loadTemplateVariant()
+
+  // 初始化广告配置并显示插屏广告（场景ID 9）
+  try {
+    const configRes: any = await getMiniappConfig()
+    const configData = configRes.data || {}
+    initFromConfig(configData)
+
+    // 获取插屏广告配置
+    const ad = shouldShowAdByScene(9)
+    if (ad && ad.ad_type === 'SLOT_ID_WEAPP_INTERSTITIAL' && ad.ad_unit_id) {
+      // 创建插屏广告实例
+      // @ts-ignore
+      if (wx.createInterstitialAd) {
+        // @ts-ignore
+        interstitialAd = wx.createInterstitialAd({
+          adUnitId: ad.ad_unit_id
+        })
+
+        interstitialAd.onLoad(() => {
+          console.log('商城页插屏广告加载成功')
+        })
+
+        interstitialAd.onError((err: any) => {
+          console.error('商城页插屏广告加载失败', err)
+        })
+
+        interstitialAd.onClose(() => {
+          console.log('商城页插屏广告关闭')
+        })
+
+        // 显示插屏广告
+        interstitialAd.show().catch((err: any) => {
+          console.error('商城页插屏广告显示失败', err)
+        })
+      }
+    }
+  } catch (e) {
+    console.error('初始化广告配置失败', e)
+  }
+
+  // 加载轮播图
   try {
     const configRes: any = await getMiniappConfig()
     const allBanners = configRes.data?.banners || []
@@ -263,6 +309,7 @@ onMounted(async () => {
       }, 3500)
     }
   } catch { /* ignore */ }
+
   loadProducts()
 })
 

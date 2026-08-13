@@ -1,4 +1,4 @@
-﻿<template>
+﻿﻿<template>
   <!-- ===== 金色模板 F-2（模板2） ===== -->
   <view v-if="isGoldTemplate" class="gold-info">
     <text class="g-info-title">资讯</text>
@@ -34,6 +34,12 @@
         <text class="g-empty-desc">试试其他关键词</text>
       </view>
     </view>
+
+    <!-- 模板广告 -->
+    <view v-if="templateAdUnit" class="g-ad-container">
+      <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+        @close="onAdClose"></ad-custom>
+    </view>
   </view>
 
   <!-- ===== 紫色模板（模板1） ===== -->
@@ -47,7 +53,8 @@
 
     <!-- 分类（纵向图标 + 文字） -->
     <scroll-view class="categories surface" scroll-x :show-scrollbar="false">
-      <button v-for="item in categories" :key="item" :class="{ active: currentCategory === item }" @tap="switchCategory(item)">
+      <button v-for="item in categories" :key="item" :class="{ active: currentCategory === item }"
+        @tap="switchCategory(item)">
         <!-- <text class="category-icon">{{ categoryIcon(item) }}</text> -->
         <text>{{ item }}</text>
       </button>
@@ -79,16 +86,32 @@
     </view>
 
     <view v-else class="empty surface">没有找到相关资讯</view>
+
+    <!-- 模板广告 -->
+    <view v-if="templateAdUnit" class="ad-container">
+      <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+        @close="onAdClose"></ad-custom>
+    </view>
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted } from 'vue'
-import { getMiniappInfoList, getMiniappInfoCategories } from '@/api/miniapp'
+import { getMiniappInfoList, getMiniappInfoCategories, getMiniappConfig } from '@/api/miniapp'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
+import { useAdManager } from '@/composables/useAdManager'
 import { navigator, showToast } from '@/utils'
 
 const { isGoldTemplate } = useMiniappTemplate()
+const { shouldShowAdByScene, initFromConfig } = useAdManager()
+
+// 模板广告配置（场景ID 14）
+const templateAdUnit = ref<any>(null)
+
+// 激励视频广告实例（场景ID 10）
+let rewardedVideoAd: any = null
+// 待跳转的详情页ID（看完广告后跳转）
+const pendingInfoId = ref<number | null>(null)
 
 function gTagClass(category: string): string {
   const map: Record<string, string> = {
@@ -155,10 +178,97 @@ function goDetail(item: any) {
     showToast(`内容过于硬核，需要【${item.require_level}】及以上身份才可以观看\n请升级权益等级后查看`)
     return
   }
-  navigator.push(`/m/info/detail?id=${item.id}`)
+
+  // 如果有激励视频广告实例，先显示广告
+  if (rewardedVideoAd) {
+    // 保存待跳转的详情页ID
+    pendingInfoId.value = item.id
+
+    // 显示激励视频广告
+    rewardedVideoAd.show().catch(() => {
+      // 失败重试
+      rewardedVideoAd.load()
+        .then(() => rewardedVideoAd.show())
+        .catch((err: any) => {
+          console.error('资讯列表页激励视频广告显示失败', err)
+          // 广告显示失败，直接跳转详情页
+          navigator.push(`/m/info/detail?id=${item.id}`)
+          pendingInfoId.value = null
+        })
+    })
+  } else {
+    // 没有广告实例，直接跳转详情页
+    navigator.push(`/m/info/detail?id=${item.id}`)
+  }
 }
 
-onMounted(() => {
+// 广告事件处理
+function onAdLoad() {
+  console.log('资讯页模板广告加载成功')
+}
+
+function onAdError(e: any) {
+  console.error('资讯页模板广告加载失败', e)
+}
+
+function onAdClose() {
+  console.log('资讯页模板广告关闭')
+}
+
+onMounted(async () => {
+  // 获取广告配置
+  try {
+    // 先获取配置并初始化
+    const configRes = await getMiniappConfig()
+    const configData = configRes.data || {}
+    initFromConfig(configData)
+
+    // 模板广告配置（场景ID 14）
+    const templateAd = shouldShowAdByScene(14)
+    if (templateAd && templateAd.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
+      templateAdUnit.value = templateAd
+      console.log('资讯页模板广告配置:', templateAd)
+    }
+
+    // 激励视频广告配置（场景ID 10）
+    const rewardedAd = shouldShowAdByScene(10)
+    if (rewardedAd && rewardedAd.ad_type === 'SLOT_ID_WEAPP_REWARD_VIDEO' && rewardedAd.ad_unit_id) {
+      // 创建激励视频广告实例
+      // @ts-ignore
+      if (wx.createRewardedVideoAd) {
+        // @ts-ignore
+        rewardedVideoAd = wx.createRewardedVideoAd({
+          adUnitId: rewardedAd.ad_unit_id
+        })
+
+        rewardedVideoAd.onLoad(() => {
+          console.log('资讯列表页激励视频广告加载成功')
+        })
+
+        rewardedVideoAd.onError((err: any) => {
+          console.error('资讯列表页激励视频广告加载失败', err)
+        })
+
+        rewardedVideoAd.onClose((res: any) => {
+          // 用户完整观看了广告
+          if (res && res.isEnded) {
+            console.log('用户完整观看了激励视频广告')
+            // 跳转到详情页
+            if (pendingInfoId.value) {
+              navigator.push(`/m/info/detail?id=${pendingInfoId.value}`)
+              pendingInfoId.value = null
+            }
+          } else {
+            console.log('用户未完整观看广告')
+            showToast('请完整观看广告后继续', 'none')
+          }
+        })
+      }
+    }
+  } catch (e) {
+    console.error('获取广告配置失败', e)
+  }
+
   fetchCategories()
   fetchList()
 })
@@ -166,50 +276,215 @@ onMounted(() => {
 
 <style scoped lang="scss">
 /* ===== 紫色模板（对齐 discover 风格） ===== */
-.info-page { padding: 18rpx 24rpx 0; box-sizing: border-box; }
+.info-page {
+  padding: 18rpx 24rpx 0;
+  box-sizing: border-box;
+}
 
 /* surface 卡片通用背景 */
-.surface { background: white; border-radius: 28rpx; box-shadow: 0 10rpx 30rpx rgba(39, 54, 75, 0.06); }
+.surface {
+  background: white;
+  border-radius: 28rpx;
+  box-shadow: 0 10rpx 30rpx rgba(39, 54, 75, 0.06);
+}
 
 /* 搜索栏 */
-.search-bar { height: 108rpx; padding: 12rpx 16rpx 12rpx 26rpx; display: flex; align-items: center; margin-bottom: 20rpx; }
-.search-icon { color: #58708e; font-size: 42rpx; }
-.search-bar input { flex: 1; min-width: 0; padding: 0 18rpx; font-size: 27rpx; }
-.clear-btn { width: 70rpx; height: 70rpx; line-height: 66rpx; padding: 0; border-radius: 22rpx; color: white; background: #3479ed; font-size: 38rpx; }
-.clear-btn::after { border: none; }
+.search-bar {
+  height: 108rpx;
+  padding: 12rpx 16rpx 12rpx 26rpx;
+  display: flex;
+  align-items: center;
+  margin-bottom: 20rpx;
+}
+
+.search-icon {
+  color: #58708e;
+  font-size: 42rpx;
+}
+
+.search-bar input {
+  flex: 1;
+  min-width: 0;
+  padding: 0 18rpx;
+  font-size: 27rpx;
+}
+
+.clear-btn {
+  width: 70rpx;
+  height: 70rpx;
+  line-height: 66rpx;
+  padding: 0;
+  border-radius: 22rpx;
+  color: white;
+  background: #3479ed;
+  font-size: 38rpx;
+}
+
+.clear-btn::after {
+  border: none;
+}
 
 /* 分类（纵向图标 + 文字） */
-.categories { margin-bottom: 20rpx; padding: 10rpx 8rpx; white-space: nowrap; }
-.categories button { width: 112rpx; height: 110rpx; display: inline-flex; flex-direction: column; align-items: center; justify-content: center; margin: 0; padding: 0; color: #8190a7; background: transparent; font-size: 24rpx; border-radius: 20rpx; }
-.categories button::after { border: none; }
-.categories button.active { color: #2f76ef; background: #edf3ff; }
-.category-icon { margin-bottom: 8rpx; font-size: 38rpx; }
+.categories {
+  margin-bottom: 20rpx;
+  padding: 10rpx 8rpx;
+  white-space: nowrap;
+}
+
+.categories button {
+  width: 112rpx;
+  height: 110rpx;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  margin: 0;
+  padding: 0;
+  color: #8190a7;
+  background: transparent;
+  font-size: 24rpx;
+  border-radius: 20rpx;
+}
+
+.categories button::after {
+  border: none;
+}
+
+.categories button.active {
+  color: #2f76ef;
+  background: #edf3ff;
+}
+
+.category-icon {
+  margin-bottom: 8rpx;
+  font-size: 38rpx;
+}
 
 /* 资讯卡片（横向：左文字 右封面） */
-.article-card { min-height: 210rpx; margin-bottom: 20rpx; padding: 22rpx; display: flex; align-items: center; }
-.article-copy { width: 52%; padding: 6rpx 12rpx 6rpx 4rpx; }
-.article-title { font-size: 32rpx; font-weight: 750; }
-.article-sub { margin-top: 14rpx; color: #8590a5; font-size: 26rpx; }
-.article-meta { margin-top: 20rpx; display: flex; align-items: center; flex-wrap: wrap; gap: 10rpx; }
-.article-tag { padding: 4rpx 12rpx; border-radius: 8rpx; color: #2f76ef; background: #edf3ff; font-size: 20rpx; }
-.lock-tag { padding: 4rpx 12rpx; border-radius: 8rpx; color: #b45309; background: #fef3c7; font-size: 20rpx; }
-.article-date { color: #8794aa; font-size: 24rpx; }
+.article-card {
+  min-height: 210rpx;
+  margin-bottom: 20rpx;
+  padding: 22rpx;
+  display: flex;
+  align-items: center;
+}
 
-.ellipsis { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.article-copy {
+  width: 52%;
+  padding: 6rpx 12rpx 6rpx 4rpx;
+}
+
+.article-title {
+  font-size: 32rpx;
+  font-weight: 750;
+}
+
+.article-sub {
+  margin-top: 14rpx;
+  color: #8590a5;
+  font-size: 26rpx;
+}
+
+.article-meta {
+  margin-top: 20rpx;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 10rpx;
+}
+
+.article-tag {
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  color: #2f76ef;
+  background: #edf3ff;
+  font-size: 20rpx;
+}
+
+.lock-tag {
+  padding: 4rpx 12rpx;
+  border-radius: 8rpx;
+  color: #b45309;
+  background: #fef3c7;
+  font-size: 20rpx;
+}
+
+.article-date {
+  color: #8794aa;
+  font-size: 24rpx;
+}
+
+.ellipsis {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
 
 /* 封面图 */
-.article-cover { width: 48%; height: 170rpx; position: relative; overflow: hidden; border-radius: 23rpx; background: linear-gradient(145deg, #edf0ff, #f8efff); }
-.article-cover image { width: 100%; height: 100%; }
-.cover-placeholder { width: 100%; height: 100%; }
+.article-cover {
+  width: 48%;
+  height: 170rpx;
+  position: relative;
+  overflow: hidden;
+  border-radius: 23rpx;
+  background: linear-gradient(145deg, #edf0ff, #f8efff);
+}
+
+.article-cover image {
+  width: 100%;
+  height: 100%;
+}
+
+.cover-placeholder {
+  width: 100%;
+  height: 100%;
+}
 
 /* 锁定遮罩 */
-.cover-lock-overlay { position: absolute; top: 0; left: 0; right: 0; bottom: 0; display: flex; align-items: center; justify-content: center; background: rgba(20, 25, 45, 0.45); }
-.lock-badge { display: flex; flex-direction: column; align-items: center; gap: 4rpx; background: rgba(255, 255, 255, 0.92); border-radius: 12rpx; padding: 8rpx 16rpx; }
-.lock-emoji { font-size: 30rpx; }
-.lock-text { font-size: 20rpx; font-weight: 700; color: #6b5a1e; }
+.cover-lock-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 25, 45, 0.45);
+}
+
+.lock-badge {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4rpx;
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12rpx;
+  padding: 8rpx 16rpx;
+}
+
+.lock-emoji {
+  font-size: 30rpx;
+}
+
+.lock-text {
+  font-size: 20rpx;
+  font-weight: 700;
+  color: #6b5a1e;
+}
 
 /* 空状态 */
-.empty { padding: 70rpx; text-align: center; color: #8b97a9; }
+.empty {
+  padding: 70rpx;
+  text-align: center;
+  color: #8b97a9;
+}
+
+/* 广告容器 */
+.ad-container {
+  margin: 20rpx 0;
+  padding: 0 24rpx;
+}
 
 /* ===== 金色模板 F-2 ===== */
 .gold-info {
@@ -405,5 +680,11 @@ onMounted(() => {
 .g-empty-desc {
   font-size: 11px;
   margin-top: 6px;
+}
+
+/* 广告容器 */
+.g-ad-container {
+  margin: 16px 0;
+  padding: 0 14px;
 }
 </style>

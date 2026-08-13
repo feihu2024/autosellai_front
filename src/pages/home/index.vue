@@ -53,6 +53,12 @@
           @click="switchCategory(tab.value)"><text>{{ tab.label }}</text></view>
       </view>
 
+      <!-- 模板广告 -->
+      <view v-if="templateAdUnit" class="g-ad-container">
+        <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+          @close="onAdClose"></ad-custom>
+      </view>
+
       <view class="g-tool-list" v-if="agents.length">
         <view class="g-tool-card" v-for="agent in agents" :key="agent.id">
           <view class="g-favorite" :class="{ active: agent.is_favorite }" @click.stop="toggleFavorite(agent)">
@@ -94,7 +100,7 @@
             }}</text>
           </view>
           <view class="g-use-btn" @click.stop="goToProduct(product)"><text>¥{{ product.min_price || product.retail_price
-              || 0 }}</text></view>
+            || 0 }}</text></view>
         </view>
       </view>
 
@@ -155,6 +161,12 @@
           {{ tab.label }}
         </button>
       </scroll-view>
+
+      <!-- 模板广告 -->
+      <view v-if="templateAdUnit" class="ad-container">
+        <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+          @close="onAdClose"></ad-custom>
+      </view>
 
       <view class="agent-list">
         <view v-for="agent in agents" :key="agent.id" class="agent-card surface" @tap="goToChat(agent)">
@@ -268,8 +280,8 @@ const productsLoading = ref(false);
 
 const quickTools = [
   { name: "提取链接", icon: "/static/icons/functions/extract-link.png", tone: "blue" },
-  { name: "反推提示词", icon: "/static/icons/functions/reverse-prompt.png", tone: "purple" },
   { name: "文案提取", icon: "/static/icons/functions/copywriting.png", tone: "orange" },
+  { name: "反推提示词", icon: "/static/icons/functions/reverse-prompt.png", tone: "purple" },
   { name: "高端制图", icon: "/static/icons/functions/image-create.png", tone: "green" },
 ];
 
@@ -315,6 +327,19 @@ function onSearch() {
 function switchCategory(category: string) {
   activeCategory.value = category;
   fetchAgents();
+}
+
+// 广告事件处理
+function onAdLoad() {
+  console.log('模板广告加载成功')
+}
+
+function onAdError(e: any) {
+  console.error('模板广告加载失败', e)
+}
+
+function onAdClose() {
+  console.log('模板广告关闭')
 }
 
 async function fetchCategories() {
@@ -400,7 +425,10 @@ async function fetchProducts() {
 }
 
 // ===== 广告频次门禁 =====
-const { initFromConfig, shouldShowAd } = useAdManager();
+const { initFromConfig, shouldShowAdByScene } = useAdManager();
+
+// 模板广告配置（场景ID 13）
+const templateAdUnit = ref<any>(null)
 
 const TOOL_TRIGGER_MAP: Record<string, string> = {
   提取链接: "btn_extract_link",
@@ -442,6 +470,12 @@ async function init() {
 
     initFromConfig(configData);
 
+    // 获取模板广告配置（场景ID 13）
+    const templateAd = shouldShowAdByScene(13)
+    if (templateAd && templateAd.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
+      templateAdUnit.value = templateAd
+    }
+
     const allBanners = configData.banners || [];
     homeBanners.value = allBanners.filter(
       (b: any) => b.category === "home" && b.image_url,
@@ -453,10 +487,6 @@ async function init() {
       }, 3500);
     }
 
-
-  let res =  await getAdUnits(2)
-  console.log(res);
-  
   } catch (e) {
     console.error("获取配置/用户信息失败", e);
   }
@@ -681,6 +711,11 @@ onUnmounted(() => {
 .category.active {
   color: white;
   background: #2f76ec;
+}
+
+.ad-container {
+  margin: 16rpx 0;
+  padding: 0 24rpx;
 }
 
 .agent-list {
@@ -952,6 +987,11 @@ onUnmounted(() => {
   left: 25%;
   right: 25%;
   bottom: 2px;
+}
+
+.g-ad-container {
+  margin: 16rpx 0;
+  padding: 0 16rpx;
 }
 
 .g-tool-list {

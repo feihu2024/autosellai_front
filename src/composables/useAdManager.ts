@@ -20,10 +20,27 @@ export interface AdUnitConfig {
   min_interval?: number | null
 }
 
-export function useAdManager() {
-  /** 从 config 下发的广告位列表 */
-  const adUnits = ref<AdUnitConfig[]>([])
+const STORAGE_KEY_AD_UNITS = 'miniapp_ad_units'
 
+/** 从 config 下发的广告位列表（模块级单例） */
+const adUnits = ref<AdUnitConfig[]>([])
+
+/** 从本地存储加载广告配置 */
+function loadFromStorage() {
+  try {
+    const stored = uni.getStorageSync(STORAGE_KEY_AD_UNITS)
+    if (stored && Array.isArray(stored) && stored.length > 0) {
+      adUnits.value = stored as AdUnitConfig[]
+    }
+  } catch (e) {
+    console.error('[useAdManager] 从存储加载广告配置失败', e)
+  }
+}
+
+// 模块加载时立即从存储加载
+loadFromStorage()
+
+export function useAdManager() {
   /** trigger_key → 广告位配置 的映射 */
   const triggerKeyMap = computed(() => {
     const map = new Map<string, AdUnitConfig>()
@@ -41,6 +58,13 @@ export function useAdManager() {
   function initFromConfig(configData: any) {
     const units = configData?.ad_units || []
     adUnits.value = units as AdUnitConfig[]
+
+    // 持久化存储
+    try {
+      uni.setStorageSync(STORAGE_KEY_AD_UNITS, adUnits.value)
+    } catch (e) {
+      console.error('[useAdManager] 存储广告配置失败', e)
+    }
   }
 
   /**
@@ -64,10 +88,54 @@ export function useAdManager() {
     return true
   }
 
+  /**
+   * 根据场景ID查找广告位
+   *
+   * @param sceneId 场景ID
+   * @returns 广告位配置，如果没有找到返回null
+   */
+  function getAdBySceneId(sceneId: number): AdUnitConfig | null {
+    return adUnits.value.find(unit => unit.ad_scene_id === sceneId) || null
+  }
+
+  /**
+   * 检查场景广告是否应该显示（频次门禁）
+   *
+   * @param sceneId 场景ID
+   * @returns 广告位配置（如果应该显示），否则返回null
+   */
+  function shouldShowAdByScene(sceneId: number): AdUnitConfig | null {
+    const unit = getAdBySceneId(sceneId)
+    if (!unit) return null
+
+    // 模板广告类型不做频次控制，直接返回
+    if (unit.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
+      return unit
+    }
+
+    // 使用ad_unit_id作为频次控制的key
+    const freqKey = `scene_${sceneId}_${unit.ad_unit_id}`
+
+    if (!unit.freq_control) {
+      recordExposure(freqKey)
+      return unit
+    }
+
+    const check = canShow(freqKey, unit.max_daily, unit.min_interval)
+    if (!check.canShow) {
+      return null
+    }
+
+    recordExposure(freqKey)
+    return unit
+  }
+
   return {
     adUnits,
     triggerKeyMap,
     initFromConfig,
     shouldShowAd,
+    getAdBySceneId,
+    shouldShowAdByScene,
   }
 }

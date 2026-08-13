@@ -121,10 +121,18 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getMiniappAgentDetail, chatWithAgentStream, getAgentGreeting } from '@/api/miniapp'
+import { getMiniappAgentDetail, chatWithAgentStream, getAgentGreeting, getMiniappConfig } from '@/api/miniapp'
 import { navigator, copyToClipboard, showToast, checkPhoneRequired } from '@/utils'
 import { getImageUrl } from '@/utils/image'
 import PaySheet from '@/components/PaySheet.vue'
+import { useAdManager } from '@/composables/useAdManager'
+
+const { shouldShowAdByScene, initFromConfig } = useAdManager()
+
+// 激励视频广告实例
+let rewardedVideoAd: any = null
+// 待发送的消息（看完广告后发送）
+const pendingMessage = ref('')
 
 const agentId = ref(0)
 const agentInfo = ref<any>(null)
@@ -255,6 +263,7 @@ async function fetchGreeting() {
   }
 }
 
+// 发送消息（先显示激励视频广告）
 async function sendMessage() {
   // 检查用户是否已绑定手机号
   if (!checkPhoneRequired()) {
@@ -265,8 +274,35 @@ async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || isTyping.value) return
 
+  // 如果有激励视频广告实例，先显示广告
+  if (rewardedVideoAd) {
+    // 保存待发送的消息
+    pendingMessage.value = text
+    inputText.value = ''
+
+    // 显示激励视频广告
+    rewardedVideoAd.show().catch(() => {
+      // 失败重试
+      rewardedVideoAd.load()
+        .then(() => rewardedVideoAd.show())
+        .catch((err: any) => {
+          console.error('激励视频广告显示失败', err)
+          // 广告显示失败，直接发送消息
+          sendMessageInternal(text)
+          pendingMessage.value = ''
+        })
+    })
+  } else {
+    // 没有广告实例，直接发送消息
+    sendMessageInternal(text)
+  }
+}
+
+// 实际发送消息的内部函数
+async function sendMessageInternal(text: string) {
+  if (!text || isTyping.value) return
+
   messages.value.push({ role: 'user', content: text })
-  inputText.value = ''
   scrollToBottom()
 
   const aiMsgIndex = messages.value.length
@@ -311,9 +347,55 @@ async function sendMessage() {
   }
 }
 
-onLoad((options: any) => {
+onLoad(async (options: any) => {
   agentId.value = Number(options?.id || 0)
   if (!agentId.value) return
+
+  // 初始化广告配置并创建激励视频广告实例（场景ID 6）
+  try {
+    const configRes = await getMiniappConfig()
+    const configData = configRes.data || {}
+    initFromConfig(configData)
+
+    // 获取激励视频广告配置
+    const ad = shouldShowAdByScene(6)
+    if (ad && ad.ad_type === 'SLOT_ID_WEAPP_REWARD_VIDEO' && ad.ad_unit_id) {
+      // 创建激励视频广告实例
+      // @ts-ignore
+      if (wx.createRewardedVideoAd) {
+        // @ts-ignore
+        rewardedVideoAd = wx.createRewardedVideoAd({
+          adUnitId: ad.ad_unit_id
+        })
+
+        rewardedVideoAd.onLoad(() => {
+          console.log('智能体对话页激励视频广告加载成功')
+        })
+
+        rewardedVideoAd.onError((err: any) => {
+          console.error('智能体对话页激励视频广告加载失败', err)
+        })
+
+        rewardedVideoAd.onClose((res: any) => {
+          // 用户完整观看了广告
+          if (res && res.isEnded) {
+            console.log('用户完整观看了激励视频广告')
+            // 发送待发送的消息
+            if (pendingMessage.value) {
+              sendMessageInternal(pendingMessage.value)
+              pendingMessage.value = ''
+            }
+          } else {
+            console.log('用户未完整观看广告')
+            showToast('请完整观看广告后继续', 'none')
+          }
+        })
+      }
+    }
+  } catch (e) {
+    console.error('初始化广告配置失败', e)
+  }
+
   fetchAgentDetail()
   fetchGreeting()
 })

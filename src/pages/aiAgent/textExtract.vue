@@ -75,8 +75,8 @@
         </view>
 
         <!-- 广告位 -->
-        <view class="ad-section animate-fade-in">
-          <ad-custom unit-id="adunit-b8127b9177979035" @load="onAdLoad" @error="onAdError"
+        <view v-if="templateAdUnit" class="ad-section animate-fade-in">
+          <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
             @close="onAdClose"></ad-custom>
         </view>
 
@@ -102,8 +102,19 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
-import { postWenanExtract } from '@/api/miniapp'
+import { ref, onMounted } from 'vue'
+import { postWenanExtract, getMiniappConfig } from '@/api/miniapp'
+import { useAdManager } from '@/composables/useAdManager'
+
+const { shouldShowAdByScene, initFromConfig } = useAdManager()
+
+// 模板广告配置（场景ID 12）
+const templateAdUnit = ref<any>(null)
+
+// 激励视频广告实例（场景ID 8）
+let rewardedVideoAd: any = null
+// 待提取的链接（看完广告后提取）
+const pendingLink = ref('')
 
 const linkInput = ref('')
 const textContent = ref('')
@@ -144,17 +155,42 @@ const handlePasteLink = async () => {
   }
 }
 
-// 提取文案
+// 提取文案（先显示激励视频广告）
 const handleExtract = async () => {
   if (!linkInput.value.trim()) {
     uni.showToast({ title: '请先输入链接', icon: 'none' })
     return
   }
 
+  // 如果有激励视频广告实例，先显示广告
+  if (rewardedVideoAd) {
+    // 保存待提取的链接
+    pendingLink.value = linkInput.value.trim()
+
+    // 显示激励视频广告
+    rewardedVideoAd.show().catch(() => {
+      // 失败重试
+      rewardedVideoAd.load()
+        .then(() => rewardedVideoAd.show())
+        .catch((err: any) => {
+          console.error('文案提取页激励视频广告显示失败', err)
+          // 广告显示失败，直接提取
+          extractInternal(linkInput.value.trim())
+          pendingLink.value = ''
+        })
+    })
+  } else {
+    // 没有广告实例，直接提取
+    extractInternal(linkInput.value.trim())
+  }
+}
+
+// 实际提取文案的内部函数
+const extractInternal = async (url: string) => {
   loading.value = true
   try {
     const res: any = await postWenanExtract({
-      url: linkInput.value.trim()
+      url: url
     })
 
     if (res.data && res.data.text) {
@@ -189,6 +225,61 @@ const copyText = () => {
 const goBack = () => {
   uni.navigateBack()
 }
+
+onMounted(async () => {
+  // 获取广告配置
+  try {
+    // 先获取配置并初始化
+    const configRes = await getMiniappConfig()
+    const configData = configRes.data || {}
+    initFromConfig(configData)
+
+    // 模板广告配置（场景ID 12）
+    const templateAd = shouldShowAdByScene(12)
+    if (templateAd && templateAd.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
+      templateAdUnit.value = templateAd
+      console.log('文案提取页模板广告配置:', templateAd)
+    }
+
+    // 激励视频广告配置（场景ID 8）
+    const rewardedAd = shouldShowAdByScene(8)
+    if (rewardedAd && rewardedAd.ad_type === 'SLOT_ID_WEAPP_REWARD_VIDEO' && rewardedAd.ad_unit_id) {
+      // 创建激励视频广告实例
+      // @ts-ignore
+      if (wx.createRewardedVideoAd) {
+        // @ts-ignore
+        rewardedVideoAd = wx.createRewardedVideoAd({
+          adUnitId: rewardedAd.ad_unit_id
+        })
+
+        rewardedVideoAd.onLoad(() => {
+          console.log('文案提取页激励视频广告加载成功')
+        })
+
+        rewardedVideoAd.onError((err: any) => {
+          console.error('文案提取页激励视频广告加载失败', err)
+        })
+
+        rewardedVideoAd.onClose((res: any) => {
+          // 用户完整观看了广告
+          if (res && res.isEnded) {
+            console.log('用户完整观看了激励视频广告')
+            // 提取文案
+            if (pendingLink.value) {
+              extractInternal(pendingLink.value)
+              pendingLink.value = ''
+            }
+          } else {
+            console.log('用户未完整观看广告')
+            uni.showToast({ title: '请完整观看广告后继续', icon: 'none' })
+          }
+        })
+      }
+    }
+  } catch (e) {
+    console.error('获取广告配置失败', e)
+  }
+})
 </script>
 
 <style lang="scss" scoped>

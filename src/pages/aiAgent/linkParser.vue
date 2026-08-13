@@ -49,6 +49,12 @@
         </view>
       </view>
 
+      <!-- 模板广告 -->
+      <view v-if="templateAdUnit" class="ad-container">
+        <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+          @close="onAdClose"></ad-custom>
+      </view>
+
       <view class="instructions-card">
         <view class="instructions-header">
           <view class="instructions-icon-wrapper">
@@ -68,9 +74,20 @@
 </template>
 
 <script lang="ts" setup>
-import { ref } from 'vue'
-import { postParseVideo } from '@/api/miniapp'
+import { ref, onMounted } from 'vue'
+import { postParseVideo, getMiniappConfig } from '@/api/miniapp'
 import { navigator } from '@/utils/navigator'
+import { useAdManager } from '@/composables/useAdManager'
+
+const { shouldShowAdByScene, initFromConfig } = useAdManager()
+
+// 模板广告配置（场景ID 11）
+const templateAdUnit = ref<any>(null)
+
+// 激励视频广告实例（场景ID 7）
+let rewardedVideoAd: any = null
+// 待解析的URL（看完广告后解析）
+const pendingUrl = ref('')
 
 const inputValue = ref('')
 const loading = ref(false)
@@ -112,7 +129,75 @@ const goBack = () => {
   uni.navigateBack()
 }
 
-// 解析视频
+// 广告事件处理
+function onAdLoad() {
+  console.log('链接解析页模板广告加载成功')
+}
+
+function onAdError(e: any) {
+  console.error('链接解析页模板广告加载失败', e)
+}
+
+function onAdClose() {
+  console.log('链接解析页模板广告关闭')
+}
+
+onMounted(async () => {
+  // 获取广告配置
+  try {
+    // 先获取配置并初始化
+    const configRes = await getMiniappConfig()
+    const configData = configRes.data || {}
+    initFromConfig(configData)
+
+    // 模板广告配置（场景ID 11）
+    const templateAd = shouldShowAdByScene(11)
+    if (templateAd && templateAd.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
+      templateAdUnit.value = templateAd
+      console.log('链接解析页模板广告配置:', templateAd)
+    }
+
+    // 激励视频广告配置（场景ID 7）
+    const rewardedAd = shouldShowAdByScene(7)
+    if (rewardedAd && rewardedAd.ad_type === 'SLOT_ID_WEAPP_REWARD_VIDEO' && rewardedAd.ad_unit_id) {
+      // 创建激励视频广告实例
+      // @ts-ignore
+      if (wx.createRewardedVideoAd) {
+        // @ts-ignore
+        rewardedVideoAd = wx.createRewardedVideoAd({
+          adUnitId: rewardedAd.ad_unit_id
+        })
+
+        rewardedVideoAd.onLoad(() => {
+          console.log('链接解析页激励视频广告加载成功')
+        })
+
+        rewardedVideoAd.onError((err: any) => {
+          console.error('链接解析页激励视频广告加载失败', err)
+        })
+
+        rewardedVideoAd.onClose((res: any) => {
+          // 用户完整观看了广告
+          if (res && res.isEnded) {
+            console.log('用户完整观看了激励视频广告')
+            // 解析视频
+            if (pendingUrl.value) {
+              parseVideoInternal(pendingUrl.value)
+              pendingUrl.value = ''
+            }
+          } else {
+            console.log('用户未完整观看广告')
+            uni.showToast({ title: '请完整观看广告后继续', icon: 'none' })
+          }
+        })
+      }
+    }
+  } catch (e) {
+    console.error('获取广告配置失败', e)
+  }
+})
+
+// 解析视频（先显示激励视频广告）
 const parseVideo = async () => {
   if (loading.value) return
   if (!inputValue.value.trim()) {
@@ -120,9 +205,34 @@ const parseVideo = async () => {
     return
   }
 
+  // 如果有激励视频广告实例，先显示广告
+  if (rewardedVideoAd) {
+    // 保存待解析的URL
+    pendingUrl.value = inputValue.value.trim()
+
+    // 显示激励视频广告
+    rewardedVideoAd.show().catch(() => {
+      // 失败重试
+      rewardedVideoAd.load()
+        .then(() => rewardedVideoAd.show())
+        .catch((err: any) => {
+          console.error('链接解析页激励视频广告显示失败', err)
+          // 广告显示失败，直接解析
+          parseVideoInternal(inputValue.value.trim())
+          pendingUrl.value = ''
+        })
+    })
+  } else {
+    // 没有广告实例，直接解析
+    parseVideoInternal(inputValue.value.trim())
+  }
+}
+
+// 实际解析视频的内部函数
+const parseVideoInternal = async (url: string) => {
   loading.value = true
   try {
-    const res: any = await postParseVideo({ url: inputValue.value.trim() })
+    const res: any = await postParseVideo({ url: url })
     if (res.data) {
       navigator.push(`/m/aiAgent/linkParserResult?data=${encodeURIComponent(JSON.stringify(res.data))}`)
     } else {
@@ -354,6 +464,11 @@ const parseVideo = async () => {
   to {
     transform: rotate(360deg);
   }
+}
+
+/* 广告容器 */
+.ad-container {
+  margin: 24px 0;
 }
 
 .instructions-card {
