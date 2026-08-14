@@ -121,7 +121,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getMiniappAgentDetail, chatWithAgentStream, getAgentGreeting, getMiniappConfig } from '@/api/miniapp'
+import { getMiniappAgentDetail, chatWithAgentStream, getAgentGreeting, getMiniappConfig, reportRewardVideo } from '@/api/miniapp'
 import { navigator, copyToClipboard, showToast, checkPhoneRequired } from '@/utils'
 import { getImageUrl } from '@/utils/image'
 import PaySheet from '@/components/PaySheet.vue'
@@ -133,6 +133,24 @@ const { shouldShowAdByScene, initFromConfig } = useAdManager()
 let rewardedVideoAd: any = null
 // 待发送的消息（看完广告后发送）
 const pendingMessage = ref('')
+
+// 激励视频上报场景码（用于领取免费算力，优先取广告配置 trigger_key）
+let rewardSceneCode: any = 'zntjl'
+
+// ===== 一天只看一次广告（领取免费算力） =====
+const AD_WATCH_DATE_KEY = 'agentChatAdWatchDate'
+
+/** 检查今天是否已看过广告 */
+function checkTodayAdWatched(): boolean {
+  const today = new Date().toDateString()
+  return uni.getStorageSync(AD_WATCH_DATE_KEY) === today
+}
+
+/** 记录今天已看过广告 */
+function setTodayAdWatched() {
+  const today = new Date().toDateString()
+  uni.setStorageSync(AD_WATCH_DATE_KEY, today)
+}
 
 const agentId = ref(0)
 const agentInfo = ref<any>(null)
@@ -263,7 +281,7 @@ async function fetchGreeting() {
   }
 }
 
-// 发送消息（先显示激励视频广告）
+// 发送消息（当天首次需看广告领取免费算力）
 async function sendMessage() {
   // 检查用户是否已绑定手机号
   if (!checkPhoneRequired()) {
@@ -274,28 +292,61 @@ async function sendMessage() {
   const text = inputText.value.trim()
   if (!text || isTyping.value) return
 
-  // 如果有激励视频广告实例，先显示广告
-  if (rewardedVideoAd) {
-    // 保存待发送的消息
-    pendingMessage.value = text
-    inputText.value = ''
-
-    // 显示激励视频广告
-    rewardedVideoAd.show().catch(() => {
-      // 失败重试
-      rewardedVideoAd.load()
-        .then(() => rewardedVideoAd.show())
-        .catch((err: any) => {
-          console.error('激励视频广告显示失败', err)
-          // 广告显示失败，直接发送消息
-          sendMessageInternal(text)
-          pendingMessage.value = ''
-        })
-    })
-  } else {
-    // 没有广告实例，直接发送消息
+  // 当天已看过广告，直接发送消息
+  if (checkTodayAdWatched()) {
     sendMessageInternal(text)
+    return
   }
+
+  // 没有广告实例，直接发送消息
+  if (!rewardedVideoAd) {
+    sendMessageInternal(text)
+    return
+  }
+
+  // 未看过，保存待发送内容并弹窗提示观看广告领取免费算力
+  pendingMessage.value = text
+  inputText.value = ''
+
+  uni.showModal({
+    title: '温馨提示',
+    content: '亲，每天可看广告免费领取30点算力，感谢您的支持，谢谢！',
+    confirmText: '观看广告',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) {
+        // 用户点击确认，播放广告
+        showRewardedAdAndSend()
+      } else {
+        // 用户取消，恢复输入内容
+        inputText.value = pendingMessage.value
+        pendingMessage.value = ''
+      }
+    }
+  })
+}
+
+// 显示激励视频广告，看完后上报领取免费算力并发送消息
+function showRewardedAdAndSend() {
+  // 显示激励视频广告
+  rewardedVideoAd.show().catch(() => {
+    // 失败重试
+    uni.showLoading({ title: '广告加载中...' })
+    rewardedVideoAd.load()
+      .then(() => {
+        uni.hideLoading()
+        return rewardedVideoAd.show()
+      })
+      .catch((err: any) => {
+        uni.hideLoading()
+        console.error('激励视频广告显示失败', err)
+        // 广告显示失败，直接发送消息
+        if (pendingMessage.value) {
+          sendMessageInternal(pendingMessage.value)
+          pendingMessage.value = ''
+        }
+      })
+  })
 }
 
 // 实际发送消息的内部函数
@@ -347,6 +398,25 @@ async function sendMessageInternal(text: string) {
   }
 }
 
+// 激励视频观看完成：上报领取免费算力后发送消息
+async function handleRewardedVideoComplete() {
+  // 上报激励视频观看，服务端据此发放30点免费算力（仅当天生效）
+  try {
+    await reportRewardVideo({ scene_code: rewardSceneCode })
+    setTodayAdWatched()
+    showToast('已领取30点免费算力', 'success')
+  } catch (err: any) {
+    console.error('领取免费算力失败', err)
+    // 上报失败也记录今天已看过，避免重复弹窗打扰用户
+    setTodayAdWatched()
+  }
+  // 发送待发送的消息
+  if (pendingMessage.value) {
+    sendMessageInternal(pendingMessage.value)
+    pendingMessage.value = ''
+  }
+}
+
 onLoad(async (options: any) => {
   agentId.value = Number(options?.id || 0)
   if (!agentId.value) return
@@ -359,6 +429,8 @@ onLoad(async (options: any) => {
 
     // 获取激励视频广告配置
     const ad = shouldShowAdByScene(6)
+    console.log(ad);
+
     if (ad && ad.ad_type === 'SLOT_ID_WEAPP_REWARD_VIDEO' && ad.ad_unit_id) {
       // 创建激励视频广告实例
       // @ts-ignore
@@ -380,15 +452,21 @@ onLoad(async (options: any) => {
           // 用户完整观看了广告
           if (res && res.isEnded) {
             console.log('用户完整观看了激励视频广告')
-            // 发送待发送的消息
-            if (pendingMessage.value) {
-              sendMessageInternal(pendingMessage.value)
-              pendingMessage.value = ''
-            }
+            // 上报领取免费算力并发送消息
+            handleRewardedVideoComplete()
           } else {
             console.log('用户未完整观看广告')
             showToast('请完整观看广告后继续', 'none')
+            // 恢复输入内容
+            if (pendingMessage.value) {
+              inputText.value = pendingMessage.value
+              pendingMessage.value = ''
+            }
           }
+          // 无论是否完整观看，都重新加载广告
+          rewardedVideoAd.load().catch(() => {
+            console.log('广告预加载失败')
+          })
         })
       }
     }

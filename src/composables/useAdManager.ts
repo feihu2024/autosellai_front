@@ -101,6 +101,11 @@ export function useAdManager() {
   /**
    * 检查场景广告是否应该显示（频次门禁）
    *
+   * - 插屏广告（SLOT_ID_WEAPP_INTERSTITIAL）且开启 freq_control 时：
+   *   按 max_daily（单日最大次数）、min_interval（最小间隔秒数）限流，
+   *   间隔时间内或当日次数用尽则返回 null（不再弹出）。
+   * - 其他类型（模板广告、激励视频等）不做频次控制，直接返回。
+   *
    * @param sceneId 场景ID
    * @returns 广告位配置（如果应该显示），否则返回null
    */
@@ -108,25 +113,19 @@ export function useAdManager() {
     const unit = getAdBySceneId(sceneId)
     if (!unit) return null
 
-    // 模板广告类型不做频次控制，直接返回
-    if (unit.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
-      return unit
-    }
-
-    // 使用ad_unit_id作为频次控制的key
-    const freqKey = `scene_${sceneId}_${unit.ad_unit_id}`
-
-    if (!unit.freq_control) {
+    // 插屏广告且开启频次控制时，按 max_daily(每日次数) / min_interval(间隔秒数) 限流
+    if (unit.ad_type === 'SLOT_ID_WEAPP_INTERSTITIAL' && unit.freq_control) {
+      const freqKey = `scene_${sceneId}_${unit.ad_unit_id}`
+      const check = canShow(freqKey, unit.max_daily, unit.min_interval)
+      if (!check.canShow) {
+        console.log(`[useAdManager] 场景${sceneId}插屏广告被频次限制: ${check.reason}`)
+        return null
+      }
       recordExposure(freqKey)
       return unit
     }
 
-    const check = canShow(freqKey, unit.max_daily, unit.min_interval)
-    if (!check.canShow) {
-      return null
-    }
-
-    recordExposure(freqKey)
+    // 其他类型不做频次控制，直接返回
     return unit
   }
 

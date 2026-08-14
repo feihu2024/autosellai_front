@@ -53,26 +53,28 @@
           @click="switchCategory(tab.value)"><text>{{ tab.label }}</text></view>
       </view>
 
-      <!-- 模板广告 -->
-      <view v-if="templateAdUnit" class="g-ad-container">
-        <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
-          @close="onAdClose"></ad-custom>
-      </view>
-
       <view class="g-tool-list" v-if="agents.length">
-        <view class="g-tool-card" v-for="agent in agents" :key="agent.id">
-          <view class="g-favorite" :class="{ active: agent.is_favorite }" @click.stop="toggleFavorite(agent)">
-            <image src="/static/tpl-gold/icon-star.png" mode="aspectFit" />
+        <template v-for="(agent, index) in agents" :key="agent.id">
+          <view class="g-tool-card">
+            <view class="g-favorite" :class="{ active: agent.is_favorite }" @click.stop="toggleFavorite(agent)">
+              <image src="/static/tpl-gold/icon-star.png" mode="aspectFit" />
+            </view>
+            <image class="g-tool-thumb" :src="getImageUrl(agent.cover_url || agent.icon) ||
+              '/static/icons/common/robot.png'
+              " mode="aspectFill" />
+            <view class="g-tool-copy">
+              <text class="g-tool-name">{{ agent.name }}</text>
+              <text class="g-tool-desc">{{ agent.description }}</text>
+            </view>
+            <view class="g-use-btn" @click="goToChat(agent)"><text>使用</text></view>
           </view>
-          <image class="g-tool-thumb" :src="getImageUrl(agent.cover_url || agent.icon) ||
-            '/static/icons/common/robot.png'
-            " mode="aspectFill" />
-          <view class="g-tool-copy">
-            <text class="g-tool-name">{{ agent.name }}</text>
-            <text class="g-tool-desc">{{ agent.description }}</text>
+
+          <!-- 在第二个智能体后插入模板广告 -->
+          <view v-if="index === 1 && templateAdUnit" class="g-ad-container">
+            <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+              @close="onAdClose"></ad-custom>
           </view>
-          <view class="g-use-btn" @click="goToChat(agent)"><text>使用</text></view>
-        </view>
+        </template>
       </view>
 
       <view v-if="!loading && agents.length === 0" class="g-empty-state">
@@ -162,27 +164,29 @@
         </button>
       </scroll-view>
 
-      <!-- 模板广告 -->
-      <view v-if="templateAdUnit" class="ad-container">
-        <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
-          @close="onAdClose"></ad-custom>
-      </view>
-
       <view class="agent-list">
-        <view v-for="agent in agents" :key="agent.id" class="agent-card surface" @tap="goToChat(agent)">
-          <image class="agent-icon"
-            :src="getImageUrl(agent.cover_url || agent.icon) || '/static/icons/common/robot.png'" mode="aspectFill" />
-          <view class="agent-copy">
-            <view class="agent-title">
-              {{ agent.name }}
-              <text v-if="agent.category">{{ agent.category }}</text>
+        <template v-for="(agent, index) in agents" :key="agent.id">
+          <view class="agent-card surface" @tap="goToChat(agent)">
+            <image class="agent-icon"
+              :src="getImageUrl(agent.cover_url || agent.icon) || '/static/icons/common/robot.png'" mode="aspectFill" />
+            <view class="agent-copy">
+              <view class="agent-title">
+                {{ agent.name }}
+                <text v-if="agent.category">{{ agent.category }}</text>
+              </view>
+              <view class="agent-desc ellipsis">{{ agent.description }}</view>
             </view>
-            <view class="agent-desc ellipsis">{{ agent.description }}</view>
+            <button :class="['favorite', { active: agent.is_favorite }]" @tap.stop="toggleFavorite(agent)">
+              {{ agent.is_favorite ? '★' : '☆' }}
+            </button>
           </view>
-          <button :class="['favorite', { active: agent.is_favorite }]" @tap.stop="toggleFavorite(agent)">
-            {{ agent.is_favorite ? '★' : '☆' }}
-          </button>
-        </view>
+
+          <!-- 在第二个智能体后插入模板广告 -->
+          <view v-if="index === 1 && templateAdUnit" class="ad-container">
+            <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+              @close="onAdClose"></ad-custom>
+          </view>
+        </template>
 
         <view v-if="!loading && agents.length === 0" class="empty surface">
           没有找到相关智能体

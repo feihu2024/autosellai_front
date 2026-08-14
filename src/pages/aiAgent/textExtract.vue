@@ -103,7 +103,7 @@
 
 <script lang="ts" setup>
 import { ref, onMounted } from 'vue'
-import { postWenanExtract, getMiniappConfig } from '@/api/miniapp'
+import { postWenanExtract, getMiniappConfig, reportRewardVideo } from '@/api/miniapp'
 import { useAdManager } from '@/composables/useAdManager'
 
 const { shouldShowAdByScene, initFromConfig } = useAdManager()
@@ -116,10 +116,28 @@ let rewardedVideoAd: any = null
 // 待提取的链接（看完广告后提取）
 const pendingLink = ref('')
 
+// 激励视频上报场景码（用于上报，优先取广告配置 trigger_key）
+let rewardSceneCode = 'EXTRACT_TEXT'
+
 const linkInput = ref('')
 const textContent = ref('')
 const loading = ref(false)
 const extracted = ref(false)
+
+// ===== 一天只看一次广告 =====
+const AD_WATCH_DATE_KEY = 'textExtractAdWatchDate'
+
+/** 检查今天是否已看过广告 */
+function checkTodayAdWatched(): boolean {
+  const today = new Date().toDateString()
+  return uni.getStorageSync(AD_WATCH_DATE_KEY) === today
+}
+
+/** 记录今天已看过广告 */
+function setTodayAdWatched() {
+  const today = new Date().toDateString()
+  uni.setStorageSync(AD_WATCH_DATE_KEY, today)
+}
 
 const instructions = [
   '支持主流视频平台和文章链接文案提取',
@@ -155,34 +173,62 @@ const handlePasteLink = async () => {
   }
 }
 
-// 提取文案（先显示激励视频广告）
+// 提取文案（先检查广告观看状态，再显示激励视频广告）
 const handleExtract = async () => {
   if (!linkInput.value.trim()) {
     uni.showToast({ title: '请先输入链接', icon: 'none' })
     return
   }
 
-  // 如果有激励视频广告实例，先显示广告
-  if (rewardedVideoAd) {
-    // 保存待提取的链接
-    pendingLink.value = linkInput.value.trim()
-
-    // 显示激励视频广告
-    rewardedVideoAd.show().catch(() => {
-      // 失败重试
-      rewardedVideoAd.load()
-        .then(() => rewardedVideoAd.show())
-        .catch((err: any) => {
-          console.error('文案提取页激励视频广告显示失败', err)
-          // 广告显示失败，直接提取
-          extractInternal(linkInput.value.trim())
-          pendingLink.value = ''
-        })
-    })
-  } else {
-    // 没有广告实例，直接提取
+  // 当天已看过广告，直接提取
+  if (checkTodayAdWatched()) {
     extractInternal(linkInput.value.trim())
+    return
   }
+
+  // 未看过，弹窗提示用户观看广告
+  uni.showModal({
+    title: '温馨提示',
+    content: '亲，当天提取仅看一次广告，感谢您的支持，谢谢！',
+    confirmText: '观看广告',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) {
+        // 用户点击确认，播放广告
+        showRewardedAdAndExtract(linkInput.value.trim())
+      }
+    }
+  })
+}
+
+// 显示激励视频广告，看完后提取
+function showRewardedAdAndExtract(link: string) {
+  if (!rewardedVideoAd) {
+    // 没有广告实例，直接提取
+    extractInternal(link)
+    return
+  }
+
+  // 保存待提取的链接
+  pendingLink.value = link
+
+  // 显示激励视频广告
+  rewardedVideoAd.show().catch(() => {
+    // 失败重试
+    uni.showLoading({ title: '广告加载中...' })
+    rewardedVideoAd.load()
+      .then(() => {
+        uni.hideLoading()
+        return rewardedVideoAd.show()
+      })
+      .catch((err: any) => {
+        uni.hideLoading()
+        console.error('文案提取页激励视频广告显示失败', err)
+        // 广告显示失败，直接提取
+        extractInternal(link)
+        pendingLink.value = ''
+      })
+  })
 }
 
 // 实际提取文案的内部函数
@@ -264,6 +310,12 @@ onMounted(async () => {
           // 用户完整观看了广告
           if (res && res.isEnded) {
             console.log('用户完整观看了激励视频广告')
+            // 记录今天已看过广告（当天不再提示）
+            setTodayAdWatched()
+            // 上报激励视频观看
+            reportRewardVideo({ scene_code: rewardSceneCode }).catch((err: any) => {
+              console.error('上报激励视频观看失败', err)
+            })
             // 提取文案
             if (pendingLink.value) {
               extractInternal(pendingLink.value)
@@ -272,7 +324,12 @@ onMounted(async () => {
           } else {
             console.log('用户未完整观看广告')
             uni.showToast({ title: '请完整观看广告后继续', icon: 'none' })
+            pendingLink.value = ''
           }
+          // 无论是否完整观看，都重新加载广告
+          rewardedVideoAd.load().catch(() => {
+            console.log('广告预加载失败')
+          })
         })
       }
     }

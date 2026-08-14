@@ -16,29 +16,30 @@
       </scroll-view>
 
       <view class="g-news-list" v-if="infoList.length">
-        <view class="g-news-card" v-for="item in infoList" :key="item.id" @click="goDetail(item)">
-          <view class="g-news-copy">
-            <text class="g-news-title">{{ item.title }}</text>
-            <view class="g-news-meta">
-              <text class="g-tag" :class="gTagClass(item.category)">{{ item.category }}</text>
-              <text class="g-news-date">{{ (item.created_at || item.publish_date || '').slice(0, 10) }}</text>
+        <template v-for="(item, index) in infoList" :key="item.id">
+          <view class="g-news-card" @click="goDetail(item)">
+            <view class="g-news-copy">
+              <text class="g-news-title">{{ item.title }}</text>
+              <view class="g-news-meta">
+                <text class="g-tag" :class="gTagClass(item.category)">{{ item.category }}</text>
+                <text class="g-news-date">{{ (item.created_at || item.publish_date || '').slice(0, 10) }}</text>
+              </view>
             </view>
+            <image class="g-news-img" v-if="item.cover_url" :src="item.cover_url" mode="aspectFill" />
+            <view class="g-news-img g-news-placeholder" v-else></view>
           </view>
-          <image class="g-news-img" v-if="item.cover_url" :src="item.cover_url" mode="aspectFill" />
-          <view class="g-news-img g-news-placeholder" v-else></view>
-        </view>
+          <!-- 在第4个列表项后展示模板广告 -->
+          <view v-if="index === 3 && templateAdUnit" class="g-ad-container">
+            <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+              @close="onAdClose"></ad-custom>
+          </view>
+        </template>
       </view>
 
       <view class="g-empty-state" v-if="!infoList.length">
         <text class="g-empty-title">没有找到相关资讯</text>
         <text class="g-empty-desc">试试其他关键词</text>
       </view>
-    </view>
-
-    <!-- 模板广告 -->
-    <view v-if="templateAdUnit" class="g-ad-container">
-      <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
-        @close="onAdClose"></ad-custom>
     </view>
   </view>
 
@@ -62,36 +63,37 @@
 
     <!-- 资讯列表 -->
     <view v-if="infoList.length">
-      <view v-for="item in infoList" :key="item.id" class="article-card surface" @tap="goDetail(item)">
-        <view class="article-copy">
-          <view class="article-title ellipsis">{{ item.title }}</view>
-          <view class="article-sub ellipsis">{{ item.summary || '点击查看详情' }}</view>
-          <view class="article-meta">
-            <text v-if="item.category" class="article-tag">{{ item.category }}</text>
-            <text v-if="item.locked" class="lock-tag">🔒 {{ item.require_level }}</text>
-            <text class="article-date">▣ {{ (item.created_at || item.publish_date || '').slice(0, 10) }}</text>
+      <template v-for="(item, index) in infoList" :key="item.id">
+        <view class="article-card surface" @tap="goDetail(item)">
+          <view class="article-copy">
+            <view class="article-title ellipsis">{{ item.title }}</view>
+            <view class="article-sub ellipsis">{{ item.summary || '点击查看详情' }}</view>
+            <view class="article-meta">
+              <text v-if="item.category" class="article-tag">{{ item.category }}</text>
+              <text v-if="item.locked" class="lock-tag">🔒 {{ item.require_level }}</text>
+              <text class="article-date">▣ {{ (item.created_at || item.publish_date || '').slice(0, 10) }}</text>
+            </view>
           </view>
-        </view>
-        <view class="article-cover">
-          <image v-if="item.cover_url" :src="item.cover_url" mode="aspectFill" />
-          <view v-else class="cover-placeholder"></view>
-          <view v-if="item.locked" class="cover-lock-overlay">
-            <view class="lock-badge">
-              <text class="lock-emoji">🔒</text>
-              <text class="lock-text">{{ item.require_level }}可读</text>
+          <view class="article-cover">
+            <image v-if="item.cover_url" :src="item.cover_url" mode="aspectFill" />
+            <view v-else class="cover-placeholder"></view>
+            <view v-if="item.locked" class="cover-lock-overlay">
+              <view class="lock-badge">
+                <text class="lock-emoji">🔒</text>
+                <text class="lock-text">{{ item.require_level }}可读</text>
+              </view>
             </view>
           </view>
         </view>
-      </view>
+        <!-- 在第4个列表项后展示模板广告 -->
+        <view v-if="index === 3 && templateAdUnit" class="ad-container">
+          <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+            @close="onAdClose"></ad-custom>
+        </view>
+      </template>
     </view>
 
     <view v-else class="empty surface">没有找到相关资讯</view>
-
-    <!-- 模板广告 -->
-    <view v-if="templateAdUnit" class="ad-container">
-      <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
-        @close="onAdClose"></ad-custom>
-    </view>
   </view>
 </template>
 
@@ -112,6 +114,21 @@ const templateAdUnit = ref<any>(null)
 let rewardedVideoAd: any = null
 // 待跳转的详情页ID（看完广告后跳转）
 const pendingInfoId = ref<number | null>(null)
+
+// ===== 一天只看一次广告 =====
+const AD_WATCH_DATE_KEY = 'infoAdWatchDate'
+
+/** 检查今天是否已看过广告 */
+function checkTodayAdWatched(): boolean {
+  const today = new Date().toDateString()
+  return uni.getStorageSync(AD_WATCH_DATE_KEY) === today
+}
+
+/** 记录今天已看过广告 */
+function setTodayAdWatched() {
+  const today = new Date().toDateString()
+  uni.setStorageSync(AD_WATCH_DATE_KEY, today)
+}
 
 function gTagClass(category: string): string {
   const map: Record<string, string> = {
@@ -179,27 +196,55 @@ function goDetail(item: any) {
     return
   }
 
-  // 如果有激励视频广告实例，先显示广告
-  if (rewardedVideoAd) {
-    // 保存待跳转的详情页ID
-    pendingInfoId.value = item.id
-
-    // 显示激励视频广告
-    rewardedVideoAd.show().catch(() => {
-      // 失败重试
-      rewardedVideoAd.load()
-        .then(() => rewardedVideoAd.show())
-        .catch((err: any) => {
-          console.error('资讯列表页激励视频广告显示失败', err)
-          // 广告显示失败，直接跳转详情页
-          navigator.push(`/m/info/detail?id=${item.id}`)
-          pendingInfoId.value = null
-        })
-    })
-  } else {
-    // 没有广告实例，直接跳转详情页
+  // 当天已看过广告，直接跳转详情页
+  if (checkTodayAdWatched()) {
     navigator.push(`/m/info/detail?id=${item.id}`)
+    return
   }
+
+  // 没有广告实例，直接跳转详情页
+  if (!rewardedVideoAd) {
+    navigator.push(`/m/info/detail?id=${item.id}`)
+    return
+  }
+
+  // 未看过，弹窗提示用户观看广告
+  uni.showModal({
+    title: '温馨提示',
+    content: '亲，当天查看资讯仅看一次广告，感谢您的支持，谢谢！',
+    confirmText: '观看广告',
+    cancelText: '取消',
+    success: (res) => {
+      if (res.confirm) {
+        // 用户点击确认，播放广告
+        showRewardedAdAndGoDetail(item.id)
+      }
+    }
+  })
+}
+
+// 显示激励视频广告，看完后跳转详情页
+function showRewardedAdAndGoDetail(infoId: number) {
+  // 保存待跳转的详情页ID
+  pendingInfoId.value = infoId
+
+  // 显示激励视频广告
+  rewardedVideoAd.show().catch(() => {
+    // 失败重试
+    uni.showLoading({ title: '广告加载中...' })
+    rewardedVideoAd.load()
+      .then(() => {
+        uni.hideLoading()
+        return rewardedVideoAd.show()
+      })
+      .catch((err: any) => {
+        uni.hideLoading()
+        console.error('资讯列表页激励视频广告显示失败', err)
+        // 广告显示失败，直接跳转详情页
+        navigator.push(`/m/info/detail?id=${infoId}`)
+        pendingInfoId.value = null
+      })
+  })
 }
 
 // 广告事件处理
@@ -253,6 +298,8 @@ onMounted(async () => {
           // 用户完整观看了广告
           if (res && res.isEnded) {
             console.log('用户完整观看了激励视频广告')
+            // 记录今天已看过广告（当天不再提示）
+            setTodayAdWatched()
             // 跳转到详情页
             if (pendingInfoId.value) {
               navigator.push(`/m/info/detail?id=${pendingInfoId.value}`)
@@ -261,7 +308,12 @@ onMounted(async () => {
           } else {
             console.log('用户未完整观看广告')
             showToast('请完整观看广告后继续', 'none')
+            pendingInfoId.value = null
           }
+          // 无论是否完整观看，都重新加载广告
+          rewardedVideoAd.load().catch(() => {
+            console.log('广告预加载失败')
+          })
         })
       }
     }
