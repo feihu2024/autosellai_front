@@ -99,7 +99,7 @@
         <view class="g-feature-item" @click="goTo('/m/privacy')">
           <image src="/static/tpl-gold/feature-7.png" mode="aspectFit" /><text>隐私协议</text>
         </view>
-        <view class="g-feature-item" @click="goTo('/m/agent-workbench')">
+        <view class="g-feature-item" v-if="isAgent" @click="goTo('/m/agent-workbench')">
           <image src="/static/tpl-gold/feature-2.png" mode="aspectFit" /><text>代理工作台</text>
         </view>
         <view class="g-feature-item" @click="goTo('/m/referrals')">
@@ -244,7 +244,7 @@
 
     <view class="menu-group">
       <text class="menu-group-title">推广业务</text>
-      <view class="menu-row" @click="goTo('/m/agent-workbench')">
+      <view class="menu-row" v-if="isAgent" @click="goTo('/m/agent-workbench')">
         <view class="menu-icon">
           <image class="ui-icon" src="/static/icons/auth/institution.png" mode="aspectFit" />
         </view>
@@ -274,6 +274,7 @@ import { ref, computed, reactive, onMounted } from 'vue'
 import { getUserProfile, getMyMallOrders } from '@/api/miniapp'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
 import { navigator } from '@/utils'
+import { onShow } from '@dcloudio/uni-app'
 
 const profile = ref<any>({})
 const { isGoldTemplate, loadTemplateVariant } = useMiniappTemplate()
@@ -293,6 +294,8 @@ const counts = reactive({
 const roleLabel = computed(() => {
   return profile.value.is_leader ? '销售代理' : '普通用户'
 })
+
+const isAgent = computed(() => profile.value.role === 'agent')
 
 function goTo(path: string) {
   navigator.push(path)
@@ -315,7 +318,7 @@ async function loadOrderCounts() {
   }
 }
 
-onMounted(async () => {
+onShow(async () => {
   loadTemplateVariant()
   try {
     const res = await getUserProfile()
