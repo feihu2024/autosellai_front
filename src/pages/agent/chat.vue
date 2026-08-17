@@ -86,8 +86,8 @@
               <view class="bubble">{{ msg.content }}</view>
               <view v-if="msg.role === 'ai' && msg.content" class="reply-actions">
                 <button @tap="copyText(msg.content)">▣ 复制</button>
-                <button :class="{ favorited: msg.favorited }" @tap="toggleMessageFavorite(msg)">
-                  {{ msg.favorited ? '★ 已收藏' : '☆ 收藏' }}</button>
+                <!-- <button :class="{ favorited: msg.favorited }" @tap="toggleMessageFavorite(msg)">
+                  {{ msg.favorited ? '★ 已收藏' : '☆ 收藏' }}</button> -->
               </view>
             </view>
             <view v-if="msg.role === 'user'" class="user-avatar">你</view>

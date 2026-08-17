@@ -57,16 +57,37 @@
       </view>
     </view>
 
-    <!-- 底部操作栏：客服 + 立即购买 -->
+    <!-- 底部操作栏：客服 + 分享 + 立即购买 -->
     <view class="action-bar">
       <view class="action-icon-btn" @click="goHome">
         <text class="action-icon-glyph">🏠</text>
         <text class="action-icon-text">首页</text>
       </view>
+      <view class="action-icon-btn" @click="sharePopupVisible = true">
+        <text class="action-icon-glyph">↗</text>
+        <text class="action-icon-text">分享</text>
+      </view>
       <view class="buy-btn" @click="openSpecSheet">
         <text class="buy-btn-main">立即购买</text>
         <text class="buy-btn-sub" v-if="minPrice">¥{{ minPrice }} 起</text>
       </view>
+    </view>
+
+    <!-- 分享弹窗 -->
+    <view class="share-popup-mask" v-if="sharePopupVisible" @click="sharePopupVisible = false"></view>
+    <view class="share-popup" v-if="sharePopupVisible" @click.stop>
+      <text class="share-popup-title">分享至</text>
+      <view class="share-options">
+        <button class="share-option" open-type="share" @click="sharePopupVisible = false">
+          <view class="share-option-icon wechat-icon"><text>微</text></view>
+          <text class="share-option-text">微信好友</text>
+        </button>
+        <view class="share-option" @click="shareToTimeline">
+          <view class="share-option-icon moments-icon"><text>圈</text></view>
+          <text class="share-option-text">朋友圈</text>
+        </view>
+      </view>
+      <view class="share-popup-cancel" @click="sharePopupVisible = false">取消</view>
     </view>
 
     <!-- 规格弹窗 -->
@@ -109,6 +130,7 @@ const product = ref<any>(null)
 const loading = ref(true)
 const currentImage = ref(0)
 const specSheetVisible = ref(false)
+const sharePopupVisible = ref(false)
 
 // 选中规格快照（供规格选择区展示）
 const selectedSkuSnapshot = ref<any>(null)
@@ -247,6 +269,12 @@ function goHome() {
   uni.reLaunch({
     url: '/pages/home/index'
   })
+}
+
+// 朋友圈分享（微信小程序无 open-type 支持，引导用户使用右上角菜单）
+function shareToTimeline() {
+  sharePopupVisible.value = false
+  showToast('请点击右上角···选择「分享到朋友圈」', 'none')
 }
 
 function goBack() {
@@ -594,5 +622,100 @@ onLoad((options: any) => {
 
 .back-btn text {
   color: #5b5cf0;
+}
+
+/* ===== 分享弹窗 ===== */
+.share-popup-mask {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.45);
+  z-index: 200;
+  animation: maskIn 0.2s ease;
+}
+
+@keyframes maskIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.share-popup {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background: #fff;
+  border-radius: 20px 20px 0 0;
+  padding: 18px 0 calc(8px + env(safe-area-inset-bottom));
+  z-index: 201;
+  animation: popupIn 0.25s ease;
+}
+
+@keyframes popupIn {
+  from { transform: translateY(100%); }
+  to { transform: translateY(0); }
+}
+
+.share-popup-title {
+  display: block;
+  text-align: center;
+  font-size: 14px;
+  color: #8d99aa;
+  margin-bottom: 20px;
+}
+
+.share-options {
+  display: flex;
+  justify-content: center;
+  gap: 48px;
+  padding: 0 20px 24px;
+}
+
+.share-option {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  background: transparent;
+  border: none;
+  padding: 0;
+  margin: 0;
+  line-height: normal;
+}
+
+.share-option::after { border: none; }
+
+.share-option-icon {
+  width: 50px;
+  height: 50px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #fff;
+}
+
+.wechat-icon {
+  background: linear-gradient(135deg, #2dc100, #07c160);
+}
+
+.moments-icon {
+  background: linear-gradient(135deg, #4ad06a, #2aa84a);
+}
+
+.share-option-text {
+  font-size: 12px;
+  color: #4d5b6e;
+}
+
+.share-popup-cancel {
+  text-align: center;
+  padding: 14px 0 8px;
+  font-size: 16px;
+  color: #64748b;
+  border-top: 1px solid #f1f5f9;
 }
 </style>

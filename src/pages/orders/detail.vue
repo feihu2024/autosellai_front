@@ -228,6 +228,8 @@ onLoad((options: any) => {
 .detail-page {
   min-height: 100vh;
   background: #f5f7fb;
+  /* 为底部固定操作栏预留空间（按钮40px + 上下padding 20px + 安全区） */
+  padding-bottom: calc(70px + env(safe-area-inset-bottom));
   /* 为微信小程序导航栏预留空间 */
 }
 
