@@ -46,13 +46,8 @@
       <view class="work-filter-group">
         <text class="work-filter-title">身份筛选</text>
         <view class="work-filter-options identity">
-          <view
-            class="work-filter-btn"
-            :class="{ active: identityFilter === item }"
-            v-for="item in ['全部','普通','达人','店长','分销商']"
-            :key="item"
-            @click="identityFilter = item"
-          >
+          <view class="work-filter-btn" :class="{ active: identityFilter === item }"
+            v-for="item in ['全部', '普通', '达人', '店长', '分销商']" :key="item" @click="identityFilter = item">
             <text>{{ item }}</text>
           </view>
         </view>
@@ -60,13 +55,17 @@
       <view class="work-filter-group">
         <text class="work-filter-title">推广员筛选</text>
         <view class="work-filter-options promoter">
-          <view
-            class="work-filter-btn"
-            :class="{ active: promoterFilter === item }"
-            v-for="item in ['全部','推广员','非推广']"
-            :key="item"
-            @click="promoterFilter = item"
-          >
+          <view class="work-filter-btn" :class="{ active: promoterFilter === item }"
+            v-for="item in ['全部', '推广员', '非推广']" :key="item" @click="promoterFilter = item">
+            <text>{{ item }}</text>
+          </view>
+        </view>
+      </view>
+      <view class="work-filter-group">
+        <text class="work-filter-title">活跃度</text>
+        <view class="work-filter-options promoter">
+          <view class="work-filter-btn" :class="{ active: activeFilter === item }" v-for="item in ['全部', '活跃', '非活跃']"
+            :key="item" @click="activeFilter = item">
             <text>{{ item }}</text>
           </view>
         </view>
@@ -75,12 +74,7 @@
 
     <!-- 成员列表 -->
     <view class="member-list">
-      <view
-        class="member-item"
-        v-for="item in filteredMembers"
-        :key="item.id"
-        @click="goMemberDetail(item.id)"
-      >
+      <view class="member-item" v-for="item in filteredMembers" :key="item.id" @click="goMemberDetail(item.id)">
         <view class="avatar member-avatar">
           <text>{{ (item.name || '').slice(0, 1) }}</text>
         </view>
@@ -91,16 +85,15 @@
             <text class="mini-tag" :class="item.promoter ? 'active' : 'off'">
               {{ item.promoter ? '推广员' : '非推广员' }}
             </text>
+            <text class="mini-tag" :class="item.is_active ? 'active' : 'off'">
+              {{ item.daily_active > 0 ? '活跃' : '非活跃' }}
+            </text>
           </view>
           <text class="member-id">ID {{ item.display_id || item.id }}</text>
         </view>
         <view class="promoter-control" @click.stop>
           <text class="promoter-label">{{ item.promoter ? '推广员' : '非推广员' }}</text>
-          <view
-            class="switch"
-            :class="{ on: item.promoter }"
-            @click="togglePromoterAPI(item)"
-          ></view>
+          <view class="switch" :class="{ on: item.promoter }" @click="togglePromoterAPI(item)"></view>
         </view>
         <text class="member-arrow">›</text>
       </view>
@@ -127,6 +120,7 @@ const workbench = ref<any>({
 
 const identityFilter = ref('全部')
 const promoterFilter = ref('全部')
+const activeFilter = ref('全部')
 
 async function togglePromoterAPI(item: any) {
   const oldVal = item.promoter
@@ -147,6 +141,11 @@ const filteredMembers = computed(() => {
     list = list.filter((m: any) => m.promoter)
   } else if (promoterFilter.value === '非推广') {
     list = list.filter((m: any) => !m.promoter)
+  }
+  if (activeFilter.value === '活跃') {
+    list = list.filter((m: any) => m.daily_active > 0)
+  } else if (activeFilter.value === '非活跃') {
+    list = list.filter((m: any) => m.daily_active === 0)
   }
   return list
 })

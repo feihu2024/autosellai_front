@@ -4,6 +4,8 @@
  * 在页面 <script setup> 中调用，自动注册 onShareAppMessage + onShareTimeline，
  * 分享链接中自动携带邀请参数（referrer_id + enterprise_id）。
  *
+ * 参数来源：getShareParams 接口（模块级缓存，全局只请求一次）
+ *
  * 用法：
  *   // 默认分享（分享首页 + 邀请参数）
  *   useShare()
@@ -19,8 +21,9 @@
  *     imageUrl: product.value?.image_list?.[0],
  *   }))
  */
+import { ref } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
-import { useGlobalState } from '@/composables/useGlobalState'
+import { getShareParams } from '@/api/miniapp'
 
 interface ShareOptions {
   /** 分享标题 */
@@ -36,8 +39,41 @@ interface ShareOptions {
 /** 支持静态对象或 getter 函数（响应式场景） */
 type ShareOptionsInput = ShareOptions | (() => ShareOptions)
 
+// ===== 模块级缓存：getShareParams 接口结果（全局只请求一次） =====
+interface ShareParams {
+  referrer_id?: number
+  enterprise_id?: number
+  title?: string
+}
+
+const shareParams = ref<ShareParams | null>(null)
+let shareParamsPromise: Promise<void> | null = null
+
+/** 确保 shareParams 已加载（带缓存，多页面共用一次请求） */
+function ensureShareParams(): Promise<void> {
+  if (shareParams.value) return Promise.resolve()
+  if (shareParamsPromise) return shareParamsPromise
+  shareParamsPromise = getShareParams()
+    .then((res: any) => {
+      const data = res.data || {}
+      shareParams.value = {
+        referrer_id: data.referrer_id,
+        enterprise_id: data.enterprise_id,
+        title: data.title,
+      }
+    })
+    .catch((e: any) => {
+      console.error('[useShare] 获取分享参数失败', e)
+    })
+    .finally(() => {
+      shareParamsPromise = null
+    })
+  return shareParamsPromise
+}
+
 export function useShare(options?: ShareOptionsInput) {
-  const { getInviteQuery, currentUserName } = useGlobalState()
+  // 进入页面时预加载分享参数（用户点分享时已就绪）
+  ensureShareParams()
 
   /** 获取当前生效的分享选项 */
   function getOptions(): ShareOptions {
@@ -49,9 +85,9 @@ export function useShare(options?: ShareOptionsInput) {
   function buildSharePath(): string {
     const opts = getOptions()
     const basePath = opts.path || '/pages/home/index'
-    const inviteQuery = getInviteQuery()
+    const params = shareParams.value
 
-    // 页面参数（如商品ID）
+    // 页面参数（如资讯ID、商品ID）
     const pageParams: string[] = []
     if (opts.pathParams) {
       for (const [k, v] of Object.entries(opts.pathParams)) {
@@ -59,28 +95,33 @@ export function useShare(options?: ShareOptionsInput) {
       }
     }
 
-    // 合并 query：页面参数 + 邀请参数
-    const allQuery = [...pageParams]
-    if (inviteQuery) {
-      allQuery.push(inviteQuery)
+    // 邀请参数（来自 getShareParams 接口）
+    if (params?.referrer_id) {
+      pageParams.push(`referrer_id=${params.referrer_id}`)
+    }
+    if (params?.enterprise_id) {
+      pageParams.push(`enterprise_id=${params.enterprise_id}`)
     }
 
-    const queryString = allQuery.length > 0 ? '?' + allQuery.join('&') : ''
+    const queryString = pageParams.length > 0 ? '?' + pageParams.join('&') : ''
     return basePath + queryString
   }
 
   /** 构建 onShareTimeline 的 query 字符串 */
   function buildTimelineQuery(): string {
     const opts = getOptions()
-    const inviteQuery = getInviteQuery()
+    const params = shareParams.value
     const parts: string[] = []
     if (opts.pathParams) {
       for (const [k, v] of Object.entries(opts.pathParams)) {
         parts.push(`${k}=${encodeURIComponent(String(v))}`)
       }
     }
-    if (inviteQuery) {
-      parts.push(inviteQuery)
+    if (params?.referrer_id) {
+      parts.push(`referrer_id=${params.referrer_id}`)
+    }
+    if (params?.enterprise_id) {
+      parts.push(`enterprise_id=${params.enterprise_id}`)
     }
     return parts.join('&')
   }
@@ -88,9 +129,10 @@ export function useShare(options?: ShareOptionsInput) {
   /** 构建分享标题 */
   function buildShareTitle(): string {
     const opts = getOptions()
+    // 页面自定义标题优先，其次用接口返回的标题，最后兜底
     if (opts.title) return opts.title
-    const name = currentUserName.value
-    return name ? `${name} 邀请你一起体验` : '邀请你一起体验'
+    if (shareParams.value?.title) return shareParams.value.title
+    return '邀请你一起体验'
   }
 
   // 注册微信转发好友

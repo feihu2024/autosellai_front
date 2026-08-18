@@ -117,7 +117,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getInfoDetail, getMiniappConfig } from '@/api/miniapp'
+import { getInfoDetail, getMiniappConfig, getShareParams } from '@/api/miniapp'
 import { useShare } from '@/composables/useShare'
 import { useAdManager } from '@/composables/useAdManager'
 import { navigator, copyToClipboard, showToast } from '@/utils'
@@ -249,6 +249,9 @@ onLoad(async (options: any) => {
   if (checkTodayAdWatched()) {
     unlocked.value = true
   }
+
+  const shareParams = await getShareParams()
+  console.log('分享Params', shareParams)
 
   // 加载详情数据
   try {
@@ -682,8 +685,13 @@ onLoad(async (options: any) => {
   box-shadow: 0 4px 12px rgba(33, 104, 239, 0.3);
 }
 
-.share-btn text { color: #fff; }
-.share-btn-icon { font-size: 17px; }
+.share-btn text {
+  color: #fff;
+}
+
+.share-btn-icon {
+  font-size: 17px;
+}
 
 /* ===== 分享弹窗 ===== */
 .share-popup-mask {
@@ -698,8 +706,13 @@ onLoad(async (options: any) => {
 }
 
 @keyframes maskIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .share-popup {
@@ -715,8 +728,13 @@ onLoad(async (options: any) => {
 }
 
 @keyframes popupIn {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 .share-popup-title {
@@ -746,7 +764,9 @@ onLoad(async (options: any) => {
   line-height: normal;
 }
 
-.share-option::after { border: none; }
+.share-option::after {
+  border: none;
+}
 
 .share-option-icon {
   width: 50px;
