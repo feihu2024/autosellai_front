@@ -26,7 +26,7 @@
       <scroll-view scroll-x class="g-news-tabs" :show-scrollbar="false">
         <view v-for="item in categories" :key="item.name" class="g-news-tab"
           :class="{ active: currentCategory === item.name }" @click="switchCategory(item.name)"><text>{{ item.name
-          }}</text></view>
+            }}</text></view>
       </scroll-view>
 
       <view class="g-news-list" v-if="infoList.length">
@@ -84,7 +84,7 @@
     <scroll-view class="categories surface" scroll-x :show-scrollbar="false">
       <button v-for="item in categories" :key="item.name" :class="{ active: currentCategory === item.name }"
         @tap="switchCategory(item.name)">
-        <image class="category-icon" :src="item.icon_url ? getImageUrl(item.icon_url) : ''" mode="aspectFit" />
+        <image class="category-icon" :src="item.icon_url" />
         <text>{{ item.name }}</text>
       </button>
     </scroll-view>
@@ -114,7 +114,7 @@
           </view>
         </view>
         <!-- 在第4个列表项后展示模板广告 -->
-        <view v-if="index === 3 && templateAdUnit" class="ad-container">
+        <view v-if="index === 2 && templateAdUnit" class="ad-container">
           <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
             @close="onAdClose"></ad-custom>
         </view>
@@ -149,7 +149,7 @@ function gTagClass(category: string): string {
   return map[category] || 'g-tag-default'
 }
 
-const categories = ref<any[]>([{ name: '全部', icon_url: '/static/icons/nav/news.png' }])
+const categories = ref<any[]>([{ name: '全部', icon_url: '/static/images/discover-category-all.png' }])
 const currentCategory = ref('全部')
 const keyword = ref('')
 const infoList = ref<any[]>([])
@@ -163,9 +163,9 @@ async function fetchCategories() {
   try {
     const res = await getMiniappInfoCategories()
     const cats = res.data?.categories || []
-    categories.value = [{ name: '全部', icon_url: '/static/icons/nav/news.png' }, ...cats]
+    categories.value = [{ name: '全部', icon_url: '/static/images/discover-category-all.png' }, ...cats]
   } catch {
-    categories.value = [{ name: '全部', icon_url: '/static/icons/nav/news.png' }]
+    categories.value = [{ name: '全部', icon_url: '/static/images/discover-category-all.png' }]
   }
 }
 
@@ -364,7 +364,7 @@ onUnmounted(() => {
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  margin: 0;
+  margin: 0 10rpx 0 0;
   padding: 0;
   color: #8190a7;
   background: transparent;
@@ -384,7 +384,7 @@ onUnmounted(() => {
 .category-icon {
   width: 52rpx;
   height: 52rpx;
-  margin-bottom: 8rpx;
+  margin-top: 8rpx;
 }
 
 /* 资讯卡片（横向：左文字 右封面） */

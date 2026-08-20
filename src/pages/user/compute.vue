@@ -1,14 +1,15 @@
 ﻿<template>
   <view class="sub-page">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">算力积分详情</text>
-    </view>
+    </view> -->
 
     <!-- 当前算力展示 -->
     <view class="compute-overview">
       <text class="overview-label">当前可用算力</text>
-      <text class="overview-amount">{{ Math.floor(summary.current_balance).toLocaleString() }}<text class="unit"> 点</text></text>
+      <text class="overview-amount">{{ Math.floor(summary.current_balance).toLocaleString() }}<text class="unit">
+          点</text></text>
       <text class="overview-hint">1元 = 100点算力</text>
     </view>
 
@@ -49,7 +50,8 @@
         </view>
         <view class="record-right">
           <text class="amount" :class="amountClass(item.type)">{{ formatChange(item) }}</text>
-          <text class="balance-after" v-if="item.balance_after !== null && item.balance_after !== undefined">余额 {{ Math.floor(item.balance_after).toLocaleString() }}</text>
+          <text class="balance-after" v-if="item.balance_after !== null && item.balance_after !== undefined">余额 {{
+            Math.floor(item.balance_after).toLocaleString() }}</text>
         </view>
       </view>
     </view>
@@ -163,12 +165,14 @@ onLoad(() => {
   background: #f4f7fc;
   padding: 0 16px 80px;
 }
+
 .page-head {
   display: flex;
   align-items: center;
   min-height: 50px;
   gap: 8px;
 }
+
 .back {
   width: 36px;
   height: 36px;
@@ -178,10 +182,12 @@ onLoad(() => {
   align-items: center;
   justify-content: center;
 }
+
 .back text {
   font-size: 22px;
   color: #1e293b;
 }
+
 .page-title {
   font-size: 18px;
   font-weight: 700;
@@ -199,22 +205,26 @@ onLoad(() => {
   flex-direction: column;
   align-items: center;
 }
+
 .overview-label {
   font-size: 13px;
   color: rgba(255, 255, 255, 0.9);
   margin-bottom: 10px;
 }
+
 .overview-amount {
   font-size: 36px;
   font-weight: 800;
   color: #fff;
   line-height: 1.1;
 }
+
 .overview-amount .unit {
   font-size: 16px;
   font-weight: 600;
   opacity: 0.85;
 }
+
 .overview-hint {
   font-size: 11px;
   color: rgba(255, 255, 255, 0.7);
@@ -231,6 +241,7 @@ onLoad(() => {
   margin-bottom: 16px;
   border: 1px solid rgba(211, 224, 241, 0.5);
 }
+
 .summary-item {
   flex: 1;
   text-align: center;
@@ -238,18 +249,30 @@ onLoad(() => {
   flex-direction: column;
   align-items: center;
 }
+
 .summary-label {
   font-size: 11px;
   color: #94a3b8;
   margin-bottom: 6px;
 }
+
 .summary-val {
   font-size: 16px;
   font-weight: 700;
 }
-.text-green { color: #10b981; }
-.text-red { color: #ef4444; }
-.text-blue { color: #3b82f6; }
+
+.text-green {
+  color: #10b981;
+}
+
+.text-red {
+  color: #ef4444;
+}
+
+.text-blue {
+  color: #3b82f6;
+}
+
 .summary-divider {
   width: 1px;
   height: 32px;
@@ -262,11 +285,13 @@ onLoad(() => {
   justify-content: space-between;
   margin-bottom: 12px;
 }
+
 .section-name {
   font-size: 15px;
   font-weight: 700;
   color: #1e293b;
 }
+
 .section-count {
   font-size: 12px;
   color: #94a3b8;
@@ -278,6 +303,7 @@ onLoad(() => {
   overflow: hidden;
   border: 1px solid rgba(211, 224, 241, 0.5);
 }
+
 .record-item {
   display: flex;
   align-items: center;
@@ -285,6 +311,7 @@ onLoad(() => {
   padding: 14px 16px;
   border-bottom: 1px solid rgba(211, 224, 241, 0.3);
 }
+
 .record-item:last-child {
   border-bottom: none;
 }
@@ -296,6 +323,7 @@ onLoad(() => {
   flex: 1;
   min-width: 0;
 }
+
 .record-icon {
   width: 36px;
   height: 36px;
@@ -305,21 +333,41 @@ onLoad(() => {
   align-items: center;
   justify-content: center;
 }
+
 .record-icon text {
   font-size: 14px;
   font-weight: 700;
 }
-.record-icon.free text { color: #059669; }
-.record-icon.free { background: #d1fae5; }
-.record-icon.consume text { color: #d97706; }
-.record-icon.consume { background: #fef3c7; }
-.record-icon.recharge text { color: #2563eb; }
-.record-icon.recharge { background: #dbeafe; }
+
+.record-icon.free text {
+  color: #059669;
+}
+
+.record-icon.free {
+  background: #d1fae5;
+}
+
+.record-icon.consume text {
+  color: #d97706;
+}
+
+.record-icon.consume {
+  background: #fef3c7;
+}
+
+.record-icon.recharge text {
+  color: #2563eb;
+}
+
+.record-icon.recharge {
+  background: #dbeafe;
+}
 
 .record-info {
   flex: 1;
   min-width: 0;
 }
+
 .record-title {
   font-size: 14px;
   color: #1e293b;
@@ -328,6 +376,7 @@ onLoad(() => {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
 .record-time {
   font-size: 11px;
   color: #94a3b8;
@@ -337,14 +386,25 @@ onLoad(() => {
   text-align: right;
   flex-shrink: 0;
 }
+
 .record-right .amount {
   font-size: 14px;
   font-weight: 700;
   display: block;
 }
-.record-right .amount.positive { color: #10b981; }
-.record-right .amount.negative { color: #ef4444; }
-.record-right .amount.free { color: #059669; }
+
+.record-right .amount.positive {
+  color: #10b981;
+}
+
+.record-right .amount.negative {
+  color: #ef4444;
+}
+
+.record-right .amount.free {
+  color: #059669;
+}
+
 .balance-after {
   font-size: 11px;
   color: #94a3b8;
@@ -356,6 +416,7 @@ onLoad(() => {
   text-align: center;
   padding: 16px;
 }
+
 .load-more text {
   color: #3b82f6;
   font-size: 13px;
@@ -365,6 +426,7 @@ onLoad(() => {
   text-align: center;
   padding: 60px 0;
 }
+
 .empty text {
   color: #94a3b8;
   font-size: 14px;

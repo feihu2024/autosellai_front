@@ -99,35 +99,30 @@
     {
       "path": "pages/user/activate",
       "style": {
-        "navigationStyle": "custom",
         "navigationBarTitleText": "卡密激活"
       }
     },
     {
       "path": "pages/user/balance",
       "style": {
-        "navigationStyle": "custom",
         "navigationBarTitleText": "资金详情"
       }
     },
     {
       "path": "pages/user/withdraw",
       "style": {
-        "navigationStyle": "custom",
         "navigationBarTitleText": "提现"
       }
     },
     {
       "path": "pages/user/compute",
       "style": {
-        "navigationStyle": "custom",
         "navigationBarTitleText": "算力积分"
       }
     },
     {
       "path": "pages/user/payments",
       "style": {
-        "navigationStyle": "custom",
         "navigationBarTitleText": "支付记录"
       }
     },
@@ -141,7 +136,6 @@
     {
       "path": "pages/user/privacy",
       "style": {
-        "navigationStyle": "custom",
         "navigationBarTitleText": "隐私协议"
       }
     },

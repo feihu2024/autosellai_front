@@ -130,7 +130,7 @@
             <view class="badges"><text>{{ profile.benefit_level || '普通' }}</text></view>
           </view>
         </view>
-        <view class="setting" @click="goTo('/m/profile-edit')">›</view>
+        <!-- <view class="setting" @click="goTo('/m/profile-edit')">›</view> -->
       </view>
 
       <view class="relation-card">
@@ -257,7 +257,7 @@
     <view class="section-card surface business-section">
       <view class="section-head"><text>业务模块</text></view>
       <view class="business-list">
-        <view class="business-blue" @click="goTo('/m/agent-workbench')">
+        <view v-if="isAgent" class="business-blue" @click="goTo('/m/agent-workbench')">
           <image src="/static/images/profile-workbench.png" mode="aspectFit" />
           <view><text>代理工作台</text><text>查看团队数据与代理收益</text></view>
           <text>›</text>
@@ -342,7 +342,7 @@ onShow(async () => {
 /* ===== 紫色模板（重构为 profile.vue 风格） ===== */
 .profile-page {
   min-height: 100vh;
-  padding: 22rpx 26rpx 150rpx;
+  padding: 80rpx 26rpx 150rpx;
   background: #f3f7fd;
 }
 
@@ -453,7 +453,7 @@ onShow(async () => {
 }
 
 .relation-name {
-  width: 170rpx;
+  width: 240rpx;
   min-width: 0;
   margin-left: 13rpx;
 }

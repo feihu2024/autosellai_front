@@ -1,9 +1,9 @@
 <template>
   <view class="sub-page">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">{{ policyTitle }}</text>
-    </view>
+    </view> -->
 
     <scroll-view class="privacy-scroll" scroll-y>
       <view class="privacy-content">
@@ -76,6 +76,7 @@ function goBack() {
   background: #f4f7fc;
   display: flex;
   flex-direction: column;
+  margin-top: 80rpx;
 }
 
 .page-head {

@@ -28,10 +28,10 @@
       <text class="meta-tag">{{ detail.category }}</text>
     </view>
 
-    <!-- 内容模块区：默认只展示第一条，解锁后展示全部 -->
-    <view class="modules" v-if="parsedModules.length">
-      <!-- 免费内容：默认只展示第一条模块 -->
-      <template v-for="(mod, idx) in parsedModules.slice(0, 1)" :key="'free-' + idx">
+    <!-- 内容模块区：基于 #lock# 标识分割 -->
+    <view class="modules" v-if="allModules.length">
+      <!-- 免费内容（标识之前的模块） -->
+      <template v-for="(mod, idx) in freeModules" :key="'free-' + idx">
         <!-- 富文本模块 -->
         <rich-text v-if="mod.type === 'editor'" class="module-editor" :nodes="mod.content"></rich-text>
 
@@ -45,17 +45,17 @@
         </view>
       </template>
 
-      <!-- 解锁栏：未解锁且有多于1条模块时展示 -->
-      <button v-if="!unlocked && parsedModules.length > 1" class="unlock-bar" @tap="unlockArticle">
+      <!-- 如果存在锁定内容且未解锁，显示解锁栏 -->
+      <button v-if="hasLocked && !unlocked" class="unlock-bar" @tap="unlockArticle">
         <text class="unlock-badge">限时免费</text>
         <text class="unlock-icon">赠</text>
         <view><text>点击解锁完整内容</text><text>查看全部精彩资讯。</text></view>
         <text class="unlock-arrow">›</text>
       </button>
 
-      <!-- 解锁后的内容 -->
-      <view v-if="unlocked" class="unlocked-content">
-        <template v-for="(mod, idx) in parsedModules.slice(1)" :key="'lock-' + idx">
+      <!-- 解锁后的锁定内容（标识及之后的模块） -->
+      <view v-if="unlocked && hasLocked" class="unlocked-content">
+        <template v-for="(mod, idx) in lockedModules" :key="'lock-' + idx">
           <!-- 富文本模块 -->
           <rich-text v-if="mod.type === 'editor'" class="module-editor" :nodes="mod.content"></rich-text>
 
@@ -70,11 +70,11 @@
         </template>
       </view>
 
-      <view class="end-mark" v-if="unlocked || parsedModules.length <= 1">— END —</view>
+      <view class="end-mark" v-if="!hasLocked || unlocked || freeModules.length === 0">— END —</view>
     </view>
 
     <!-- 无模块时的空提示 -->
-    <text class="empty-modules" v-if="!parsedModules.length && detail.title">暂无更多内容</text>
+    <text class="empty-modules" v-if="!allModules.length && detail.title">暂无更多内容</text>
 
     <!-- 权限不足提示页 -->
     <view class="permission-denied" v-if="permissionDenied">
@@ -96,7 +96,6 @@
       <view v-for="item in detail.related_articles" :key="item.id" class="related-card" @tap="openRelated(item.id)">
         <image :src="item.cover_url" mode="aspectFill" class="related-cover" />
         <view class="related-info">
-          <text class="related-category">{{ item.category }}</text>
           <text class="related-article-title">{{ item.title }}</text>
         </view>
         <text class="related-arrow">›</text>
@@ -167,7 +166,7 @@ function setTodayAdWatched() {
   uni.setStorageSync(AD_WATCH_DATE_KEY, today)
 }
 
-// 注册信息分享：分享当前信息详情 + 自动携带邀请参数
+// 注册信息分享
 useShare(() => ({
   title: detail.value?.title || '快来看看这篇资讯',
   path: '/pages/info/detail',
@@ -191,10 +190,41 @@ const permissionMsg = ref('')
 const unlocked = ref(false)
 const sharePopupVisible = ref(false)
 
-const parsedModules = computed(() => {
+// 所有模块
+const allModules = computed(() => {
   const mods = detail.value.content_modules
-  if (!Array.isArray(mods)) return []
-  return mods
+  return Array.isArray(mods) ? mods : []
+})
+
+// 查找第一个包含 #lock# 的模块索引
+const lockIndex = computed(() => {
+  const mods = allModules.value
+  return mods.findIndex(mod => mod.content && mod.content.includes('#lock#'))
+})
+
+// 是否有锁定内容
+const hasLocked = computed(() => lockIndex.value !== -1)
+
+// 免费模块：标识之前的模块
+const freeModules = computed(() => {
+  const mods = allModules.value
+  const idx = lockIndex.value
+  if (idx === -1) return mods // 无锁，全部免费
+  return mods.slice(0, idx)
+})
+
+// 锁定模块：标识及之后的模块（并去除标识）
+const lockedModules = computed(() => {
+  const mods = allModules.value
+  const idx = lockIndex.value
+  if (idx === -1) return []
+  // 复制并清除第一个模块中的 #lock# 标识
+  return mods.slice(idx).map((mod, i) => {
+    if (i === 0 && mod.content) {
+      return { ...mod, content: mod.content.replace('#lock#', '') }
+    }
+    return mod
+  })
 })
 
 function goBack() {
@@ -220,7 +250,7 @@ function unlockArticle() {
     return
   }
 
-  // 未看过，弹窗提示用户观看广告
+  // 未看过，弹窗提示
   uni.showModal({
     title: '温馨提示',
     content: '亲，当天查看资讯仅看一次广告，感谢您的支持，谢谢！',
@@ -228,18 +258,15 @@ function unlockArticle() {
     cancelText: '取消',
     success: (res) => {
       if (res.confirm) {
-        // 用户点击确认，播放广告
         showRewardedAdAndUnlock()
       }
     }
   })
 }
 
-// 显示激励视频广告，看完后解锁全部内容
+// 显示激励视频广告
 function showRewardedAdAndUnlock() {
-  // 显示激励视频广告
   rewardedVideoAd.show().catch(() => {
-    // 失败重试
     uni.showLoading({ title: '广告加载中...' })
     rewardedVideoAd.load()
       .then(() => {
@@ -261,7 +288,6 @@ function copyText(text: string) {
   copyToClipboard(text)
 }
 
-// 朋友圈分享（微信小程序无 open-type 支持，引导用户使用右上角菜单）
 function shareToTimeline() {
   sharePopupVisible.value = false
   showToast('请点击右上角···选择「分享到朋友圈」', 'none')
@@ -272,7 +298,7 @@ onLoad(async (options: any) => {
   infoId.value = id
   if (!id) return
 
-  // 当天已看过广告，直接全部展示（不显示解锁按钮）
+  // 当天已看过广告，直接全部展示
   if (checkTodayAdWatched()) {
     unlocked.value = true
   }
@@ -287,27 +313,24 @@ onLoad(async (options: any) => {
       detail.value = res.data
     }
   } catch (err: any) {
-    // 权限不足时展示锁定提示页
     if (err?.message && err.message.includes('身份')) {
       permissionMsg.value = err.message
       permissionDenied.value = true
     }
   }
 
-  // 初始化广告配置并创建激励视频广告实例（场景ID 10）
+  // 初始化广告配置并创建激励视频广告实例
   try {
     const configRes = await getMiniappConfig()
     const configData = configRes.data || {}
     initFromConfig(configData)
 
-    // 激励视频广告配置（场景ID 10）
     const rewardedAd = shouldShowAdByScene(10)
     const templateAd = shouldShowAdByScene(18)
     if (templateAd && templateAd.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
       templateAdUnit.value = templateAd
     }
     if (rewardedAd && rewardedAd.ad_type === 'SLOT_ID_WEAPP_REWARD_VIDEO' && rewardedAd.ad_unit_id) {
-      // 创建激励视频广告实例
       // @ts-ignore
       if (wx.createRewardedVideoAd) {
         // @ts-ignore
@@ -324,19 +347,15 @@ onLoad(async (options: any) => {
         })
 
         rewardedVideoAd.onClose((res: any) => {
-          // 用户完整观看了广告
           if (res && res.isEnded) {
             console.log('用户完整观看了激励视频广告')
-            // 记录今天已看过广告（当天不再提示）
             setTodayAdWatched()
-            // 解锁全部内容
             unlocked.value = true
             showToast('内容已解锁', 'success')
           } else {
             console.log('用户未完整观看广告')
             showToast('请完整观看广告后继续', 'none')
           }
-          // 无论是否完整观看，都重新加载广告
           rewardedVideoAd.load().catch(() => {
             console.log('广告预加载失败')
           })
@@ -725,8 +744,8 @@ onLoad(async (options: any) => {
 }
 
 .related-cover {
-  width: 72px;
-  height: 48px;
+  width: 80px;
+  height: 58px;
   border-radius: 10px;
   flex-shrink: 0;
   background: #e8eef7;
@@ -735,7 +754,7 @@ onLoad(async (options: any) => {
 .related-info {
   flex: 1;
   min-width: 0;
-  margin-left: 12px;
+  margin-left: 8px;
   display: flex;
   flex-direction: column;
   gap: 4px;
@@ -751,7 +770,7 @@ onLoad(async (options: any) => {
 }
 
 .related-article-title {
-  font-size: 14px;
+  font-size: 16px;
   color: #1e293b;
   font-weight: 500;
   line-height: 1.4;

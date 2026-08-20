@@ -1,9 +1,9 @@
 ﻿<template>
   <view class="sub-page">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">支付记录</text>
-    </view>
+    </view> -->
 
     <view class="pay-list">
       <view class="pay-item" v-for="item in payments" :key="item.id">
@@ -11,7 +11,8 @@
           <view class="line1">
             <text v-if="item.order_type === 'cardkey'" class="cardkey-tag">卡密激活</text>
             <text class="pay-name">{{ item.package_name || item.title }}</text>
-            <text class="status-tag" :class="'st-' + (item.status || 'pending')">{{ item.status_text || statusText(item.status) }}</text>
+            <text class="status-tag" :class="'st-' + (item.status || 'pending')">{{ item.status_text ||
+              statusText(item.status) }}</text>
           </view>
           <text class="orderno">订单号 {{ item.out_trade_no || item.order_no }}</text>
           <text class="compute" v-if="item.compute_amount">算力 +{{ item.compute_amount }} 点</text>
@@ -64,12 +65,14 @@ onLoad(async () => {
   background: #f4f7fc;
   padding: 0 16px 80px;
 }
+
 .page-head {
   display: flex;
   align-items: center;
   min-height: 50px;
   gap: 8px;
 }
+
 .back {
   width: 36px;
   height: 36px;
@@ -79,21 +82,25 @@ onLoad(async () => {
   align-items: center;
   justify-content: center;
 }
+
 .back text {
   font-size: 22px;
   color: #1e293b;
 }
+
 .page-title {
   font-size: 18px;
   font-weight: 700;
   color: #1e293b;
 }
+
 .pay-list {
   background: rgba(255, 255, 255, 0.92);
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(211, 224, 241, 0.5);
 }
+
 .pay-item {
   display: flex;
   justify-content: space-between;
@@ -101,41 +108,49 @@ onLoad(async () => {
   padding: 14px 16px;
   border-bottom: 1px solid rgba(211, 224, 241, 0.3);
 }
+
 .pay-item:last-child {
   border-bottom: none;
 }
+
 .pay-main {
   flex: 1;
   min-width: 0;
 }
+
 .line1 {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
 }
+
 .pay-name {
   font-size: 14px;
   color: #1e293b;
   font-weight: 500;
 }
+
 .orderno {
   display: block;
   font-size: 11px;
   color: #94a3b8;
   margin-bottom: 2px;
 }
+
 .compute {
   display: block;
   font-size: 11px;
   color: #8b5cf6;
 }
+
 .status-tag {
   font-size: 10px;
   padding: 1px 7px;
   border-radius: 4px;
   font-weight: 500;
 }
+
 .cardkey-tag {
   font-size: 10px;
   padding: 1px 7px;
@@ -144,23 +159,28 @@ onLoad(async () => {
   background: #f3e8ff;
   color: #7c3aed;
 }
+
 .st-paid {
   background: #dcfce7;
   color: #16a34a;
 }
+
 .st-pending {
   background: #fef3c7;
   color: #d97706;
 }
+
 .st-cancelled {
   background: #fee2e2;
   color: #dc2626;
 }
+
 .pay-right {
   text-align: right;
   flex-shrink: 0;
   padding-left: 10px;
 }
+
 .pay-amount {
   display: block;
   font-size: 16px;
@@ -168,14 +188,17 @@ onLoad(async () => {
   font-weight: 700;
   margin-bottom: 2px;
 }
+
 .pay-time {
   font-size: 11px;
   color: #94a3b8;
 }
+
 .empty {
   text-align: center;
   padding: 60px 0;
 }
+
 .empty text {
   color: #94a3b8;
   font-size: 14px;

@@ -43,46 +43,49 @@
     <view class="form-section" v-if="showForm">
       <text class="form-title">{{ editingId ? '编辑地址' : '新增地址' }}</text>
 
-      <view class="form-field">
-        <text class="field-label">收件人</text>
-        <input v-model="form.name" type="text" placeholder="姓名" maxlength="20" class="field-input" />
-      </view>
-      <view class="form-field">
-        <text class="field-label">手机号</text>
-        <input v-model="form.phone" type="number" placeholder="11 位手机号" maxlength="11" class="field-input" />
-      </view>
-
-      <!-- 三级联动：省 / 市 / 区（picker） -->
-      <view class="form-field form-field-region">
-        <text class="field-label">所在地区</text>
-        <view class="region-row">
-          <picker mode="selector" :range="provinceList" @change="onProvinceChange" class="region-picker">
-            <view class="picker-display">{{ form.province || '省份' }}</view>
-          </picker>
-          <picker mode="selector" :range="cityOptions" @change="onCityChange" class="region-picker"
-            :disabled="!form.province">
-            <view class="picker-display" :class="{ disabled: !form.province }">{{ form.city || '城市' }}</view>
-          </picker>
-          <picker mode="selector" :range="districtOptions" @change="onDistrictChange" class="region-picker"
-            :disabled="!form.city">
-            <view class="picker-display" :class="{ disabled: !form.city }">{{ form.district || '区/县' }}</view>
-          </picker>
+      <!-- 地区数据加载中 -->
+      <template>
+        <view class="form-field">
+          <text class="field-label">收件人</text>
+          <input v-model="form.name" type="text" placeholder="姓名" maxlength="20" class="field-input" />
         </view>
-      </view>
+        <view class="form-field">
+          <text class="field-label">手机号</text>
+          <input v-model="form.phone" type="number" placeholder="11 位手机号" maxlength="11" class="field-input" />
+        </view>
 
-      <view class="form-field">
-        <text class="field-label">详细地址</text>
-        <textarea v-model="form.detail" class="form-textarea" placeholder="街道、楼栋、门牌号等" maxlength="200"></textarea>
-      </view>
-
-      <view class="form-field checkbox-field">
-        <view class="checkbox-row" @click="form.is_default = !form.is_default">
-          <view :class="['custom-checkbox', { checked: form.is_default }]">
-            <text v-if="form.is_default" class="check-mark">✓</text>
+        <!-- 三级联动：省 / 市 / 区（picker） -->
+        <view class="form-field form-field-region">
+          <text class="field-label">所在地区</text>
+          <view class="region-row">
+            <picker mode="selector" :range="provinceOptions" @change="onProvinceChange" class="region-picker">
+              <view class="picker-display">{{ form.province || '省份' }}</view>
+            </picker>
+            <picker mode="selector" :range="cityOptions" @change="onCityChange" class="region-picker"
+              :disabled="!form.province">
+              <view class="picker-display" :class="{ disabled: !form.province }">{{ form.city || '城市' }}</view>
+            </picker>
+            <picker mode="selector" :range="districtOptions" @change="onDistrictChange" class="region-picker"
+              :disabled="!form.city">
+              <view class="picker-display" :class="{ disabled: !form.city }">{{ form.district || '区/县' }}</view>
+            </picker>
           </view>
-          <text class="checkbox-label">设为默认地址</text>
         </view>
-      </view>
+
+        <view class="form-field">
+          <text class="field-label">详细地址</text>
+          <textarea v-model="form.detail" class="form-textarea" placeholder="街道、楼栋、门牌号等" maxlength="200"></textarea>
+        </view>
+
+        <view class="form-field checkbox-field">
+          <view class="checkbox-row" @click="form.is_default = !form.is_default">
+            <view :class="['custom-checkbox', { checked: form.is_default }]">
+              <text v-if="form.is_default" class="check-mark">✓</text>
+            </view>
+            <text class="checkbox-label">设为默认地址</text>
+          </view>
+        </view>
+      </template>
 
       <view class="form-btns">
         <view class="cancel-btn" @click="showForm = false"><text>取消</text></view>
@@ -95,7 +98,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
 import {
   getAddresses,
@@ -103,7 +106,6 @@ import {
   updateAddress,
   deleteAddress,
   setDefaultAddress,
-  getAddresses as getAddressesList,
 } from '@/api/miniapp'
 import { provinceList, cityListOf, districtListOf } from '@/utils/region'
 import { navigator, showToast, showConfirm } from '@/utils'
@@ -115,29 +117,11 @@ const saving = ref(false)
 const showForm = ref(false)
 const editingId = ref<number | null>(null)
 
-// 从结算页带 select 参数进入时，为「选择地址」模式
 const selectMode = ref(false)
 
-/** 选择该地址并返回结算页 */
-function selectAddress(item: any) {
-  if (!selectMode.value) return
-
-  const { getAddressSelectContext, clearAddressSelectContext } = useGlobalState()
-  const context = getAddressSelectContext()
-
-  if (!context) {
-    showToast('页面状态异常', 'error')
-    return
-  }
-
-  // 清除上下文
-  clearAddressSelectContext()
-
-  // 跳转回结算页，带上地址ID
-  uni.redirectTo({
-    url: `/pages/mall/checkout?product_id=${context.productId}&sku_id=${context.skuId}&qty=${context.qty}&address_id=${item.id}`
-  })
-}
+const provinceOptions = provinceList
+const cityOptions = ref<string[]>([])
+const districtOptions = ref<string[]>([])
 
 const form = reactive({
   name: '',
@@ -149,8 +133,19 @@ const form = reactive({
   is_default: false,
 })
 
-const cityOptions = computed(() => cityListOf(form.province))
-const districtOptions = computed(() => districtListOf(form.province, form.city))
+function selectAddress(item: any) {
+  if (!selectMode.value) return
+  const { getAddressSelectContext, clearAddressSelectContext } = useGlobalState()
+  const context = getAddressSelectContext()
+  if (!context) {
+    showToast('页面状态异常', 'error')
+    return
+  }
+  clearAddressSelectContext()
+  uni.redirectTo({
+    url: `/pages/mall/checkout?product_id=${context.productId}&sku_id=${context.skuId}&qty=${context.qty}&address_id=${item.id}`
+  })
+}
 
 function resetForm() {
   form.name = ''
@@ -160,6 +155,8 @@ function resetForm() {
   form.district = ''
   form.detail = ''
   form.is_default = false
+  cityOptions.value = []
+  districtOptions.value = []
 }
 
 function addNew() {
@@ -177,27 +174,40 @@ function editAddress(item: any) {
   form.district = item.district || ''
   form.detail = item.detail || ''
   form.is_default = !!item.is_default
+
+  if (form.province) {
+    cityOptions.value = cityListOf(form.province)
+    if (form.city) {
+      districtOptions.value = districtListOf(form.province, form.city)
+    } else {
+      districtOptions.value = []
+    }
+  } else {
+    cityOptions.value = []
+    districtOptions.value = []
+  }
   showForm.value = true
 }
 
 function onProvinceChange(e: any) {
   const idx = Number(e.detail.value)
-  form.province = provinceList[idx] || ''
+  form.province = provinceOptions[idx] || ''
   form.city = ''
   form.district = ''
+  cityOptions.value = form.province ? cityListOf(form.province) : []
+  districtOptions.value = []
 }
 
 function onCityChange(e: any) {
   const idx = Number(e.detail.value)
-  const cities = cityListOf(form.province)
-  form.city = cities[idx] || ''
+  form.city = cityOptions.value[idx] || ''
   form.district = ''
+  districtOptions.value = form.province && form.city ? districtListOf(form.province, form.city) : []
 }
 
 function onDistrictChange(e: any) {
   const idx = Number(e.detail.value)
-  const districts = districtListOf(form.province, form.city)
-  form.district = districts[idx] || ''
+  form.district = districtOptions.value[idx] || ''
 }
 
 function validate(): string | null {
@@ -272,10 +282,6 @@ async function onToggleDefault(item: any) {
     return
   }
   await onSetDefault(item)
-}
-
-function goBack() {
-  navigator.back()
 }
 
 async function loadList() {
@@ -664,7 +670,7 @@ onLoad((options: any) => {
 
 .loading-state {
   text-align: center;
-  padding: 60px 16px;
+  padding: 20px 16px;
 }
 
 .loading-state text {

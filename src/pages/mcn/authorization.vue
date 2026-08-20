@@ -242,7 +242,7 @@ async function loadStatus() {
 }
 
 function openTutorial(type: string, title: string) {
-  navigator.push(`/m/mcn-tutorial?type=${type}&title=${encodeURIComponent(title)}`)
+  navigator.push(`/pages/mcn/tutorial?type=${type}&title=${encodeURIComponent(title)}`)
 }
 
 function onStaticClick(name: string) {

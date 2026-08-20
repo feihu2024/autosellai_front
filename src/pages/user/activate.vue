@@ -1,26 +1,18 @@
 ﻿<template>
   <view class="sub-page">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">卡密激活</text>
-    </view>
+    </view> -->
 
     <!-- 步骤1：输入激活码 -->
     <view class="form-card">
       <text class="field-label">激活码</text>
       <view class="input-row">
-        <input
-          class="text-input"
-          v-model="activationCode"
-          placeholder="请输入激活码"
-          :disabled="step === 'confirming' || step === 'done'"
-          @confirm="identifyCard"
-        />
-        <view
-          class="primary-btn"
-          :class="{ disabled: step === 'confirming' || step === 'done' || !activationCode }"
-          @click="identifyCard"
-        >
+        <input class="text-input" v-model="activationCode" placeholder="请输入激活码"
+          :disabled="step === 'confirming' || step === 'done'" @confirm="identifyCard" />
+        <view class="primary-btn" :class="{ disabled: step === 'confirming' || step === 'done' || !activationCode }"
+          @click="identifyCard">
           <text>识别</text>
         </view>
       </view>
@@ -63,8 +55,10 @@
         </view>
 
         <view class="kv-list">
-          <view class="kv"><text class="kv-label">卡密码</text><text class="kv-val code-val">{{ activationCode.toUpperCase() }}</text></view>
-          <view class="kv"><text class="kv-label">激活截止</text><text class="kv-val">{{ recognizedCard.expire_date }}</text></view>
+          <view class="kv"><text class="kv-label">卡密码</text><text class="kv-val code-val">{{
+            activationCode.toUpperCase() }}</text></view>
+          <view class="kv"><text class="kv-label">激活截止</text><text class="kv-val">{{ recognizedCard.expire_date
+              }}</text></view>
           <view class="kv"><text class="kv-label">激活后权益归属</text><text class="kv-val">当前激活账户</text></view>
         </view>
 
@@ -89,7 +83,8 @@
       <view class="done-benefits">
         <view class="done-benefit" v-if="recognizedCard.benefit_level !== '无'">
           <text class="benefit-mini-label">权益身份</text>
-          <text class="benefit-mini-val identity">{{ activatedResult?.new_benefit_level || recognizedCard.benefit_level }}</text>
+          <text class="benefit-mini-val identity">{{ activatedResult?.new_benefit_level || recognizedCard.benefit_level
+            }}</text>
         </view>
         <view class="done-benefit" v-if="recognizedCard.compute_power > 0">
           <text class="benefit-mini-label">算力</text>
@@ -186,12 +181,14 @@ function goBack() {
   background: #f4f7fc;
   padding: 0 16px 80px;
 }
+
 .page-head {
   display: flex;
   align-items: center;
   min-height: 50px;
   gap: 8px;
 }
+
 .back {
   width: 36px;
   height: 36px;
@@ -201,10 +198,12 @@ function goBack() {
   align-items: center;
   justify-content: center;
 }
+
 .back text {
   font-size: 22px;
   color: #1e293b;
 }
+
 .page-title {
   font-size: 18px;
   font-weight: 700;
@@ -220,6 +219,7 @@ function goBack() {
   border: 1px solid rgba(211, 224, 241, 0.5);
   margin-bottom: 14px;
 }
+
 .field-label {
   display: block;
   font-size: 13px;
@@ -227,16 +227,19 @@ function goBack() {
   color: #64748b;
   margin-bottom: 10px;
 }
+
 .field-hint {
   display: block;
   font-size: 12px;
   color: #94a3b8;
   margin-top: 10px;
 }
+
 .input-row {
   display: flex;
   gap: 10px;
 }
+
 .text-input {
   flex: 1;
   height: 44px;
@@ -258,14 +261,17 @@ function goBack() {
   justify-content: center;
   flex-shrink: 0;
 }
+
 .primary-btn text {
   color: #fff;
   font-size: 14px;
   font-weight: 600;
 }
+
 .primary-btn.disabled {
   opacity: 0.5;
 }
+
 .wide-btn {
   width: 100%;
   margin-top: 16px;
@@ -281,6 +287,7 @@ function goBack() {
   align-items: center;
   justify-content: center;
 }
+
 .ghost-btn text {
   color: #64748b;
   font-size: 14px;
@@ -301,10 +308,12 @@ function goBack() {
   align-items: center;
   gap: 10px;
 }
+
 .loading-text {
   color: #64748b;
   font-size: 14px;
 }
+
 .loading-dot {
   width: 14px;
   height: 14px;
@@ -313,7 +322,12 @@ function goBack() {
   border-top-color: #6366f1;
   animation: spin 0.8s linear infinite;
 }
-@keyframes spin { to { transform: rotate(360deg); } }
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
 
 .error-card {
   display: flex;
@@ -322,6 +336,7 @@ function goBack() {
   background: #fef2f2;
   border-color: #fecaca;
 }
+
 .error-icon {
   width: 28px;
   height: 28px;
@@ -332,10 +347,12 @@ function goBack() {
   justify-content: center;
   flex-shrink: 0;
 }
+
 .error-icon text {
   color: #fff;
   font-size: 16px;
 }
+
 .error-text {
   color: #dc2626;
   font-size: 14px;
@@ -345,12 +362,14 @@ function goBack() {
 .success-card {
   padding: 20px;
 }
+
 .success-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 14px;
 }
+
 .success-badge {
   background: #dcfce7;
   color: #16a34a;
@@ -359,13 +378,16 @@ function goBack() {
   font-size: 12px;
   font-weight: 600;
 }
+
 .batch-tag {
   font-size: 12px;
   color: #94a3b8;
 }
+
 .goods-title {
   margin-bottom: 14px;
 }
+
 .goods-name {
   font-size: 17px;
   font-weight: 700;
@@ -377,6 +399,7 @@ function goBack() {
   gap: 10px;
   margin-bottom: 14px;
 }
+
 .benefit-item {
   flex: 1;
   padding: 14px;
@@ -388,6 +411,7 @@ function goBack() {
   flex-direction: column;
   align-items: center;
 }
+
 .benefit-label {
   display: block;
   font-size: 11px;
@@ -395,12 +419,19 @@ function goBack() {
   margin-bottom: 6px;
   font-weight: 500;
 }
+
 .benefit-value {
   font-size: 16px;
   font-weight: 700;
 }
-.benefit-value.identity { color: #6d28d9; }
-.benefit-value.compute { color: #7c3aed; }
+
+.benefit-value.identity {
+  color: #6d28d9;
+}
+
+.benefit-value.compute {
+  color: #7c3aed;
+}
 
 .kv-list {
   background: #f8fafc;
@@ -408,6 +439,7 @@ function goBack() {
   padding: 4px 14px;
   margin-bottom: 12px;
 }
+
 .kv {
   display: flex;
   justify-content: space-between;
@@ -415,18 +447,22 @@ function goBack() {
   padding: 10px 0;
   border-bottom: 1px solid #e2e8f0;
 }
+
 .kv:last-child {
   border-bottom: none;
 }
+
 .kv-label {
   font-size: 13px;
   color: #64748b;
 }
+
 .kv-val {
   font-size: 13px;
   color: #1e293b;
   font-weight: 600;
 }
+
 .code-val {
   color: #6366f1 !important;
 }
@@ -441,10 +477,12 @@ function goBack() {
   line-height: 1.6;
   margin-bottom: 14px;
 }
+
 .confirm-actions {
   display: flex;
   gap: 10px;
 }
+
 .confirm-actions .primary-btn,
 .confirm-actions .ghost-btn {
   flex: 1;
@@ -457,22 +495,26 @@ function goBack() {
   flex-direction: column;
   align-items: center;
 }
+
 .done-icon {
   font-size: 48px;
   margin-bottom: 10px;
 }
+
 .done-title {
   font-size: 18px;
   color: #1e293b;
   font-weight: 700;
   margin-bottom: 8px;
 }
+
 .done-desc {
   font-size: 13px;
   color: #64748b;
   line-height: 1.5;
   margin-bottom: 18px;
 }
+
 .done-benefits {
   display: flex;
   gap: 10px;
@@ -480,6 +522,7 @@ function goBack() {
   margin-bottom: 18px;
   width: 100%;
 }
+
 .done-benefit {
   flex: 1;
   padding: 12px;
@@ -490,18 +533,26 @@ function goBack() {
   flex-direction: column;
   align-items: center;
 }
+
 .benefit-mini-label {
   display: block;
   font-size: 11px;
   color: #16a34a;
   margin-bottom: 4px;
 }
+
 .benefit-mini-val {
   font-size: 15px;
   font-weight: 700;
 }
-.benefit-mini-val.identity { color: #6d28d9; }
-.benefit-mini-val.compute { color: #7c3aed; }
+
+.benefit-mini-val.identity {
+  color: #6d28d9;
+}
+
+.benefit-mini-val.compute {
+  color: #7c3aed;
+}
 
 .balance-now {
   font-size: 13px;
@@ -514,6 +565,7 @@ function goBack() {
   align-items: center;
   justify-content: center;
 }
+
 .balance-num {
   color: #6366f1;
   font-weight: 700;

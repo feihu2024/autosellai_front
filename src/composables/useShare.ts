@@ -44,6 +44,7 @@ interface ShareParams {
   referrer_id?: number
   enterprise_id?: number
   title?: string
+  imageUrl?: string
 }
 
 const shareParams = ref<ShareParams | null>(null)
@@ -60,6 +61,7 @@ function ensureShareParams(): Promise<void> {
         referrer_id: data.referrer_id,
         enterprise_id: data.enterprise_id,
         title: data.title,
+        imageUrl: data.image_url,
       }
     })
     .catch((e: any) => {

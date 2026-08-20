@@ -1,9 +1,9 @@
 ﻿<template>
   <view class="sub-page">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">提现</text>
-    </view>
+    </view> -->
 
     <view class="withdraw-card">
       <text class="withdraw-label">可提现金额</text>
@@ -52,7 +52,8 @@
         </view>
         <view class="record-right">
           <text :class="'status-' + item.status">{{ item.status_text || statusText(item.status) }}</text>
-          <view class="reason-text" v-if="(item.status === 'rejected' || item.status === 'transfer_failed') && (item.reject_reason || item.reason)">
+          <view class="reason-text"
+            v-if="(item.status === 'rejected' || item.status === 'transfer_failed') && (item.reject_reason || item.reason)">
             <text>{{ item.reject_reason || item.reason }}</text>
           </view>
         </view>
@@ -205,12 +206,14 @@ onLoad(loadData)
   background: #f4f7fc;
   padding: 0 16px 80px;
 }
+
 .page-head {
   display: flex;
   align-items: center;
   min-height: 50px;
   gap: 8px;
 }
+
 .back {
   width: 36px;
   height: 36px;
@@ -220,10 +223,12 @@ onLoad(loadData)
   align-items: center;
   justify-content: center;
 }
+
 .back text {
   font-size: 22px;
   color: #1e293b;
 }
+
 .page-title {
   font-size: 18px;
   font-weight: 700;
@@ -240,16 +245,19 @@ onLoad(loadData)
   flex-direction: column;
   align-items: center;
 }
+
 .withdraw-label {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.8);
   margin-bottom: 8px;
 }
+
 .withdraw-amount {
   font-size: 30px;
   font-weight: 700;
   color: #fff;
 }
+
 .frozen-tip {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.85);
@@ -267,9 +275,11 @@ onLoad(loadData)
   gap: 12px;
   margin-bottom: 12px;
 }
+
 .auth-info {
   flex: 1;
 }
+
 .auth-title {
   display: block;
   font-size: 13px;
@@ -277,12 +287,14 @@ onLoad(loadData)
   margin-bottom: 4px;
   font-weight: 600;
 }
+
 .auth-desc {
   display: block;
   font-size: 11px;
   color: #9a3412;
   line-height: 1.4;
 }
+
 .auth-btn {
   flex-shrink: 0;
   height: 36px;
@@ -293,11 +305,13 @@ onLoad(loadData)
   align-items: center;
   justify-content: center;
 }
+
 .auth-btn text {
   color: #fff;
   font-size: 13px;
   font-weight: 600;
 }
+
 .auth-btn.disabled {
   opacity: 0.6;
 }
@@ -309,6 +323,7 @@ onLoad(loadData)
   margin-bottom: 20px;
   border: 1px solid rgba(211, 224, 241, 0.5);
 }
+
 .field-label {
   display: block;
   font-size: 13px;
@@ -316,6 +331,7 @@ onLoad(loadData)
   color: #64748b;
   margin-bottom: 10px;
 }
+
 .input-wrap {
   display: flex;
   align-items: center;
@@ -325,12 +341,14 @@ onLoad(loadData)
   padding: 0 14px;
   margin-bottom: 10px;
 }
+
 .yen {
   font-size: 20px;
   font-weight: 700;
   color: #1e293b;
   margin-right: 8px;
 }
+
 .amount-input {
   flex: 1;
   height: 48px;
@@ -338,16 +356,19 @@ onLoad(loadData)
   font-weight: 600;
   color: #1e293b;
 }
+
 .limit-tips {
   display: flex;
   gap: 12px;
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
+
 .limit-tips text {
   font-size: 11px;
   color: #94a3b8;
 }
+
 .fee-preview {
   background: #f1f5f9;
   border-radius: 8px;
@@ -357,15 +378,18 @@ onLoad(loadData)
   justify-content: space-between;
   align-items: center;
 }
+
 .fee-label {
   font-size: 12px;
   color: #64748b;
 }
+
 .fee-actual {
   font-size: 16px;
   color: #10b981;
   font-weight: 700;
 }
+
 .primary-btn {
   height: 48px;
   border-radius: 12px;
@@ -374,14 +398,17 @@ onLoad(loadData)
   align-items: center;
   justify-content: center;
 }
+
 .primary-btn text {
   color: #fff;
   font-size: 15px;
   font-weight: 600;
 }
+
 .primary-btn.disabled {
   opacity: 0.5;
 }
+
 .wide-btn {
   width: 100%;
 }
@@ -393,12 +420,14 @@ onLoad(loadData)
   color: #1e293b;
   margin-bottom: 12px;
 }
+
 .record-list {
   background: rgba(255, 255, 255, 0.92);
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(211, 224, 241, 0.5);
 }
+
 .record-item {
   display: flex;
   justify-content: space-between;
@@ -406,53 +435,111 @@ onLoad(loadData)
   padding: 14px 16px;
   border-bottom: 1px solid rgba(211, 224, 241, 0.3);
 }
+
 .record-item:last-child {
   border-bottom: none;
 }
+
 .record-left {
   display: flex;
   flex-direction: column;
 }
+
 .record-amount {
   font-size: 16px;
   color: #1e293b;
   font-weight: 700;
 }
+
 .record-actual {
   font-size: 11px;
   color: #94a3b8;
   margin-top: 2px;
 }
+
 .record-time {
   font-size: 11px;
   color: #cbd5e1;
   margin-top: 2px;
 }
+
 .record-right {
   text-align: right;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
 }
+
 .reason-text {
   margin-top: 4px;
   max-width: 140px;
 }
+
 .reason-text text {
   font-size: 10px;
   color: #ef4444;
 }
-.status-pending { background: #fef3c7; color: #d97706; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.status-approved { background: #dbeafe; color: #2563eb; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.status-transferring { background: #dbeafe; color: #2563eb; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.status-success { background: #dcfce7; color: #16a34a; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.status-rejected { background: #fee2e2; color: #dc2626; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; }
-.status-transfer_failed { background: #fef2f2; color: #dc2626; padding: 3px 10px; border-radius: 20px; font-size: 11px; font-weight: 600; border: 1px solid #fecaca; }
+
+.status-pending {
+  background: #fef3c7;
+  color: #d97706;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-approved {
+  background: #dbeafe;
+  color: #2563eb;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-transferring {
+  background: #dbeafe;
+  color: #2563eb;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-success {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-rejected {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.status-transfer_failed {
+  background: #fef2f2;
+  color: #dc2626;
+  padding: 3px 10px;
+  border-radius: 20px;
+  font-size: 11px;
+  font-weight: 600;
+  border: 1px solid #fecaca;
+}
 
 .empty {
   text-align: center;
   padding: 40px 0;
 }
+
 .empty text {
   color: #94a3b8;
   font-size: 14px;

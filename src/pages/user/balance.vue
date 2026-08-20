@@ -1,9 +1,9 @@
 ﻿<template>
   <view class="sub-page">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">资金详情</text>
-    </view>
+    </view> -->
 
     <view class="balance-overview">
       <view class="balance-info">
@@ -89,12 +89,14 @@ onLoad(async () => {
   background: #f4f7fc;
   padding: 0 16px 80px;
 }
+
 .page-head {
   display: flex;
   align-items: center;
   min-height: 50px;
   gap: 8px;
 }
+
 .back {
   width: 36px;
   height: 36px;
@@ -104,15 +106,18 @@ onLoad(async () => {
   align-items: center;
   justify-content: center;
 }
+
 .back text {
   font-size: 22px;
   color: #1e293b;
 }
+
 .page-title {
   font-size: 18px;
   font-weight: 700;
   color: #1e293b;
 }
+
 .balance-overview {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   border-radius: 16px;
@@ -122,20 +127,24 @@ onLoad(async () => {
   align-items: center;
   margin-bottom: 16px;
 }
+
 .balance-info {
   display: flex;
   flex-direction: column;
 }
+
 .balance-label {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.8);
   margin-bottom: 6px;
 }
+
 .balance-amount {
   font-size: 26px;
   font-weight: 700;
   color: #fff;
 }
+
 .primary-btn {
   height: 40px;
   padding: 0 20px;
@@ -145,30 +154,36 @@ onLoad(async () => {
   align-items: center;
   justify-content: center;
 }
+
 .primary-btn text {
   color: #fff;
   font-size: 14px;
   font-weight: 600;
 }
+
 .amount-list {
   background: rgba(255, 255, 255, 0.92);
   border-radius: 14px;
   overflow: hidden;
   border: 1px solid rgba(211, 224, 241, 0.5);
 }
+
 .amount-item {
   padding: 14px 16px;
   border-bottom: 1px solid rgba(211, 224, 241, 0.3);
 }
+
 .amount-item:last-child {
   border-bottom: none;
 }
+
 .line-row {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 4px;
 }
+
 .title-wrap {
   display: flex;
   align-items: center;
@@ -176,42 +191,50 @@ onLoad(async () => {
   flex: 1;
   min-width: 0;
 }
+
 .item-title {
   font-size: 14px;
   color: #1e293b;
   font-weight: 500;
 }
+
 .positive {
   color: #10b981;
   font-weight: 600;
   font-size: 14px;
 }
+
 .sub-row {
   display: flex;
   gap: 12px;
   margin-top: 2px;
   flex-wrap: wrap;
 }
+
 .sub-text {
   font-size: 11px;
   color: #94a3b8;
 }
+
 .remark-text {
   display: block;
   font-size: 12px;
   color: #64748b;
   margin-top: 2px;
 }
+
 .time-text {
   display: block;
   font-size: 11px;
   color: #94a3b8;
   margin-top: 2px;
 }
+
 .empty {
   text-align: center;
   padding: 60px 0;
 }
+
 .empty text {
   color: #94a3b8;
   font-size: 14px;

@@ -532,7 +532,7 @@ onUnmounted(() => {
 
 /* ===== HomeView 紫色模板样式（对齐参考布局） ===== */
 .home-page {
-  padding: 40rpx 24rpx 0;
+  padding: 80rpx 24rpx 0;
   box-sizing: border-box;
 }
 
@@ -559,7 +559,7 @@ onUnmounted(() => {
   width: 84rpx;
   height: 84rpx;
   position: relative;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
   border-radius: 28rpx;
