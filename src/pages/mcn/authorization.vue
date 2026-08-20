@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!-- ===== 金色模板 F-4（模板2） ===== -->
   <view v-if="isGoldTemplate" class="gold-auth">
     <text class="g-auth-title">授权管理</text>
@@ -178,12 +178,16 @@
       <text class="status-note-text">当前企业暂未开启视频号带货机构功能</text>
     </view>
   </view>
+
+  <!-- 底部跑马灯登录条（未绑定手机号时显示） -->
+  <LoginMarqueeBar />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { getMcnStatus, getMcnAuthorization, bindMcn } from '@/api/miniapp'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
+import LoginMarqueeBar from '@/components/LoginMarqueeBar.vue'
 import { navigator, showToast } from '@/utils'
 
 const { isGoldTemplate, loadTemplateVariant } = useMiniappTemplate()

@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <!-- ===== 金色模板 F-3（模板2） ===== -->
   <view v-if="isGoldTemplate" class="gold-mall">
     <view v-if="mallBanners.length > 0" class="g-shop-banner">
@@ -140,12 +140,16 @@
     <PurchaseSpecSheet v-if="specSheetVisible && selectedProduct" :product="selectedProduct" :visible="specSheetVisible"
       @close="specSheetVisible = false" @confirm="handleSpecConfirm" />
   </view>
+
+  <!-- 底部跑马灯登录条（未绑定手机号时显示） -->
+  <LoginMarqueeBar />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted } from 'vue'
 import { getMiniappMallProducts, getMiniappConfig } from '@/api/miniapp'
 import PurchaseSpecSheet from '@/components/PurchaseSpecSheet.vue'
+import LoginMarqueeBar from '@/components/LoginMarqueeBar.vue'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
 import { useAdManager } from '@/composables/useAdManager'
 import { navigator } from '@/utils'

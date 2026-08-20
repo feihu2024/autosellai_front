@@ -222,6 +222,9 @@
       </view>
     </template>
   </view>
+
+  <!-- 底部跑马灯登录条（未绑定手机号时显示） -->
+  <LoginMarqueeBar />
 </template>
 
 <script setup lang="ts">
@@ -239,6 +242,7 @@ import {
 } from "@/api/miniapp";
 import { useAdManager } from "@/composables/useAdManager";
 import { useMiniappTemplate } from "@/composables/useMiniappTemplate";
+import LoginMarqueeBar from "@/components/LoginMarqueeBar.vue";
 import { useShare } from "@/composables/useShare";
 import { useGlobalState } from "@/composables/useGlobalState";
 import { navigator } from "@/utils";

@@ -275,12 +275,16 @@
       </view>
     </view>
   </view>
+
+  <!-- 底部跑马灯登录条（未绑定手机号时显示） -->
+  <LoginMarqueeBar />
 </template>
 
 <script setup lang="ts">
 import { ref, computed, reactive, onMounted } from 'vue'
 import { getUserProfile, getMyMallOrders } from '@/api/miniapp'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
+import LoginMarqueeBar from '@/components/LoginMarqueeBar.vue'
 import { navigator } from '@/utils'
 import { onShow } from '@dcloudio/uni-app'
 

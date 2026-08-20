@@ -1,4 +1,4 @@
-﻿﻿<template>
+﻿<template>
   <!-- ===== 金色模板 F-2（模板2） ===== -->
   <view v-if="isGoldTemplate" class="gold-info">
     <text class="g-info-title">资讯</text>
@@ -123,12 +123,16 @@
 
     <view v-else class="empty surface">没有找到相关资讯</view>
   </view>
+
+  <!-- 底部跑马灯登录条（未绑定手机号时显示） -->
+  <LoginMarqueeBar />
 </template>
 
 <script setup lang="ts">
 import { ref, onMounted, onUnmounted } from 'vue'
 import { getMiniappInfoList, getMiniappInfoCategories, getMiniappConfig } from '@/api/miniapp'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
+import LoginMarqueeBar from '@/components/LoginMarqueeBar.vue'
 import { useAdManager } from '@/composables/useAdManager'
 import { navigator, showToast } from '@/utils'
 import { getImageUrl } from '@/utils/image'
