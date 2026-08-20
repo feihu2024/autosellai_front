@@ -129,7 +129,6 @@
     {
       "path": "pages/user/contacts",
       "style": {
-        "navigationStyle": "custom",
         "navigationBarTitleText": "联系客服"
       }
     },

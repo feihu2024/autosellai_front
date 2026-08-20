@@ -295,6 +295,9 @@ export function getBalanceRecords() { return request.get('/v1/miniapp/user/balan
 export function getComputeRecords(params?: { page?: number; page_size?: number }) { return request.get('/v1/miniapp/user/compute', { params }) }
 export function getPayments() { return request.get('/v1/miniapp/user/payments') }
 export function getContacts() { return request.get('/v1/miniapp/user/contacts') }
+export function getCustomerServices() { return request.get('/v1/miniapp/customer-services') }
+
+
 export function getWithdrawRecords() { return request.get('/v1/miniapp/user/withdraw-records') }
 export function requestWithdraw(data: { amount: number }) { return request.post('/v1/miniapp/user/withdraw', data) }
 
