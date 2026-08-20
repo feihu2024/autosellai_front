@@ -117,153 +117,161 @@
     </view>
   </view>
 
-  <!-- ===== 紫色模板（模板1）个人中心 ===== -->
+  <!-- ===== 紫色模板（模板1）个人中心 - 重构为 profile.vue 风格 ===== -->
   <view v-else class="profile-page">
-    <view class="page-header">
-      <text class="eyebrow">账户与服务</text>
-      <text class="page-title">个人中心</text>
-    </view>
-
-    <view class="profile-card">
-      <view class="profile-top">
-        <view class="avatar"><text class="avatar-text">{{ profile.nickname ? profile.nickname[0] : 'U' }}</text></view>
-        <view class="profile-name">
-          <view class="name-row">
-            <text class="name-text">{{ profile.nickname || '用户' }}</text>
-            <text class="benefit-tag">权益·{{ profile.benefit_level || '普通' }}</text>
+    <!-- 身份卡片 -->
+    <view class="identity-card">
+      <view class="profile-main">
+        <image class="avatar" :src="profile.avatar_url || '/static/images/robot.png'" mode="aspectFill" />
+        <view class="profile-copy">
+          <view class="nickname">{{ profile.nickname || '用户' }}</view>
+          <view class="meta-row">
+            <view class="user-id">ID · {{ profile.display_id || '未设置' }}</view>
+            <view class="badges"><text>{{ profile.benefit_level || '普通' }}</text></view>
           </view>
-          <text class="phone-text">{{ profile.phone || '未登录' }}</text>
         </view>
-        <text class="identity">{{ roleLabel }}</text>
+        <view class="setting" @click="goTo('/m/profile-edit')">›</view>
       </view>
-      <view class="profile-stats">
-        <view class="stat-item">
-          <text class="stat-label">ID</text>
-          <text class="stat-value">{{ profile.display_id || '-' }}</text>
+
+      <view class="relation-card">
+        <image src="/static/images/robot.png" mode="aspectFill" />
+        <view class="relation-name">
+          <text>所属代理</text>
+          <view>代理ID：{{ profile.agent_display_id || '无' }}</view>
         </view>
-        <view class="stat-item">
-          <text class="stat-label">推荐人ID</text>
-          <text class="stat-value">{{ profile.referrer_display_id || '无' }}</text>
+        <view class="relation-ids">
+          <text>推荐人 ID：{{ profile.referrer_display_id || '无' }}</text>
+          <text>所属代理 ID：{{ profile.agent_display_id || '无' }}</text>
         </view>
-        <view class="stat-item">
-          <text class="stat-label">所属代理ID</text>
-          <text class="stat-value">{{ profile.agent_display_id || '无' }}</text>
+      </view>
+
+      <view class="asset-row">
+        <view @click="goTo('/m/compute')">
+          <text>{{ profile.compute_balance?.toLocaleString() || 0 }}</text>
+          <view>算力余额</view>
         </view>
-        <view class="stat-item stat-clickable" @click="goTo('/m/compute')">
-          <text class="stat-label">算力余额</text>
-          <text class="stat-value">{{ profile.compute_balance?.toLocaleString() || 0 }}</text>
+        <view @click="goTo('/m/balance')">
+          <text>¥ {{ (profile.balance || 0).toFixed(2) }}</text>
+          <view>资金余额</view>
         </view>
-        <view class="stat-item stat-clickable" @click="goTo('/m/balance')">
-          <text class="stat-label">资金余额</text>
-          <text class="stat-value">¥{{ (profile.balance || 0).toFixed(2) }}</text>
+        <view @click="goTo('/m/benefit')">
+          <text>{{ profile.benefit_level || '普通' }}</text>
+          <view>代理级别</view>
         </view>
       </view>
     </view>
 
-    <view class="order-card">
-      <view class="card-title-row">
-        <text class="card-title">我的订单</text>
-        <view class="card-all-btn" @click="goOrders('')"><text>全部</text>
-          <image class="ui-icon" src="/static/icons/common/chevron-purple.png" mode="aspectFit" />
-        </view>
+    <!-- 邀请横幅 -->
+    <view class="invite-banner" @click="goTo('/m/share')">
+      <image class="invite-banner-bg"
+        src="https://mlcfjihuaqn.yxiaozhu.com/saas/ffc7144b712145c49d61bcc2b4d3afba.png?e=1787450837&token=8HYKX7kOi_0yI5lbCm9L15PD17ROW4bDVRCIXtCA:j8cPc3-d6pBPN3lUZ78n8kbRLIs="
+        mode="aspectFill" />
+    </view>
+
+    <!-- 我的订单 -->
+    <view class="section-card surface">
+      <view class="section-head">
+        <text>我的订单</text>
+        <text @click="goOrders('')">全部订单　›</text>
       </view>
       <view class="order-grid">
-        <view class="order-btn" @click="goOrders('pending_ship')">
-          <view class="order-icon-box">
-            <image class="ui-icon" src="/static/icons/common/box.png" mode="aspectFit" /><text class="order-badge"
-              v-if="counts.pending_ship">{{ counts.pending_ship }}</text>
+        <view @click="goOrders('')">
+          <view class="service-icon blue">
+            <image src="/static/images/profile-order.png" mode="aspectFit" />
+            <text v-if="totalOrders">{{ totalOrders }}</text>
           </view>
-          <text class="order-label">待发货</text>
+          <text>我的订单</text>
         </view>
-        <view class="order-btn" @click="goOrders('pending_receive')">
-          <view class="order-icon-box">
-            <image class="ui-icon" src="/static/icons/common/truck.png" mode="aspectFit" /><text class="order-badge"
-              v-if="counts.pending_receive">{{ counts.pending_receive }}</text>
+        <view @click="goOrders('pending_ship')">
+          <view class="service-icon orange">
+            <image src="/static/images/profile-ship.png" mode="aspectFit" />
+            <text v-if="counts.pending_ship">{{ counts.pending_ship }}</text>
           </view>
-          <text class="order-label">待收货</text>
+          <text>待发货</text>
         </view>
-        <view class="order-btn" @click="goOrders('completed')">
-          <view class="order-icon-box">
-            <image class="ui-icon" src="/static/icons/common/check.png" mode="aspectFit" /><text
-              class="order-badge done" v-if="counts.completed">{{ counts.completed }}</text>
+        <view @click="goOrders('pending_receive')">
+          <view class="service-icon green">
+            <image src="/static/images/profile-receive.png" mode="aspectFit" />
+            <text v-if="counts.pending_receive">{{ counts.pending_receive }}</text>
           </view>
-          <text class="order-label">已完成</text>
+          <text>待收货</text>
+        </view>
+        <view @click="goOrders('completed')">
+          <view class="service-icon purple">
+            <image src="/static/images/profile-complete.png" mode="aspectFit" />
+          </view>
+          <text>已完成</text>
         </view>
       </view>
     </view>
 
-    <view class="menu-group">
-      <text class="menu-group-title">卡密服务</text>
-      <view class="menu-row" @click="goTo('/m/activate')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/common/key.png" mode="aspectFit" />
+    <!-- 服务中心 -->
+    <view class="section-card surface service-center">
+      <view class="section-head"><text>服务中心</text></view>
+      <view class="two-grid">
+        <view @click="goTo('/m/activate')">
+          <view class="wide-icon blue">
+            <image src="/static/images/profile-activate.png" mode="aspectFit" />
+          </view>
+          <view><text>卡密激活</text><text>输入卡密兑换权益</text></view>
+          <text>›</text>
         </view>
-        <text class="menu-label">卡密激活</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
+        <view @click="goTo('/m/cards')">
+          <view class="wide-icon purple">
+            <image src="/static/images/profile-cards.png" mode="aspectFit" />
+          </view>
+          <view><text>我的卡密</text><text>查看卡密与状态</text></view>
+          <text>›</text>
+        </view>
       </view>
-      <view class="menu-row" @click="goTo('/m/cards')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/common/card.png" mode="aspectFit" />
+      <view class="service-divider"></view>
+      <view class="account-grid">
+        <view @click="goTo('/m/contacts')">
+          <view class="service-icon green">
+            <image src="/static/images/profile-contact.png" mode="aspectFit" />
+          </view>
+          <text>联系客服</text>
         </view>
-        <text class="menu-label">我的卡密</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
-      </view>
-    </view>
-
-    <view class="menu-group">
-      <text class="menu-group-title">账户服务</text>
-      <view class="menu-row" @click="goTo('/m/contacts')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/common/service.png" mode="aspectFit" />
+        <view @click="goTo('/m/payments')">
+          <view class="service-icon orange">
+            <image src="/static/images/profile-payment.png" mode="aspectFit" />
+          </view>
+          <text>支付记录</text>
         </view>
-        <text class="menu-label">联系客服</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
-      </view>
-      <view class="menu-row" @click="goTo('/m/payments')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/common/news-empty.png" mode="aspectFit" />
+        <view @click="goTo('/m/addresses')">
+          <view class="service-icon blue">
+            <image src="/static/images/profile-address.png" mode="aspectFit" />
+          </view>
+          <text>地址管理</text>
         </view>
-        <text class="menu-label">支付记录</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
-      </view>
-      <view class="menu-row" @click="goTo('/m/addresses')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/common/location.png" mode="aspectFit" />
+        <view @click="goTo('/m/privacy')">
+          <view class="service-icon purple">
+            <image src="/static/images/profile-privacy.png" mode="aspectFit" />
+          </view>
+          <text>隐私协议</text>
         </view>
-        <text class="menu-label">地址管理</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
-      </view>
-      <view class="menu-row" @click="goTo('/m/privacy')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/common/shield.png" mode="aspectFit" />
-        </view>
-        <text class="menu-label">隐私协议</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
       </view>
     </view>
 
-    <view class="menu-group">
-      <text class="menu-group-title">推广业务</text>
-      <view class="menu-row" v-if="isAgent" @click="goTo('/m/agent-workbench')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/auth/institution.png" mode="aspectFit" />
+    <!-- 业务模块 -->
+    <view class="section-card surface business-section">
+      <view class="section-head"><text>业务模块</text></view>
+      <view class="business-list">
+        <view class="business-blue" @click="goTo('/m/agent-workbench')">
+          <image src="/static/images/profile-workbench.png" mode="aspectFit" />
+          <view><text>代理工作台</text><text>查看团队数据与代理收益</text></view>
+          <text>›</text>
         </view>
-        <text class="menu-label">代理工作台</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
-      </view>
-      <view class="menu-row" @click="goTo('/m/referrals')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/common/share.png" mode="aspectFit" />
+        <view class="business-purple" @click="goTo('/m/referrals')">
+          <image src="/static/images/profile-referral.png" mode="aspectFit" />
+          <view><text>我的推荐</text><text>管理推荐用户与奖励记录</text></view>
+          <text>›</text>
         </view>
-        <text class="menu-label">我的推荐</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
-      </view>
-      <view class="menu-row" @click="goTo('/m/share')">
-        <view class="menu-icon">
-          <image class="ui-icon" src="/static/icons/common/share.png" mode="aspectFit" />
+        <view class="business-gold" @click="goTo('/m/share')">
+          <image src="/static/images/profile-share.png" mode="aspectFit" />
+          <view><text>分享好友</text><text>邀请好友一起解锁 AI 实战</text></view>
+          <text>›</text>
         </view>
-        <text class="menu-label">分享好友</text>
-        <image class="ui-icon menu-arrow" src="/static/icons/common/chevron.png" mode="aspectFit" />
       </view>
     </view>
   </view>
@@ -331,333 +339,477 @@ onShow(async () => {
 </script>
 
 <style scoped lang="scss">
-/* ===== 紫色模板 ===== */
+/* ===== 紫色模板（重构为 profile.vue 风格） ===== */
 .profile-page {
-  padding: 12px 18px 0;
+  min-height: 100vh;
+  padding: 22rpx 26rpx 150rpx;
+  background: #f3f7fd;
 }
 
-.ui-icon {
-  display: block;
-  flex: 0 0 auto;
-}
-
-.page-header {
-  padding: 18px 2px 12px;
-}
-
-.eyebrow {
-  display: block;
-  color: #6658f5;
-  font-size: 11px;
-  font-weight: 800;
-  margin-bottom: 5px;
-}
-
-.page-title {
-  display: block;
-  font-size: 29px;
-  line-height: 1.15;
-  color: #202a42;
-  font-weight: 800;
-}
-
-.profile-card {
-  border-radius: 26px;
-  padding: 19px;
-  color: #fff;
-  background: linear-gradient(135deg, #594cf1, #7665f6 56%, #8f7cf8);
-  box-shadow: 0 18px 42px rgba(102, 88, 245, 0.24);
-  position: relative;
+/* 身份卡片 */
+.identity-card {
+  padding: 30rpx 28rpx 22rpx;
   overflow: hidden;
+  border: 1rpx solid #e5edf7;
+  border-radius: 32rpx;
+  color: #20344e;
+  background: #fff;
+  box-shadow: 0 14rpx 36rpx rgba(46, 76, 119, 0.08);
 }
 
-.profile-top {
+.profile-main {
   display: flex;
   align-items: center;
-  gap: 12px;
-  position: relative;
-  z-index: 2;
 }
 
 .avatar {
-  width: 54px;
-  height: 54px;
-  border-radius: 19px;
+  width: 104rpx;
+  height: 104rpx;
+  flex: 0 0 auto;
+  border: 5rpx solid #eaf2ff;
+  border-radius: 50%;
+  background: #f2f7ff;
+}
+
+.profile-copy {
+  flex: 1;
+  min-width: 0;
+  margin-left: 22rpx;
+}
+
+.nickname {
+  max-width: 100%;
+  overflow: hidden;
+  font-size: 34rpx;
+  font-weight: 800;
+  line-height: 1.35;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.meta-row {
+  margin-top: 10rpx;
+  display: flex;
+  align-items: center;
+  gap: 10rpx;
+  overflow: hidden;
+}
+
+.user-id {
+  flex: 0 0 auto;
+  padding: 4rpx 9rpx;
+  border-radius: 10rpx;
+  color: #8d99aa;
+  background: #f4f6f9;
+  font-size: 18rpx;
+  line-height: 1.35;
+  font-weight: 500;
+  letter-spacing: 0.3rpx;
+  white-space: nowrap;
+}
+
+.badges {
+  flex: 0 0 auto;
+}
+
+.badges text {
+  padding: 4rpx 10rpx;
+  border-radius: 14rpx;
+  color: #3876df;
+  background: #edf4ff;
+  font-size: 19rpx;
+  font-weight: 650;
+}
+
+.setting {
+  width: 48rpx;
+  height: 50rpx;
+  margin: 0;
+  padding: 0 12rpx;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(255, 255, 255, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.16);
-  flex-shrink: 0;
+  border-radius: 25rpx;
+  color: #7e8ca0;
+  background: #f5f7fa;
+  font-size: 34rpx;
+  line-height: 1;
 }
 
-.avatar-text {
-  font-size: 25px;
-  font-weight: 900;
-  color: #fff;
-}
-
-.profile-name {
-  flex: 1;
-  min-width: 0;
-}
-
-.name-row {
+.relation-card {
+  margin-top: 22rpx;
+  padding: 20rpx 0 0;
   display: flex;
   align-items: center;
-  gap: 6px;
-  margin-bottom: 4px;
+  border-top: 1rpx solid #edf1f6;
 }
 
-.name-text {
-  font-size: 18px;
-  color: #fff;
+.relation-card image {
+  width: 58rpx;
+  height: 58rpx;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  background: #eef4ff;
+}
+
+.relation-name {
+  width: 170rpx;
+  min-width: 0;
+  margin-left: 13rpx;
+}
+
+.relation-name>text {
+  display: block;
+  color: #98a4b5;
+  font-size: 20rpx;
+}
+
+.relation-name>view {
+  margin-top: 3rpx;
+  overflow: hidden;
+  color: #344860;
+  font-size: 25rpx;
   font-weight: 700;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.benefit-tag {
-  padding: 2px 8px;
-  border-radius: 999px;
-  font-size: 10px;
-  font-weight: 700;
-  background: rgba(255, 255, 255, 0.22);
-  color: #fff;
+.relation-ids {
+  flex: 1;
+  min-width: 0;
+  margin-left: 18rpx;
+  padding-left: 16rpx;
+  border-left: 1rpx solid #e8edf4;
 }
 
-.phone-text {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.84);
+.relation-ids text {
+  display: block;
+  overflow: hidden;
+  color: #7f8c9e;
+  font-size: 21rpx;
+  line-height: 1.65;
+  white-space: nowrap;
+  text-overflow: ellipsis;
 }
 
-.identity {
-  padding: 6px 11px;
-  background: rgba(255, 255, 255, 0.18);
-  border-radius: 999px;
-  font-size: 10px;
-  flex-shrink: 0;
-  color: #fff;
-}
-
-.profile-stats {
+.asset-row {
+  margin-top: 22rpx;
+  padding: 18rpx 4rpx;
   display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  margin-top: 18px;
+  border-radius: 20rpx;
+  background: #f6f9fd;
+}
+
+.asset-row>view {
+  flex: 1;
+  text-align: center;
+  border-right: 1rpx solid #e5ebf3;
+}
+
+.asset-row>view:last-child {
+  border-right: 0;
+}
+
+.asset-row text {
+  color: #253b55;
+  font-size: 29rpx;
+  font-weight: 800;
+}
+
+.asset-row view view {
+  margin-top: 6rpx;
+  color: #8b97a8;
+  font-size: 21rpx;
+}
+
+/* 邀请横幅 */
+.invite-banner {
+  width: 100%;
+  height: 190rpx;
+  margin-top: 20rpx;
+  padding: 0;
   position: relative;
-  z-index: 2;
-}
-
-.stat-item {
-  width: calc(33.33% - 8px);
-  padding: 11px 12px;
-  border-radius: 15px;
-  background: rgba(255, 255, 255, 0.13);
-  display: flex;
-  flex-direction: column;
-  gap: 5px;
-  box-sizing: border-box;
-  transition: all 0.2s ease;
-}
-
-/* 第4、5项（算力余额、资金余额）各占50% */
-.stat-item:nth-child(4),
-.stat-item:nth-child(5) {
-  width: calc(50% - 5px);
-}
-
-/* 可点击项样式 - 更显眼 */
-.stat-clickable {
-  cursor: pointer;
-  background: rgba(255, 184, 0, 0.25);
-  border: 1px solid rgba(255, 184, 0, 0.4);
-  position: relative;
-}
-
-.stat-clickable:active {
-  background: rgba(255, 184, 0, 0.35);
-  transform: scale(0.98);
-}
-
-/* 可点击项的标签更突出 */
-.stat-clickable .stat-label {
-  color: #ffd700;
-  font-weight: 600;
-}
-
-/* 可点击项的数值更突出 */
-.stat-clickable .stat-value {
-  color: #ffd700;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-}
-
-.stat-label {
-  font-size: 10px;
-  color: rgba(255, 255, 255, 0.78);
-}
-
-.stat-value {
-  font-size: 17px;
+  overflow: hidden;
+  border: 0;
+  border-radius: 26rpx;
+  background: #1676f3;
   color: #fff;
-  font-weight: 700;
+  text-align: left;
+  box-shadow: 0 14rpx 30rpx rgba(21, 92, 208, 0.23);
 }
 
-.order-card {
-  margin-top: 14px;
+.invite-banner::after {
+  border: 0;
+}
+
+.invite-banner-bg {
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  inset: 0;
+}
+
+/* 通用卡片 */
+.section-card {
+  margin-top: 22rpx;
+  padding: 26rpx 24rpx;
+}
+
+.surface {
   background: #fff;
-  border-radius: 22px;
-  border: 1px solid #e5eaf4;
-  box-shadow: 0 8px 24px rgba(57, 70, 112, 0.07);
-  padding: 15px;
+  border-radius: 26rpx;
+  border: 1rpx solid #e5edf7;
+  box-shadow: 0 8rpx 24rpx rgba(57, 70, 112, 0.06);
 }
 
-.card-title-row {
+.section-head {
   display: flex;
   align-items: center;
   justify-content: space-between;
 }
 
-.card-title {
-  font-size: 16px;
-  color: #202a42;
-  font-weight: 700;
+.section-head>text:first-child {
+  color: #1d3049;
+  font-size: 33rpx;
+  font-weight: 800;
 }
 
-.card-all-btn {
-  display: flex;
-  align-items: center;
-  color: #6658f5;
-  font-size: 11px;
+.section-head>text:last-child {
+  color: #8b97a9;
+  font-size: 24rpx;
 }
 
-.card-all-btn .ui-icon {
-  width: 13px;
-  height: 13px;
-  margin-left: 2px;
-}
-
+/* 订单网格 */
 .order-grid {
-  display: flex;
-  gap: 6px;
-  margin-top: 16px;
+  margin-top: 25rpx;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
 }
 
-.order-btn {
-  flex: 1;
+.order-grid>view {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 7px;
-  position: relative;
-  padding: 4px 0;
+  color: #45566e;
+  font-size: 24rpx;
 }
 
-.order-icon-box {
-  width: 42px;
-  height: 42px;
-  border-radius: 15px;
-  background: #f5f3ff;
+.service-icon {
+  width: 82rpx;
+  height: 82rpx;
+  margin-bottom: 13rpx;
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  position: relative;
+  border-radius: 22rpx;
+  border: 2rpx solid rgba(255, 255, 255, 0.9);
+  box-shadow: 0 8rpx 18rpx rgba(47, 83, 132, 0.13);
 }
 
-.order-icon-box .ui-icon {
-  width: 22px;
-  height: 22px;
+.service-icon image {
+  width: 50rpx;
+  height: 50rpx;
 }
 
-.order-label {
-  font-size: 11px;
-  color: #202a42;
-}
-
-.order-badge {
+.service-icon>text {
   position: absolute;
-  right: -4px;
-  top: -5px;
-  min-width: 18px;
-  height: 18px;
-  padding: 0 4px;
-  border-radius: 999px;
-  background: #ff5359;
+  right: -6rpx;
+  top: -8rpx;
+  min-width: 30rpx;
+  height: 30rpx;
+  padding: 0 7rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 3rpx solid #fff;
+  border-radius: 18rpx;
   color: #fff;
-  font-size: 9px;
-  font-weight: 800;
+  background: #ff5a62;
+  font-size: 17rpx;
+}
+
+/* 服务图标色调 */
+.blue {
+  background: #dceaff;
+}
+
+.orange {
+  background: #ffe5c7;
+}
+
+.green {
+  background: #d6f3e9;
+}
+
+.purple {
+  background: #e7dcff;
+}
+
+/* 两列网格（卡密服务） */
+.two-grid {
+  margin-top: 22rpx;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16rpx;
+}
+
+.two-grid>view {
+  min-width: 0;
+  padding: 18rpx 14rpx;
   display: flex;
   align-items: center;
-  justify-content: center;
-  border: 2px solid #fff;
-  z-index: 2;
+  border-radius: 20rpx;
+  background: #f6f9fe;
 }
 
-.order-badge.done {
-  background: #32b67a;
-}
-
-.menu-group {
-  margin-top: 14px;
-  background: #fff;
-  border-radius: 22px;
-  border: 1px solid #e5eaf4;
-  box-shadow: 0 8px 24px rgba(57, 70, 112, 0.07);
-  overflow: hidden;
-  padding-top: 10px;
-  padding-bottom: 4px;
-}
-
-.menu-group-title {
-  display: block;
-  font-size: 11px;
-  color: #9aa4b8;
-  padding: 0 15px 8px;
-}
-
-.menu-row {
-  width: 100%;
-  min-height: 56px;
-  padding: 0 14px;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  color: #202a42;
-  position: relative;
-  border-top: 1px solid #f0f3f8;
-}
-
-.menu-row:first-of-type {
-  border-top: 0;
-}
-
-.menu-icon {
-  width: 34px;
-  height: 34px;
-  border-radius: 12px;
-  background: #f5f3ff;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+.wide-icon {
+  width: 72rpx;
+  height: 72rpx;
   flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 19rpx;
+  border: 2rpx solid #fff;
+  box-shadow: 0 7rpx 16rpx rgba(47, 83, 132, 0.12);
 }
 
-.menu-icon .ui-icon {
-  width: 18px;
-  height: 18px;
+.wide-icon image {
+  width: 46rpx;
+  height: 46rpx;
 }
 
-.menu-label {
-  font-size: 13px;
-  font-weight: 600;
+.two-grid>view>view:nth-child(2) {
   flex: 1;
-  color: #202a42;
+  min-width: 0;
+  margin-left: 12rpx;
 }
 
-.menu-arrow {
-  width: 16px;
-  height: 16px;
+.two-grid>view>view:nth-child(2) text {
+  display: block;
 }
 
-/* ===== 金色模板 F-5 ===== */
+.two-grid>view>view:nth-child(2) text:first-child {
+  color: #2c405b;
+  font-size: 27rpx;
+  font-weight: 700;
+}
+
+.two-grid>view>view:nth-child(2) text:last-child {
+  margin-top: 5rpx;
+  overflow: hidden;
+  color: #8a96a7;
+  font-size: 20rpx;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.two-grid>view>text {
+  color: #90a0b4;
+  font-size: 32rpx;
+}
+
+.service-divider {
+  height: 1rpx;
+  margin: 24rpx 0 22rpx;
+  background: #e9eef5;
+}
+
+/* 账户服务网格（四列） */
+.account-grid {
+  margin-top: 0;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.account-grid>view {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: #45566e;
+  font-size: 24rpx;
+}
+
+.account-grid .service-icon {
+  width: 82rpx;
+  height: 82rpx;
+  margin-bottom: 13rpx;
+  border: 0;
+  background: transparent !important;
+  box-shadow: none;
+}
+
+.account-grid .service-icon image {
+  width: 76rpx;
+  height: 76rpx;
+}
+
+/* 业务模块列表 */
+.business-list {
+  margin-top: 20rpx;
+}
+
+.business-list>view {
+  min-height: 112rpx;
+  margin-top: 14rpx;
+  padding: 18rpx 20rpx;
+  display: flex;
+  align-items: center;
+  border-radius: 23rpx;
+}
+
+.business-list>view>image {
+  width: 72rpx;
+  height: 72rpx;
+  flex: 0 0 auto;
+  padding: 0;
+  border: 0;
+  border-radius: 20rpx;
+  background: transparent;
+  box-shadow: none;
+}
+
+.business-list>view>view {
+  flex: 1;
+  min-width: 0;
+  margin-left: 18rpx;
+}
+
+.business-list>view>view text {
+  display: block;
+}
+
+.business-list>view>view text:first-child {
+  color: #213750;
+  font-size: 30rpx;
+  font-weight: 800;
+}
+
+.business-list>view>view text:last-child {
+  margin-top: 7rpx;
+  color: #73839a;
+  font-size: 23rpx;
+}
+
+.business-list>view>text {
+  color: #6f86a4;
+  font-size: 38rpx;
+}
+
+.business-blue {
+  background: linear-gradient(110deg, #edf5ff, #f8fbff);
+}
+
+.business-purple {
+  background: linear-gradient(110deg, #f3efff, #fbf9ff);
+}
+
+.business-gold {
+  background: linear-gradient(110deg, #fef7e6, #fffcf0);
+}
+
+/* ===== 金色模板样式（原样保留） ===== */
 .gold-profile {
   padding: 0 15px 30px;
   background: #fffaf2;
@@ -750,28 +902,23 @@ onShow(async () => {
   transition: all 0.2s ease;
 }
 
-/* 第三项（所属代理ID）右边框清除 */
 .g-stat-item:nth-child(3) {
   border-right: 0;
 }
 
-/* 第4、5项（资金余额、算力余额）各占50% */
 .g-stat-item:nth-child(4),
 .g-stat-item:nth-child(5) {
   width: 50%;
 }
 
-/* 第四项（资金余额）右边框保留 */
 .g-stat-item:nth-child(4) {
   border-right: 1px solid rgba(255, 184, 0, 0.25);
 }
 
-/* 第五项（算力余额）右边框清除 */
 .g-stat-item:nth-child(5) {
   border-right: 0;
 }
 
-/* 可点击项样式 - 更显眼 */
 .g-stat-clickable {
   cursor: pointer;
   background: linear-gradient(135deg, rgba(255, 184, 0, 0.05) 0%, rgba(255, 200, 50, 0.08) 100%);
@@ -783,19 +930,16 @@ onShow(async () => {
   transform: scale(0.98);
 }
 
-/* 可点击项的数字更突出 */
 .g-stat-clickable .g-stat-num {
   color: #ff9500;
   text-shadow: 0 1px 2px rgba(255, 149, 0, 0.3);
 }
 
-/* 可点击项的标签更突出 */
 .g-stat-clickable .g-stat-label {
   color: #ff9500;
   font-weight: 600;
 }
 
-/* 添加提示图标 */
 .g-stat-clickable::after {
   content: '›';
   position: absolute;
@@ -988,7 +1132,6 @@ onShow(async () => {
 
 .g-invite-banner {
   position: relative;
-  // width: 100%;
   min-height: 80px;
   display: flex;
   align-items: center;

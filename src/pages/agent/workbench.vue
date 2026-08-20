@@ -85,7 +85,7 @@
             <text class="mini-tag" :class="item.promoter ? 'active' : 'off'">
               {{ item.promoter ? '推广员' : '非推广员' }}
             </text>
-            <text class="mini-tag" :class="item.is_active ? 'active' : 'off'">
+            <text class="mini-tag" :class="item.daily_active > 0 ? 'active' : 'off'">
               {{ item.daily_active > 0 ? '活跃' : '非活跃' }}
             </text>
           </view>
@@ -127,6 +127,8 @@ async function togglePromoterAPI(item: any) {
   item.promoter = !item.promoter
   try {
     await togglePromoter({ member_user_id: item.id, is_promoter: item.promoter })
+    const res = await getAgentWorkbench()
+    workbench.value = res.data || workbench.value
   } catch {
     item.promoter = oldVal
   }
