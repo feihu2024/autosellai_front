@@ -295,7 +295,7 @@ const roleLabel = computed(() => {
   return profile.value.is_leader ? '销售代理' : '普通用户'
 })
 
-const isAgent = computed(() => profile.value.role === 'user')
+const isAgent = computed(() => profile.value.role === 'agent')
 
 function goTo(path: string) {
   navigator.push(path)

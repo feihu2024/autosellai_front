@@ -87,6 +87,26 @@
       <view class="pd-btn" @click="goBack"><text>返回列表</text></view>
     </view>
 
+    <!-- 相关推荐 -->
+    <view v-if="detail.related_articles && detail.related_articles.length" class="related-section">
+      <view class="related-head">
+        <text class="related-title">相关推荐</text>
+        <text class="related-subtitle">继续探索更多内容</text>
+      </view>
+      <view v-for="item in detail.related_articles" :key="item.id" class="related-card" @tap="openRelated(item.id)">
+        <image :src="item.cover_url" mode="aspectFill" class="related-cover" />
+        <view class="related-info">
+          <text class="related-category">{{ item.category }}</text>
+          <text class="related-article-title">{{ item.title }}</text>
+        </view>
+        <text class="related-arrow">›</text>
+      </view>
+    </view>
+
+    <view v-if="templateAdUnit" class="ad-container">
+      <ad-custom :unit-id="templateAdUnit.ad_unit_id"></ad-custom>
+    </view>
+
     <!-- 底部分享栏 -->
     <view class="share-bar" v-if="!permissionDenied">
       <view class="share-btn" @click="sharePopupVisible = true">
@@ -125,6 +145,9 @@ import { navigator, copyToClipboard, showToast } from '@/utils'
 const { shouldShowAdByScene, initFromConfig } = useAdManager()
 
 const infoId = ref(0)
+
+// 模板广告配置（场景ID 18）
+const templateAdUnit = ref<any>(null)
 
 // 激励视频广告实例（场景ID 10）
 let rewardedVideoAd: any = null
@@ -176,6 +199,10 @@ const parsedModules = computed(() => {
 
 function goBack() {
   navigator.back()
+}
+
+function openRelated(id: number) {
+  navigator.push(`/pages/info/detail?id=${id}`)
 }
 
 function unlockArticle() {
@@ -275,6 +302,10 @@ onLoad(async (options: any) => {
 
     // 激励视频广告配置（场景ID 10）
     const rewardedAd = shouldShowAdByScene(10)
+    const templateAd = shouldShowAdByScene(18)
+    if (templateAd && templateAd.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
+      templateAdUnit.value = templateAd
+    }
     if (rewardedAd && rewardedAd.ad_type === 'SLOT_ID_WEAPP_REWARD_VIDEO' && rewardedAd.ad_unit_id) {
       // 创建激励视频广告实例
       // @ts-ignore
@@ -652,6 +683,90 @@ onLoad(async (options: any) => {
   color: #fff;
   font-size: 14px;
   font-weight: 600;
+}
+
+/* ===== 相关推荐 ===== */
+.related-section {
+  margin-top: 20px;
+  padding: 16px;
+  background: #fff;
+  border-radius: 16px;
+  box-shadow: 0 4px 16px rgba(60, 119, 196, 0.06);
+}
+
+.related-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 14px;
+}
+
+.related-title {
+  font-size: 17px;
+  font-weight: 700;
+  color: #1e293b;
+}
+
+.related-subtitle {
+  font-size: 12px;
+  color: #94a3b8;
+}
+
+.related-card {
+  display: flex;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.related-card:last-child {
+  border-bottom: none;
+  padding-bottom: 0;
+}
+
+.related-cover {
+  width: 72px;
+  height: 48px;
+  border-radius: 10px;
+  flex-shrink: 0;
+  background: #e8eef7;
+}
+
+.related-info {
+  flex: 1;
+  min-width: 0;
+  margin-left: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.related-category {
+  font-size: 11px;
+  color: #287be9;
+  background: #eaf4ff;
+  border-radius: 5px;
+  padding: 1px 6px;
+  align-self: flex-start;
+}
+
+.related-article-title {
+  font-size: 14px;
+  color: #1e293b;
+  font-weight: 500;
+  line-height: 1.4;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.related-arrow {
+  flex-shrink: 0;
+  font-size: 20px;
+  color: #c0c8d4;
+  margin-left: 8px;
 }
 
 /* ===== 底部分享栏 ===== */

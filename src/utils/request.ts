@@ -150,7 +150,7 @@ function request<T = any>(options: RequestOptions): Promise<ApiResponse<T>> {
         const statusCode = res.statusCode
         if (statusCode === 401) {
           handleUnauthorized()
-          showError('登录已过期，请重新登录')
+          // showError('登录已过期，请重新登录')
           reject(new Error('登录已过期'))
           return
         }

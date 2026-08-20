@@ -3,6 +3,19 @@
   <view v-if="isGoldTemplate" class="gold-info">
     <text class="g-info-title">资讯</text>
 
+    <view v-if="infoBanners.length > 0" class="g-info-banner">
+      <view class="g-info-banner-track" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
+        <view v-for="(banner, idx) in infoBanners" :key="banner.id || idx" class="g-info-banner-slide"
+          @click="onBannerClick(banner)">
+          <image :src="getImageUrl(banner.image_url)" class="g-info-banner-img" mode="aspectFill" />
+        </view>
+      </view>
+      <view class="g-info-banner-dots" v-if="infoBanners.length > 1">
+        <view v-for="(banner, idx) in infoBanners" :key="idx"
+          :class="['g-info-banner-dot', { active: currentBanner === idx }]" @click="currentBanner = idx" />
+      </view>
+    </view>
+
     <view class="g-news-search">
       <image src="/static/tpl-gold/icon-search.png" mode="aspectFit" />
       <input v-model.trim="keyword" type="text" confirm-type="search" placeholder="搜索资讯、文章、动态等" @input="onSearch" />
@@ -11,8 +24,9 @@
 
     <view class="g-news-panel">
       <scroll-view scroll-x class="g-news-tabs" :show-scrollbar="false">
-        <view v-for="item in categories" :key="item" class="g-news-tab" :class="{ active: currentCategory === item }"
-          @click="switchCategory(item)"><text>{{ item }}</text></view>
+        <view v-for="item in categories" :key="item.name" class="g-news-tab"
+          :class="{ active: currentCategory === item.name }" @click="switchCategory(item.name)"><text>{{ item.name
+          }}</text></view>
       </scroll-view>
 
       <view class="g-news-list" v-if="infoList.length">
@@ -45,6 +59,20 @@
 
   <!-- ===== 紫色模板（模板1） ===== -->
   <view v-else class="page-shell info-page">
+    <!-- 轮播图 -->
+    <view v-if="infoBanners.length > 0" class="info-banner-carousel surface">
+      <view class="info-banner-track" :style="{ transform: `translateX(-${currentBanner * 100}%)` }">
+        <view v-for="(banner, idx) in infoBanners" :key="banner.id || idx" class="info-banner-slide"
+          @click="onBannerClick(banner)">
+          <image :src="getImageUrl(banner.image_url)" class="info-banner-img" mode="aspectFill" />
+        </view>
+      </view>
+      <view class="info-banner-dots" v-if="infoBanners.length > 1">
+        <view v-for="(banner, idx) in infoBanners" :key="idx"
+          :class="['info-banner-dot', { active: currentBanner === idx }]" @click="currentBanner = idx" />
+      </view>
+    </view>
+
     <!-- 搜索栏 -->
     <view class="search-bar surface">
       <text class="search-icon">⌕</text>
@@ -54,10 +82,10 @@
 
     <!-- 分类（纵向图标 + 文字） -->
     <scroll-view class="categories surface" scroll-x :show-scrollbar="false">
-      <button v-for="item in categories" :key="item" :class="{ active: currentCategory === item }"
-        @tap="switchCategory(item)">
-        <!-- <text class="category-icon">{{ categoryIcon(item) }}</text> -->
-        <text>{{ item }}</text>
+      <button v-for="item in categories" :key="item.name" :class="{ active: currentCategory === item.name }"
+        @tap="switchCategory(item.name)">
+        <image class="category-icon" :src="item.icon_url ? getImageUrl(item.icon_url) : ''" mode="aspectFit" />
+        <text>{{ item.name }}</text>
       </button>
     </scroll-view>
 
@@ -98,11 +126,12 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { getMiniappInfoList, getMiniappInfoCategories, getMiniappConfig } from '@/api/miniapp'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
 import { useAdManager } from '@/composables/useAdManager'
 import { navigator, showToast } from '@/utils'
+import { getImageUrl } from '@/utils/image'
 
 const { isGoldTemplate } = useMiniappTemplate()
 const { shouldShowAdByScene, initFromConfig } = useAdManager()
@@ -120,30 +149,23 @@ function gTagClass(category: string): string {
   return map[category] || 'g-tag-default'
 }
 
-const categories = ref<string[]>(['全部'])
+const categories = ref<any[]>([{ name: '全部', icon_url: '/static/icons/nav/news.png' }])
 const currentCategory = ref('全部')
 const keyword = ref('')
 const infoList = ref<any[]>([])
 
-/** 分类图标映射（参考 discover.vue 风格） */
-function categoryIcon(name: string): string {
-  const map: Record<string, string> = {
-    全部: '▦',
-    行业动态: '✈',
-    政策解读: '♨',
-    技术干货: '▣',
-    热门活动: '⌂',
-  }
-  return map[name] || '▣'
-}
+// 轮播图
+const infoBanners = ref<any[]>([])
+const currentBanner = ref(0)
+let bannerTimer: ReturnType<typeof setInterval> | null = null
 
 async function fetchCategories() {
   try {
     const res = await getMiniappInfoCategories()
     const cats = res.data?.categories || []
-    categories.value = ['全部', ...cats]
+    categories.value = [{ name: '全部', icon_url: '/static/icons/nav/news.png' }, ...cats]
   } catch {
-    categories.value = ['全部']
+    categories.value = [{ name: '全部', icon_url: '/static/icons/nav/news.png' }]
   }
 }
 
@@ -178,6 +200,10 @@ function goDetail(item: any) {
   navigator.push(`/m/info/detail?id=${item.id}`)
 }
 
+function onBannerClick(banner: any) {
+  if (banner.link_url) navigator.push(banner.link_url)
+}
+
 // 广告事件处理
 function onAdLoad() {
   console.log('资讯页模板广告加载成功')
@@ -205,12 +231,25 @@ onMounted(async () => {
       templateAdUnit.value = templateAd
       console.log('资讯页模板广告配置:', templateAd)
     }
+
+    // 加载轮播图
+    const allBanners = configData.banners || []
+    infoBanners.value = allBanners.filter((b: any) => b.category === 'miniapp' && b.image_url)
+    if (infoBanners.value.length > 1) {
+      bannerTimer = setInterval(() => {
+        currentBanner.value = (currentBanner.value + 1) % infoBanners.value.length
+      }, 3500)
+    }
   } catch (e) {
     console.error('获取广告配置失败', e)
   }
 
   fetchCategories()
   fetchList()
+})
+
+onUnmounted(() => {
+  if (bannerTimer) clearInterval(bannerTimer)
 })
 </script>
 
@@ -235,6 +274,53 @@ onMounted(async () => {
   display: flex;
   align-items: center;
   margin-bottom: 20rpx;
+}
+
+/* 轮播图（紫色模板） */
+.info-banner-carousel {
+  position: relative;
+  overflow: hidden;
+  margin-bottom: 20rpx;
+  margin-top: 40px;
+}
+
+.info-banner-track {
+  display: flex;
+  transition: transform 0.4s ease;
+}
+
+.info-banner-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 180px;
+}
+
+.info-banner-img {
+  width: 100%;
+  height: 100%;
+}
+
+.info-banner-dots {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 6px;
+  z-index: 5;
+}
+
+.info-banner-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.info-banner-dot.active {
+  background: #fff;
+  width: 18px;
+  border-radius: 4px;
 }
 
 .search-icon {
@@ -273,7 +359,7 @@ onMounted(async () => {
 
 .categories button {
   width: 112rpx;
-  height: 110rpx;
+  height: 118rpx;
   display: inline-flex;
   flex-direction: column;
   align-items: center;
@@ -296,8 +382,9 @@ onMounted(async () => {
 }
 
 .category-icon {
+  width: 52rpx;
+  height: 52rpx;
   margin-bottom: 8rpx;
-  font-size: 38rpx;
 }
 
 /* 资讯卡片（横向：左文字 右封面） */
@@ -439,6 +526,54 @@ onMounted(async () => {
   font-size: 19px;
   font-weight: 700;
   color: #15171b;
+}
+
+/* 轮播图（金色模板） */
+.g-info-banner {
+  position: relative;
+  border-radius: 16px;
+  overflow: hidden;
+  margin-bottom: 12px;
+  box-shadow: 0 8px 24px rgba(255, 180, 0, 0.12);
+}
+
+.g-info-banner-track {
+  display: flex;
+  transition: transform 0.4s ease;
+}
+
+.g-info-banner-slide {
+  flex: 0 0 100%;
+  width: 100%;
+  height: 180px;
+}
+
+.g-info-banner-img {
+  width: 100%;
+  height: 100%;
+}
+
+.g-info-banner-dots {
+  position: absolute;
+  bottom: 8px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 5px;
+  z-index: 5;
+}
+
+.g-info-banner-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.g-info-banner-dot.active {
+  background: #ffb400;
+  width: 16px;
+  border-radius: 4px;
 }
 
 .g-news-search {
