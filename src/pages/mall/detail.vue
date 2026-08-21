@@ -122,7 +122,7 @@ useShare(() => ({
   title: product.value?.name || '快来看看这个好商品',
   path: '/pages/mall/detail',
   pathParams: { id: productId.value },
-  imageUrl: product.value?.image_list?.[0],
+  imageUrl: product.value?.share_image || '',
 }))
 
 const productId = ref(0)
@@ -637,8 +637,13 @@ onLoad((options: any) => {
 }
 
 @keyframes maskIn {
-  from { opacity: 0; }
-  to { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
 }
 
 .share-popup {
@@ -654,8 +659,13 @@ onLoad((options: any) => {
 }
 
 @keyframes popupIn {
-  from { transform: translateY(100%); }
-  to { transform: translateY(0); }
+  from {
+    transform: translateY(100%);
+  }
+
+  to {
+    transform: translateY(0);
+  }
 }
 
 .share-popup-title {
@@ -685,7 +695,9 @@ onLoad((options: any) => {
   line-height: normal;
 }
 
-.share-option::after { border: none; }
+.share-option::after {
+  border: none;
+}
 
 .share-option-icon {
   width: 50px;
