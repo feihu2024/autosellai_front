@@ -5,11 +5,13 @@
  * 1. 请求拦截器：根据 URL 自动注入对应 token（miniapp_token / enterprise_token / token）
  * 2. 响应拦截器：解包 {code, message, data} 业务体；401 自动跳转登录
  * 3. 错误提示：使用 uni.showToast 替代 ElMessage
+ * 4. 401 自动恢复：小程序端 token 过期时自动 wx.login 静默换取新 token 并重试原请求
  *
  * 对外接口与 axios 保持一致，使迁移的 api/miniapp.ts 无需修改。
  */
 
 import { storage } from './storage'
+import { useGlobalState } from '@/composables/useGlobalState'
 
 /** 后端统一响应格式 */
 export interface ApiResponse<T = any> {
@@ -124,18 +126,89 @@ function buildUrl(url: string, params?: Record<string, any>): string {
   return fullUrl
 }
 
+// ============ 401 静默重登录 ============
+
 /**
- * 核心请求方法
+ * 通过 wx.login 静默换取新 token（仅小程序端）
+ *
+ * 注意：这里必须用原生 uni.request 直接调用登录接口，不能复用 auth.ts 的 wxLogin：
+ * 1. auth.ts 引用了本文件，反向引用会形成循环依赖
+ * 2. 登录请求若再经过本封装，一旦返回 401 会递归触发重登录，造成死锁卡死
  */
-function request<T = any>(options: RequestOptions): Promise<ApiResponse<T>> {
-  // 1. 执行请求拦截器
-  let config = requestInterceptor(options)
+async function doSilentWxRelogin(): Promise<string | null> {
+  let token: string | null = null
 
-  // 2. 构建 URL
-  const fullUrl = buildUrl(config.url, config.params)
+  // #ifdef MP-WEIXIN
+  try {
+    // 1. wx.login 获取临时 code
+    const loginRes = await new Promise<any>((resolve, reject) => {
+      uni.login({
+        provider: 'weixin',
+        success: resolve,
+        fail: reject,
+      })
+    })
 
-  // 3. 发起 uni.request
-  return new Promise<ApiResponse<T>>((resolve, reject) => {
+    // 2. 获取小程序 appid（后端通过 appid 反查企业）
+    let appid: string | undefined
+    try {
+      appid = uni.getAccountInfoSync().miniProgram.appId
+    } catch {
+      appid = undefined
+    }
+
+    // 3. 调用后端 wx-login 接口换取新 token
+    const { pendingReferrerId, currentEnterpriseId, setUserInfo, consumePendingReferrer } = useGlobalState()
+    const res = await new Promise<any>((resolve, reject) => {
+      uni.request({
+        url: `${BASE_URL}/v1/miniapp/auth/wx-login`,
+        method: 'POST',
+        data: {
+          code: loginRes?.code,
+          referrer_id: pendingReferrerId.value || undefined,
+          enterprise_id: currentEnterpriseId.value || undefined,
+          appid,
+        },
+        header: { 'Content-Type': 'application/json' },
+        timeout: DEFAULT_TIMEOUT,
+        success: resolve,
+        fail: reject,
+      })
+    })
+
+    const body = res?.data
+    if (res.statusCode === 200 && body?.code === 200) {
+      const newToken = body?.data?.access_token || body?.data?.token
+      if (newToken) {
+        storage.setItem('miniapp_token', newToken)
+        setUserInfo(body.data.user)
+        consumePendingReferrer()
+        token = newToken
+      }
+    }
+  } catch {
+    // 静默失败，交由调用方走原 401 逻辑
+  }
+  // #endif
+
+  return token
+}
+
+/** 并发去重：多个请求同时 401 时，只发起一次静默重登录 */
+let refreshingPromise: Promise<string | null> | null = null
+
+function silentRelogin(): Promise<string | null> {
+  if (!refreshingPromise) {
+    refreshingPromise = doSilentWxRelogin().finally(() => {
+      refreshingPromise = null
+    })
+  }
+  return refreshingPromise
+}
+
+/** 发起底层 uni.request（网络异常统一提示并 reject） */
+function rawRequest<T = any>(fullUrl: string, config: RequestOptions): Promise<any> {
+  return new Promise((resolve, reject) => {
     uni.request({
       url: fullUrl,
       method: config.method || 'GET',
@@ -145,46 +218,62 @@ function request<T = any>(options: RequestOptions): Promise<ApiResponse<T>> {
         ...config.headers,
       },
       timeout: config.timeout || DEFAULT_TIMEOUT,
-      success: (res) => {
-        // HTTP 状态码检查
-        const statusCode = res.statusCode
-        if (statusCode === 401) {
-          handleUnauthorized()
-          // showError('登录已过期，请重新登录')
-          reject(new Error('登录已过期'))
-          return
-        }
-        if (statusCode === 403) {
-          showError('没有权限访问')
-          reject(new Error('没有权限访问'))
-          return
-        }
-        if (statusCode === 500) {
-          showError('服务器错误')
-          reject(new Error('服务器错误'))
-          return
-        }
-        if (statusCode < 200 || statusCode >= 300) {
-          const errMsg = (res.data as any)?.message || `请求失败(${statusCode})`
-          showError(errMsg)
-          reject(new Error(errMsg))
-          return
-        }
-
-        // 4. 执行响应拦截器
-        try {
-          const processed = responseInterceptor(res.data as ApiResponse<T>)
-          resolve(processed)
-        } catch (err) {
-          reject(err)
-        }
-      },
+      success: resolve,
       fail: (err) => {
         showError('网络连接异常')
         reject(new Error(err.errMsg || '网络连接异常'))
       },
     })
   })
+}
+
+/**
+ * 核心请求方法
+ *
+ * @param isRetry 是否为 401 重登录后的重试（防止 token 一直无效时无限循环重试）
+ */
+async function request<T = any>(options: RequestOptions, isRetry = false): Promise<ApiResponse<T>> {
+  // 1. 执行请求拦截器（从 storage 读取最新 token 注入）
+  const config = requestInterceptor(options)
+
+  // 2. 构建 URL
+  const fullUrl = buildUrl(config.url, config.params)
+
+  // 3. 发起请求
+  const res = await rawRequest<T>(fullUrl, config)
+  const body = res.data as ApiResponse<T> | undefined
+
+  // 4. 401（HTTP 状态码或业务码）：小程序端先静默重新登录，成功后用新 token 自动重试一次
+  const isUnauthorized = res.statusCode === 401 || body?.code === 401
+  if (isUnauthorized && !isRetry && (config.url || '').includes('/miniapp')) {
+    const newToken = await silentRelogin()
+    if (newToken) {
+      return request<T>(options, true)
+    }
+  }
+
+  // 5. HTTP 状态码检查
+  if (res.statusCode === 401) {
+    handleUnauthorized()
+    // showError('登录已过期，请重新登录')
+    throw new Error('登录已过期')
+  }
+  if (res.statusCode === 403) {
+    showError('没有权限访问')
+    throw new Error('没有权限访问')
+  }
+  if (res.statusCode === 500) {
+    showError('服务器错误')
+    throw new Error('服务器错误')
+  }
+  if (res.statusCode < 200 || res.statusCode >= 300) {
+    const errMsg = body?.message || `请求失败(${res.statusCode})`
+    showError(errMsg)
+    throw new Error(errMsg)
+  }
+
+  // 6. 执行响应拦截器
+  return responseInterceptor(body as ApiResponse<T>)
 }
 
 /**

@@ -21,7 +21,7 @@
  *     imageUrl: product.value?.image_list?.[0],
  *   }))
  */
-import { ref } from 'vue'
+import { ref, getCurrentInstance } from 'vue'
 import { onShareAppMessage, onShareTimeline } from '@dcloudio/uni-app'
 import { getShareParams } from '@/api/miniapp'
 
@@ -74,6 +74,27 @@ function ensureShareParams(): Promise<void> {
 }
 
 export function useShare(options?: ShareOptionsInput) {
+  const instance = getCurrentInstance()
+  if (instance) {
+    const componentOptions = instance.type as any
+    // 覆盖页面的 onShareAppMessage 和 onShareTimeline
+    componentOptions.onShareAppMessage = function (res: any) {
+      const opts = getOptions()
+      return {
+        title: buildShareTitle(),
+        path: buildSharePath(),
+        imageUrl: opts.imageUrl || shareParams.value?.imageUrl,
+      }
+    }
+    componentOptions.onShareTimeline = function () {
+      const opts = getOptions()
+      return {
+        title: buildShareTitle(),
+        query: buildTimelineQuery(),
+        imageUrl: opts.imageUrl || shareParams.value?.imageUrl,
+      }
+    }
+  }
   // 进入页面时预加载分享参数（用户点分享时已就绪）
   ensureShareParams()
 
@@ -140,10 +161,11 @@ export function useShare(options?: ShareOptionsInput) {
   // 注册微信转发好友
   onShareAppMessage((_res: any) => {
     const opts = getOptions()
+    console.log('分享好友', buildSharePath())
     return {
-      title: buildShareTitle(),
+      title: '2222',
       path: buildSharePath(),
-      imageUrl: opts.imageUrl,
+      imageUrl: opts.imageUrl || shareParams.value?.imageUrl || '',
     }
   })
 
@@ -153,7 +175,7 @@ export function useShare(options?: ShareOptionsInput) {
     return {
       title: buildShareTitle(),
       query: buildTimelineQuery(),
-      imageUrl: opts.imageUrl,
+      imageUrl: opts.imageUrl || shareParams.value?.imageUrl || '',
     }
   })
 }

@@ -90,7 +90,7 @@ let rewardedVideoAd: any = null
 const pendingUrl = ref('')
 
 // 激励视频上报场景码（用于上报，优先取广告配置 trigger_key）
-let rewardSceneCode = 'EXTRACT_LINK'
+let rewardSceneCode = 'jlggjx'
 
 const inputValue = ref('')
 const loading = ref(false)

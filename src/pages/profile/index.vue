@@ -10,7 +10,7 @@
       <view class="g-profile-main">
         <view class="g-profile-name-row">
           <text class="g-profile-name">{{ profile.nickname || '用户' }}</text>
-          <text v-if="profile.benefit_level" class="g-benefit-badge">{{ profile.benefit_level }}</text>
+          <text v-if="profile.benefit_level" class="g-benefit-badge">{{ profile.is_leader ? '代理' : '普通' }}</text>
           <text v-if="profile.is_leader" class="g-agent-badge">销售代理</text>
         </view>
         <text class="g-profile-phone">{{ profile.phone || '未登录' }}</text>
@@ -127,7 +127,7 @@
           <view class="nickname">{{ profile.nickname || '用户' }}</view>
           <view class="meta-row">
             <view class="user-id">ID · {{ profile.display_id || '未设置' }}</view>
-            <view class="badges"><text>{{ profile.benefit_level || '普通' }}</text></view>
+            <view class="badges"><text>{{ profile.benefit_level }}</text></view>
           </view>
         </view>
         <!-- <view class="setting" @click="goTo('/m/profile-edit')">›</view> -->
@@ -155,7 +155,7 @@
           <view>资金余额</view>
         </view>
         <view @click="goTo('/m/benefit')">
-          <text>{{ profile.benefit_level || '普通' }}</text>
+          <text>{{ profile.is_leader ? '代理' : '普通' }}</text>
           <view>代理级别</view>
         </view>
       </view>
@@ -307,7 +307,7 @@ const roleLabel = computed(() => {
   return profile.value.is_leader ? '销售代理' : '普通用户'
 })
 
-const isAgent = computed(() => profile.value.role === 'agent')
+const isAgent = computed(() => profile.value.is_leader)
 
 function goTo(path: string) {
   navigator.push(path)

@@ -136,7 +136,7 @@
 <script setup lang="ts">
 import { ref, computed } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getInfoDetail, getMiniappConfig, getShareParams } from '@/api/miniapp'
+import { getInfoDetail, getMiniappConfig, getShareParams, reportRewardVideo } from '@/api/miniapp'
 import { useShare } from '@/composables/useShare'
 import { useAdManager } from '@/composables/useAdManager'
 import { navigator, copyToClipboard, showToast } from '@/utils'
@@ -154,6 +154,9 @@ let rewardedVideoAd: any = null
 // ===== 一天只看一次广告 =====
 const AD_WATCH_DATE_KEY = 'infoAdWatchDate'
 
+// 激励视频上报场景码（用于上报，优先取广告配置 trigger_key）
+let rewardSceneCode = 'twjjgl'
+
 /** 检查今天是否已看过广告 */
 function checkTodayAdWatched(): boolean {
   const today = new Date().toDateString()
@@ -168,10 +171,9 @@ function setTodayAdWatched() {
 
 // 注册信息分享
 useShare(() => ({
-  title: detail.value?.title || '快来看看这篇资讯',
+  // title: detail.value?.title || '快来看看这篇资讯',
   path: '/pages/info/detail',
   pathParams: { id: infoId.value },
-  imageUrl: detail.value?.cover_url,
 }))
 
 const detail = ref<any>({
@@ -205,26 +207,46 @@ const lockIndex = computed(() => {
 // 是否有锁定内容
 const hasLocked = computed(() => lockIndex.value !== -1)
 
-// 免费模块：标识之前的模块
+// 免费模块：lockIndex 之前的全部模块 + 当前模块中 #lock# 之前的内容（如果有）
 const freeModules = computed(() => {
   const mods = allModules.value
   const idx = lockIndex.value
   if (idx === -1) return mods // 无锁，全部免费
-  return mods.slice(0, idx)
+
+  const before = mods.slice(0, idx)                 // 锁定模块之前的所有模块
+  const current = mods[idx]                         // 包含 #lock# 的模块
+  if (!current) return before
+
+  // 按 #lock# 分割，取前半部分
+  const parts = current.content.split('#lock#')
+  const beforeLock = parts[0]
+  // 若前半部分非空（去除空白字符后），则创建一个同类型的新模块
+  if (beforeLock && beforeLock.trim()) {
+    const newMod = { ...current, content: beforeLock }
+    return [...before, newMod]
+  }
+  return before
 })
 
-// 锁定模块：标识及之后的模块（并去除标识）
+// 锁定模块：当前模块中 #lock# 之后的内容（若有）+ 当前模块之后的所有模块
 const lockedModules = computed(() => {
   const mods = allModules.value
   const idx = lockIndex.value
   if (idx === -1) return []
-  // 复制并清除第一个模块中的 #lock# 标识
-  return mods.slice(idx).map((mod, i) => {
-    if (i === 0 && mod.content) {
-      return { ...mod, content: mod.content.replace('#lock#', '') }
-    }
-    return mod
-  })
+
+  const after = mods.slice(idx + 1)                 // 锁定模块之后的所有模块
+  const current = mods[idx]
+  if (!current) return after
+
+  const parts = current.content.split('#lock#')
+  // 取后半部分（可能有多个 #lock#，此处取第一个之后的所有内容拼接）
+  const afterLock = parts.slice(1).join('#lock#')
+  // 若后半部分非空，则创建同类型新模块
+  if (afterLock && afterLock.trim()) {
+    const newMod = { ...current, content: afterLock }
+    return [newMod, ...after]
+  }
+  return after
 })
 
 function goBack() {
@@ -350,6 +372,12 @@ onLoad(async (options: any) => {
           if (res && res.isEnded) {
             console.log('用户完整观看了激励视频广告')
             setTodayAdWatched()
+
+            // 上报激励视频观看
+            reportRewardVideo({ scene_code: rewardSceneCode }).catch((err: any) => {
+              console.error('上报激励视频观看失败', err)
+            })
+
             unlocked.value = true
             showToast('内容已解锁', 'success')
           } else {

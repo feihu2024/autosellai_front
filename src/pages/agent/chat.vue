@@ -405,11 +405,11 @@ async function handleRewardedVideoComplete() {
     await reportRewardVideo({ scene_code: rewardSceneCode })
     setTodayAdWatched()
     // showToast('已领取30点免费算力', 'success')
-    uni.showToast({
-      title: '已领取30点免费算力',
-      icon: 'none',
-      duration: 3000
-    })
+    // uni.showToast({
+    //   title: '已领取30点免费算力',
+    //   icon: 'none',
+    //   duration: 3000
+    // })
   } catch (err: any) {
     console.error('领取免费算力失败', err)
     // 上报失败也记录今天已看过，避免重复弹窗打扰用户
