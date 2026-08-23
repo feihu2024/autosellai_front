@@ -155,7 +155,7 @@ let rewardedVideoAd: any = null
 const AD_WATCH_DATE_KEY = 'infoAdWatchDate'
 
 // 激励视频上报场景码（用于上报，优先取广告配置 trigger_key）
-let rewardSceneCode = 'twjjgl'
+let rewardSceneCode = 'twjlgg'
 
 /** 检查今天是否已看过广告 */
 function checkTodayAdWatched(): boolean {
