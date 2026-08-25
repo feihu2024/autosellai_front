@@ -92,7 +92,6 @@
     {
       "path": "pages/user/cards",
       "style": {
-        "navigationStyle": "custom",
         "navigationBarTitleText": "我的卡密"
       }
     },

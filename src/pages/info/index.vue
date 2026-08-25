@@ -26,7 +26,7 @@
       <scroll-view scroll-x class="g-news-tabs" :show-scrollbar="false">
         <view v-for="item in categories" :key="item.name" class="g-news-tab"
           :class="{ active: currentCategory === item.name }" @click="switchCategory(item.name)"><text>{{ item.name
-            }}</text></view>
+          }}</text></view>
       </scroll-view>
 
       <view class="g-news-list" v-if="infoList.length">
@@ -285,7 +285,7 @@ onUnmounted(() => {
   position: relative;
   overflow: hidden;
   margin-bottom: 20rpx;
-  margin-top: 40px;
+  margin-top: 32px;
 }
 
 .info-banner-track {

@@ -1,9 +1,9 @@
 ﻿<template>
   <view class="sub-page">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">我的卡密</text>
-    </view>
+    </view> -->
 
     <!-- 统计概览 -->
     <view class="stat-row">
@@ -24,9 +24,12 @@
     <!-- 状态筛选 -->
     <scroll-view scroll-x class="subchips" :show-scrollbar="false">
       <view class="chip" :class="{ active: filter === 'all' }" @click="changeFilter('all')"><text>全部</text></view>
-      <view class="chip" :class="{ active: filter === 'unused' }" @click="changeFilter('unused')"><text>未激活</text></view>
-      <view class="chip" :class="{ active: filter === 'activated' }" @click="changeFilter('activated')"><text>已激活</text></view>
-      <view class="chip" :class="{ active: filter === 'expired' }" @click="changeFilter('expired')"><text>已过期</text></view>
+      <view class="chip" :class="{ active: filter === 'unused' }" @click="changeFilter('unused')"><text>未激活</text>
+      </view>
+      <view class="chip" :class="{ active: filter === 'activated' }" @click="changeFilter('activated')"><text>已激活</text>
+      </view>
+      <view class="chip" :class="{ active: filter === 'expired' }" @click="changeFilter('expired')"><text>已过期</text>
+      </view>
     </scroll-view>
 
     <!-- 卡密列表 -->
@@ -147,12 +150,14 @@ onLoad(() => {
   background: #f4f7fc;
   padding: 0 16px 80px;
 }
+
 .page-head {
   display: flex;
   align-items: center;
   min-height: 50px;
   gap: 8px;
 }
+
 .back {
   width: 36px;
   height: 36px;
@@ -162,10 +167,12 @@ onLoad(() => {
   align-items: center;
   justify-content: center;
 }
+
 .back text {
   font-size: 22px;
   color: #1e293b;
 }
+
 .page-title {
   font-size: 18px;
   font-weight: 700;
@@ -178,6 +185,7 @@ onLoad(() => {
   gap: 10px;
   margin-bottom: 14px;
 }
+
 .stat-item {
   flex: 1;
   padding: 14px 10px;
@@ -190,18 +198,26 @@ onLoad(() => {
   flex-direction: column;
   align-items: center;
 }
+
 .stat-label {
   font-size: 11px;
   color: #94a3b8;
   margin-bottom: 4px;
 }
+
 .stat-val {
   font-size: 20px;
   color: #1e293b;
   font-weight: 700;
 }
-.stat-val.warn { color: #ea580c; }
-.stat-val.done { color: #16a34a; }
+
+.stat-val.warn {
+  color: #ea580c;
+}
+
+.stat-val.done {
+  color: #16a34a;
+}
 
 /* 筛选 chips */
 .subchips {
@@ -209,6 +225,7 @@ onLoad(() => {
   margin-bottom: 14px;
   padding-bottom: 2px;
 }
+
 .chip {
   display: inline-flex;
   align-items: center;
@@ -219,15 +236,18 @@ onLoad(() => {
   background: rgba(255, 255, 255, 0.9);
   margin-right: 8px;
 }
+
 .chip text {
   color: #64748b;
   font-size: 12px;
   white-space: nowrap;
 }
+
 .chip.active {
   background: linear-gradient(135deg, #6366f1, #8b5cf6);
   border-color: transparent;
 }
+
 .chip.active text {
   color: #fff;
 }
@@ -249,6 +269,7 @@ onLoad(() => {
   gap: 8px;
   margin-bottom: 10px;
 }
+
 .head-name {
   font-size: 14px;
   color: #1e293b;
@@ -258,12 +279,14 @@ onLoad(() => {
   white-space: nowrap;
   flex: 1;
 }
+
 .head-tags {
   display: flex;
   align-items: center;
   gap: 5px;
   flex-shrink: 0;
 }
+
 .mini-tag {
   padding: 2px 8px;
   border-radius: 12px;
@@ -271,11 +294,46 @@ onLoad(() => {
   font-weight: 600;
   white-space: nowrap;
 }
-.mini-tag.identity { background: #ede9fe; color: #6d28d9; }
-.mini-tag.compute { background: #f5f3ff; color: #7c3aed; }
-.status-pill-unused { background: #dcfce7; color: #16a34a; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
-.status-pill-activated { background: #f1f5f9; color: #64748b; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
-.status-pill-expired { background: #fee2e2; color: #dc2626; padding: 2px 8px; border-radius: 12px; font-size: 10px; font-weight: 600; white-space: nowrap; }
+
+.mini-tag.identity {
+  background: #ede9fe;
+  color: #6d28d9;
+}
+
+.mini-tag.compute {
+  background: #f5f3ff;
+  color: #7c3aed;
+}
+
+.status-pill-unused {
+  background: #dcfce7;
+  color: #16a34a;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-pill-activated {
+  background: #f1f5f9;
+  color: #64748b;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.status-pill-expired {
+  background: #fee2e2;
+  color: #dc2626;
+  padding: 2px 8px;
+  border-radius: 12px;
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
 
 .code-row {
   display: flex;
@@ -287,9 +345,11 @@ onLoad(() => {
   padding: 8px 12px;
   margin-bottom: 8px;
 }
+
 .code-row.disabled {
   background: #f8fafc;
 }
+
 .code-text {
   font-size: 14px;
   color: #1e293b;
@@ -297,10 +357,12 @@ onLoad(() => {
   font-weight: 600;
   flex: 1;
 }
+
 .code-row.disabled .code-text {
   color: #94a3b8;
   font-weight: 500;
 }
+
 .copy-link {
   font-size: 12px;
   color: #6366f1;
@@ -308,6 +370,7 @@ onLoad(() => {
   white-space: nowrap;
   flex-shrink: 0;
 }
+
 .code-state {
   font-size: 11px;
   color: #94a3b8;
@@ -320,14 +383,17 @@ onLoad(() => {
   justify-content: space-between;
   align-items: center;
 }
+
 .sub-info {
   font-size: 11px;
   color: #94a3b8;
 }
+
 .goto-link {
   display: flex;
   align-items: center;
 }
+
 .goto-link text {
   color: #6366f1;
   font-size: 12px;
@@ -338,6 +404,7 @@ onLoad(() => {
   text-align: center;
   padding: 50px 0;
 }
+
 .empty text {
   color: #94a3b8;
   font-size: 14px;
@@ -352,12 +419,14 @@ onLoad(() => {
   display: flex;
   flex-direction: column;
 }
+
 .tip-title {
   font-size: 13px;
   color: #4338ca;
   margin-bottom: 6px;
   font-weight: 600;
 }
+
 .tip-p {
   font-size: 12px;
   color: #64748b;

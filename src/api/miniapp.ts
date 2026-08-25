@@ -54,6 +54,40 @@ export function uploadFile(filePath: string) {
   })
 }
 
+/**
+ * 上传对话图片（复用通用文件上传接口）
+ *
+ * @returns 服务器图片地址
+ */
+export function uploadChatImage(filePath: string) {
+  return new Promise<string>((resolve, reject) => {
+    uni.uploadFile({
+      url: 'https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/video/upload/',
+      filePath,
+      name: 'file',
+      header: {
+        'Authorization': `Bearer ${uni.getStorageSync('miniapp_token')}`
+      },
+      success: (res) => {
+        try {
+          const data = JSON.parse(res.data)
+          const url = data?.data?.video_url || data?.data?.url
+          if (url) {
+            resolve(url)
+          } else {
+            reject(new Error(data?.message || '上传失败'))
+          }
+        } catch {
+          reject(new Error('解析上传结果失败'))
+        }
+      },
+      fail: (err) => {
+        reject(new Error(err.errMsg || '上传失败'))
+      }
+    })
+  })
+}
+
 export function wxLogin(data: { code: string; enterprise_id?: number; referrer_id?: number }) {
   return request.post('/v1/miniapp/auth/wx-login', data)
 }
@@ -104,6 +138,7 @@ export async function chatWithAgentStream(
   onChunk: (text: string) => void,
   onDone?: () => void,
   onError?: (err: Error) => void,
+  images?: string[],
 ): Promise<void> {
   const token = getWsToken()
 
@@ -115,7 +150,12 @@ export async function chatWithAgentStream(
       token,
       {
         onOpen: () => {
-          socket.send({ data: JSON.stringify({ message }) })
+          // 有图片时携带 images 字段（服务器图片地址数组），支持图片对话
+          const payload: { message: string; images?: string[] } = { message }
+          if (images && images.length > 0) {
+            payload.images = images
+          }
+          socket.send({ data: JSON.stringify(payload) })
         },
         onMessage: (raw: string) => {
           try {

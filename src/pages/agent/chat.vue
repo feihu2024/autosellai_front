@@ -1,4 +1,4 @@
-﻿<template>
+<template>
   <view class="assistant-page">
     <!-- ===== Sticky Header ===== -->
     <view class="detail-sticky-head" :style="{ paddingTop: statusBarHeight + 'px' }">
@@ -83,7 +83,13 @@
           <view :class="['message-row', msg.role === 'user' ? 'user' : 'bot']">
             <image v-if="msg.role === 'ai'" class="avatar" src="/static/icons/common/robot.png" mode="aspectFit" />
             <view class="message-body" :class="{ response: msg.role === 'ai' }">
-              <view class="bubble">{{ msg.content }}</view>
+              <view class="bubble">
+                <view v-if="msg.images && msg.images.length" class="bubble-images">
+                  <image v-for="(img, i) in msg.images" :key="i" :src="getImageUrl(img)" mode="aspectFill"
+                    @tap="previewChatImage(msg, i)" />
+                </view>
+                <text v-if="msg.content" class="bubble-text">{{ msg.content }}</text>
+              </view>
               <view v-if="msg.role === 'ai' && msg.content" class="reply-actions">
                 <button @tap="copyText(msg.content)">▣ 复制</button>
                 <!-- <button :class="{ favorited: msg.favorited }" @tap="toggleMessageFavorite(msg)">
@@ -106,11 +112,28 @@
 
     <!-- ===== Composer ===== -->
     <view class="composer surface">
-      <!-- <button class="voice" @tap="voiceHint">◉</button> -->
-      <textarea v-model="inputText" class="chat-input" placeholder="请输入你的问题..." :maxlength="-1" auto-height
-        :show-confirm-bar="false" :adjust-position="true" :cursor-spacing="24" confirm-type="send"
-        @confirm="sendMessage" />
-      <button :class="['send', { ready: inputText.trim() && !isTyping }]" @tap="sendMessage">发送</button>
+      <!-- 待发送图片回显区（输入框上方） -->
+      <view v-if="pendingImages.length > 0 || uploadingImage" class="pending-images">
+        <view v-for="(img, idx) in pendingImages" :key="idx" class="pending-item">
+          <image class="pending-thumb" :src="img.preview" mode="aspectFill" @tap="previewPendingImage(idx)" />
+          <view class="pending-delete" @tap.stop="removePendingImage(idx)">
+            <text class="pending-delete-icon">×</text>
+          </view>
+        </view>
+        <view v-if="uploadingImage" class="pending-uploading">
+          <text>上传中</text>
+        </view>
+      </view>
+      <view class="composer-row">
+        <button class="upload-btn" :class="{ disabled: uploadingImage }" @tap="chooseImage">
+          <text class="upload-icon">📷</text>
+        </button>
+        <textarea v-model="inputText" class="chat-input" placeholder="请输入你的问题..." :maxlength="-1" auto-height
+          :show-confirm-bar="false" :adjust-position="true" :cursor-spacing="24" confirm-type="send"
+          @confirm="sendMessage" />
+        <button :class="['send', { ready: (inputText.trim() || pendingImages.length > 0) && !isTyping }]"
+          @tap="sendMessage">发送</button>
+      </view>
     </view>
 
     <!-- 套餐支付弹窗 -->
@@ -121,7 +144,7 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getMiniappAgentDetail, chatWithAgentStream, getAgentGreeting, getMiniappConfig, reportRewardVideo } from '@/api/miniapp'
+import { getMiniappAgentDetail, chatWithAgentStream, getAgentGreeting, getMiniappConfig, reportRewardVideo, uploadChatImage } from '@/api/miniapp'
 import { navigator, copyToClipboard, showToast, checkPhoneRequired } from '@/utils'
 import { getImageUrl } from '@/utils/image'
 import PaySheet from '@/components/PaySheet.vue'
@@ -154,7 +177,7 @@ function setTodayAdWatched() {
 
 const agentId = ref(0)
 const agentInfo = ref<any>(null)
-const messages = ref<{ role: string; content: string; favorited?: boolean }[]>([])
+const messages = ref<{ role: string; content: string; favorited?: boolean; images?: string[] }[]>([])
 const inputText = ref('')
 const isTyping = ref(false)
 const isFavorite = ref(false)
@@ -162,8 +185,17 @@ const dynamicGreeting = ref<string | null>(null)
 const greetingLoading = ref(false)
 const paySheetVisible = ref(false)
 const lastMessage = ref('')
+// 算力不足时记录的最近一次发送内容（文字 + 图片），支付成功后重发
+const lastImages = ref<string[]>([])
 const scrollTarget = ref('')
 const statusBarHeight = ref(0)
+
+// ===== 图片上传 =====
+// 待发送图片：preview 为本地预览地址（或服务器地址），url 为上传后的服务器地址
+const pendingImages = ref<{ preview: string; url: string }[]>([])
+const uploadingImage = ref(false)
+// 单次最多可携带的图片数
+const MAX_IMAGES = 9
 
 // 获取状态栏高度
 const sysInfo = uni.getSystemInfoSync()
@@ -216,10 +248,6 @@ function playSample(_sample: any) {
   showToast('正在播放样例', 'none')
 }
 
-function voiceHint() {
-  showToast('按住说话功能开发中', 'none')
-}
-
 function showMoreSamples() {
   showToast('更多样例持续更新中', 'none')
 }
@@ -240,6 +268,71 @@ function scrollToBottom() {
 async function copyText(text: string) {
   await copyToClipboard(text)
   showToast('已复制', 'success')
+}
+
+// ===== 图片上传与预览 =====
+
+/** 点击上传按钮：选择图片并上传 */
+function chooseImage() {
+  if (uploadingImage.value) {
+    showToast('图片上传中，请稍候', 'none')
+    return
+  }
+  const remaining = MAX_IMAGES - pendingImages.value.length
+  if (remaining <= 0) {
+    showToast(`最多上传${MAX_IMAGES}张图片`, 'none')
+    return
+  }
+  uni.chooseImage({
+    count: remaining,
+    sizeType: ['compressed'],
+    sourceType: ['album', 'camera'],
+    success: (res: any) => {
+      uploadImages(res.tempFilePaths as string[])
+    },
+    fail: () => {
+      // 用户取消选择，无需提示
+    }
+  })
+}
+
+/** 批量上传图片，成功后加入待发送回显区 */
+async function uploadImages(filePaths: string[]) {
+  if (!filePaths || filePaths.length === 0) return
+  uploadingImage.value = true
+  uni.showToast({ title: '正在上传...', icon: 'loading', duration: 30000 })
+  try {
+    const urls = await Promise.all(filePaths.map((p) => uploadChatImage(p)))
+    urls.forEach((url, i) => {
+      pendingImages.value.push({ preview: filePaths[i], url })
+    })
+    uni.hideToast()
+    showToast('图片上传成功', 'success')
+  } catch (err: any) {
+    console.error('图片上传失败', err)
+    uni.hideToast()
+    showToast(err?.message || '图片上传失败', 'none')
+  } finally {
+    uploadingImage.value = false
+  }
+}
+
+/** 删除待发送图片 */
+function removePendingImage(idx: number) {
+  pendingImages.value.splice(idx, 1)
+}
+
+/** 预览待发送图片 */
+function previewPendingImage(idx: number) {
+  const urls = pendingImages.value.map((item) => item.preview)
+  uni.previewImage({ current: urls[idx], urls })
+}
+
+/** 预览聊天消息中的图片 */
+function previewChatImage(msg: { images?: string[] }, idx: number) {
+  if (!msg.images || msg.images.length === 0) return
+  const urls = msg.images.map((u) => getImageUrl(u))
+  uni.previewImage({ current: urls[idx], urls })
 }
 
 async function fetchAgentDetail() {
@@ -290,21 +383,23 @@ async function sendMessage() {
   }
 
   const text = inputText.value.trim()
-  if (!text || isTyping.value) return
+  const images = pendingImages.value.map((item) => item.url)
+  if ((!text && images.length === 0) || isTyping.value) return
 
   // 当天已看过广告，直接发送消息
   if (checkTodayAdWatched()) {
-    sendMessageInternal(text)
+    sendMessageInternal(text, images)
     return
   }
 
   // 没有广告实例，直接发送消息
   if (!rewardedVideoAd) {
-    sendMessageInternal(text)
+    sendMessageInternal(text, images)
     return
   }
 
   // 未看过，保存待发送内容并弹窗提示观看广告领取免费算力
+  // （图片保留在回显区，看完广告后随文字一起发送）
   pendingMessage.value = text
   inputText.value = ''
 
@@ -318,7 +413,7 @@ async function sendMessage() {
         // 用户点击确认，播放广告
         showRewardedAdAndSend()
       } else {
-        // 用户取消，恢复输入内容
+        // 用户取消，恢复输入内容（图片仍在回显区）
         inputText.value = pendingMessage.value
         pendingMessage.value = ''
       }
@@ -340,20 +435,29 @@ function showRewardedAdAndSend() {
       .catch((err: any) => {
         uni.hideLoading()
         console.error('激励视频广告显示失败', err)
-        // 广告显示失败，直接发送消息
-        if (pendingMessage.value) {
-          sendMessageInternal(pendingMessage.value)
+        // 广告显示失败，直接发送消息（文字 + 图片）
+        if (pendingMessage.value || pendingImages.value.length > 0) {
+          const text = pendingMessage.value
+          const images = pendingImages.value.map((item) => item.url)
           pendingMessage.value = ''
+          sendMessageInternal(text, images)
         }
       })
   })
 }
 
-// 实际发送消息的内部函数
-async function sendMessageInternal(text: string) {
-  if (!text || isTyping.value) return
+// 实际发送消息的内部函数（文字 + 图片一起发送）
+async function sendMessageInternal(text: string, images: string[] = []) {
+  if ((!text && images.length === 0) || isTyping.value) return
 
-  messages.value.push({ role: 'user', content: text })
+  messages.value.push({
+    role: 'user',
+    content: text,
+    images: images.length > 0 ? images : undefined,
+  })
+  // 清空输入框与待发送图片回显区
+  inputText.value = ''
+  pendingImages.value = []
   scrollToBottom()
 
   const aiMsgIndex = messages.value.length
@@ -379,6 +483,7 @@ async function sendMessageInternal(text: string) {
         if (err.message === 'COMPUTE_INSUFFICIENT') {
           messages.value[aiMsgIndex].content = '您的算力余额不足，请购买套餐后继续使用。'
           lastMessage.value = text
+          lastImages.value = images
           paySheetVisible.value = true
         } else if (err.message === 'ENTERPRISE_COMPUTE_INSUFFICIENT') {
           messages.value[aiMsgIndex].content = '所在企业的算力已耗尽，请联系企业管理员补充算力后继续使用。'
@@ -386,6 +491,7 @@ async function sendMessageInternal(text: string) {
           messages.value[aiMsgIndex].content = '网络异常，请稍后重试。'
         }
       },
+      images,
     )
     if (!messages.value[aiMsgIndex].content) {
       messages.value[aiMsgIndex].content = '抱歉，暂时无法回复。'
@@ -415,10 +521,12 @@ async function handleRewardedVideoComplete() {
     // 上报失败也记录今天已看过，避免重复弹窗打扰用户
     setTodayAdWatched()
   }
-  // 发送待发送的消息
-  if (pendingMessage.value) {
-    sendMessageInternal(pendingMessage.value)
+  // 发送待发送的消息（文字 + 图片）
+  if (pendingMessage.value || pendingImages.value.length > 0) {
+    const text = pendingMessage.value
+    const images = pendingImages.value.map((item) => item.url)
     pendingMessage.value = ''
+    sendMessageInternal(text, images)
   }
 }
 
@@ -488,9 +596,12 @@ async function handlePaid(_data: { compute_balance: number }) {
   if (messages.value.length > 0 && messages.value[messages.value.length - 1].role === 'ai') {
     messages.value.pop()
   }
-  if (lastMessage.value) {
+  if (lastMessage.value || lastImages.value.length > 0) {
     inputText.value = lastMessage.value
     lastMessage.value = ''
+    // 恢复待发送图片到回显区（本地临时文件已失效，用服务器地址预览）
+    pendingImages.value = lastImages.value.map((url) => ({ preview: getImageUrl(url), url }))
+    lastImages.value = []
     sendMessage()
   }
 }
@@ -773,6 +884,21 @@ async function handlePaid(_data: { compute_balance: number }) {
   background: linear-gradient(135deg, #3b91ff, #2269ef);
 }
 
+/* 气泡内图片 */
+.bubble-images {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10rpx;
+  margin-bottom: 10rpx;
+}
+
+.bubble-images image {
+  width: 200rpx;
+  height: 200rpx;
+  border-radius: 12rpx;
+  background: #f3f6fa;
+}
+
 .reply-actions {
   display: flex;
   gap: 12rpx;
@@ -856,27 +982,101 @@ async function handlePaid(_data: { compute_balance: number }) {
   padding: 12rpx 24rpx;
   padding-bottom: calc(12rpx + env(safe-area-inset-bottom));
   display: flex;
-  align-items: flex-end;
+  flex-direction: column;
   background: rgba(255, 255, 255, 0.96);
   border-top: 1px solid #dfe5f0;
   box-shadow: 0 -12rpx 32rpx rgba(40, 52, 89, 0.1);
 }
 
-.voice {
-  width: 64rpx;
+/* 输入行：上传按钮 + 输入框 + 发送按钮 */
+.composer-row {
+  display: flex;
+  align-items: flex-end;
+  width: 100%;
+}
+
+/* 待发送图片回显区（输入框上方） */
+.pending-images {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 18rpx;
+  padding: 6rpx 6rpx 14rpx;
+  width: 100%;
+}
+
+.pending-item {
+  position: relative;
+  width: 120rpx;
+  height: 120rpx;
+}
+
+.pending-thumb {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 14rpx;
+  background: #f3f6fa;
+}
+
+.pending-delete {
+  position: absolute;
+  top: -12rpx;
+  right: -12rpx;
+  width: 38rpx;
+  height: 38rpx;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(32, 42, 66, 0.82);
+  border: 2rpx solid #ffffff;
+}
+
+.pending-delete-icon {
+  color: #ffffff;
+  font-size: 26rpx;
+  line-height: 1;
+  font-weight: 600;
+}
+
+.pending-uploading {
+  width: 120rpx;
+  height: 120rpx;
+  border-radius: 14rpx;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #718098;
+  background: #f3f6fa;
+  font-size: 23rpx;
+}
+
+/* 上传按钮（输入框左侧） */
+.upload-btn {
+  width: 70rpx;
   height: 70rpx;
+  margin: 0 12rpx 0 0;
   padding: 0;
   flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #26374d;
-  background: transparent;
-  font-size: 36rpx;
+  border-radius: 35rpx;
+  background: #f3f6fa;
+  line-height: 1;
 }
 
-.voice::after {
+.upload-btn::after {
   border: none;
+}
+
+.upload-btn.disabled {
+  opacity: 0.5;
+}
+
+.upload-icon {
+  font-size: 34rpx;
+  line-height: 1;
 }
 
 .chat-input {

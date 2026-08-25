@@ -25,8 +25,12 @@
       </view>
     </view>
 
+
+    <view v-if="templateAdUnit" class="ad-container">
+      <ad-custom :unit-id="templateAdUnit.ad_unit_id"></ad-custom>
+    </view>
     <!-- 分配比例 -->
-    <view class="section">
+    <!-- <view class="section">
       <view class="section-title">
         <text class="section-h3">分配比例设置</text>
       </view>
@@ -55,7 +59,6 @@
       </view>
     </view>
 
-    <!-- 广告收益列表 -->
     <view class="section">
       <view class="section-title">
         <text class="section-h3">广告收益列表明细</text>
@@ -102,15 +105,21 @@
       <view class="note">
         <text>列表项依次展示日期、曝光数、日活、个人实际收益与 ECPM；点击单项展开分润明细与广告位数据。</text>
       </view>
-    </view>
+    </view> -->
   </view>
 </template>
 
 <script setup lang="ts">
 import { ref, reactive } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getAgentRevenue, setLeaderToMemberRatio } from '@/api/miniapp'
+import { getAgentRevenue, getMiniappConfig, setLeaderToMemberRatio } from '@/api/miniapp'
 import { navigator, showToast } from '@/utils'
+import { useAdManager } from '@/composables/useAdManager'
+const { shouldShowAdByScene, initFromConfig } = useAdManager()
+
+
+// 模板广告配置（场景ID 18）
+const templateAdUnit = ref<any>(null)
 
 const summary = ref({
   yesterday_revenue: 0,
@@ -138,6 +147,15 @@ function onRatioInput(e: any) {
 
 onLoad(async () => {
   try {
+    const configRes = await getMiniappConfig()
+    const configData = configRes.data || {}
+    initFromConfig(configData)
+
+    const templateAd = shouldShowAdByScene(20)
+    if (templateAd && templateAd.ad_type === 'SLOT_ID_WEAPP_TEMPLATE') {
+      templateAdUnit.value = templateAd
+    }
+
     const res = await getAgentRevenue()
     const data = res.data
     if (data) {
