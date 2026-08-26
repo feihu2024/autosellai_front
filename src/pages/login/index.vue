@@ -1200,6 +1200,7 @@ export default {
 }
 
 .privacy-dialog-content {
+  width: 93%;
   flex: 1;
   padding: 32rpx;
   overflow-y: auto;

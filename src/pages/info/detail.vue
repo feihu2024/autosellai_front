@@ -33,7 +33,8 @@
       <!-- 免费内容（标识之前的模块） -->
       <template v-for="(mod, idx) in freeModules" :key="'free-' + idx">
         <!-- 富文本模块 -->
-        <rich-text v-if="mod.type === 'editor'" class="module-editor" :nodes="mod.content"></rich-text>
+        <rich-text v-if="mod.type === 'editor'" class="module-editor"
+          :nodes="processedDetailHtml(mod.content)"></rich-text>
 
         <!-- 可复制文本模块 -->
         <view v-else-if="mod.type === 'copytext'" class="copy-text-module">
@@ -57,7 +58,8 @@
       <view v-if="unlocked && hasLocked" class="unlocked-content">
         <template v-for="(mod, idx) in lockedModules" :key="'lock-' + idx">
           <!-- 富文本模块 -->
-          <rich-text v-if="mod.type === 'editor'" class="module-editor" :nodes="mod.content"></rich-text>
+          <rich-text v-if="mod.type === 'editor'" class="module-editor"
+            :nodes="processedDetailHtml(mod.content)"></rich-text>
 
           <!-- 可复制文本模块 -->
           <view v-else-if="mod.type === 'copytext'" class="copy-text-module">
@@ -247,6 +249,47 @@ const lockedModules = computed(() => {
     return [newMod, ...after]
   }
   return after
+})
+
+const processedDetailHtml = ((detail_html: any) => {
+  if (!detail_html) return ''
+  let html = detail_html
+
+  // 处理函数：给标签添加宽度和样式
+  const processTag = (tagHtml: string, tagName: string): string => {
+    // 1. 移除已有的 width 和 height 属性
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)\\s+width\\s*=\\s*["'][^"']*["']`, 'gi'), `<${tagName}$1`)
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)\\s+height\\s*=\\s*["'][^"']*["']`, 'gi'), `<${tagName}$1`)
+
+    // 2. 移除已有 style 中的 width 和 height（rich-text 不支持 max-width）
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)\\s+style\\s*=\\s*["']([^"']*?)width\\s*:\\s*[^;]+;?([^"']*)["']`, 'gi'), `<${tagName}$1 style="$2$3"`)
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)\\s+style\\s*=\\s*["']([^"']*?)height\\s*:\\s*[^;]+;?([^"']*)["']`, 'gi'), `<${tagName}$1 style="$2$3"`)
+
+    // 3. 给所有标签添加 width="100%" HTML 属性和 style（使用 width 而不是 max-width）
+    tagHtml = tagHtml.replace(new RegExp(`<${tagName}([^>]*?)(\\s+style\\s*=\\s*["']([^"']*)["'])?([^>]*?)(\\/?)>`, 'gi'), (match, before, styleAttr, styleContent, after, selfClosing) => {
+      if (styleAttr) {
+        // 已有 style 属性，在前面添加 width 和 height
+        const newStyle = `width:100%;height:auto;display:block;${styleContent || ''}`
+        return `<${tagName}${before} width="100%" style="${newStyle}"${after}${selfClosing}>`
+      } else {
+        // 没有 style 属性，新增一个
+        return `<${tagName}${before} width="100%" style="width:100%;height:auto;display:block;"${after}${selfClosing}>`
+      }
+    })
+
+    return tagHtml
+  }
+
+  // 同时处理 img 和 image 标签
+  html = processTag(html, 'img')
+  html = processTag(html, 'image')
+
+  // 4. 处理父元素的固定宽度（将固定宽度改为 100%）
+  html = html.replace(/style\s*=\s*["']([^"']*?)width\s*:\s*\d+([^"';]*)px([^"']*)["']/gi, 'style="$1width:100%$3"')
+
+  console.log('处理后的 HTML:', html)
+
+  return html
 })
 
 function goBack() {

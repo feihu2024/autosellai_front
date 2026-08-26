@@ -96,7 +96,7 @@
           <text class="preview-tip-text">{{ shareTarget === 'friend'
             ? '小程序中点击「微信好友」可直接转发；分享链接自动携带你的邀请码'
             : '点击右上角「···」→ 分享到朋友圈；分享链接自动携带你的邀请码'
-            }}</text>
+          }}</text>
         </view>
         <view class="wechat-card" :class="{ 'is-moments': shareTarget === 'moments' }">
           <template v-if="shareTarget === 'friend'">
@@ -357,7 +357,7 @@ function composePosterImage(poster: any, idx: number): Promise<string> {
             }
 
             // 5. 绘制文案
-            drawPosterText(ctx, poster, idx, canvasWidth, canvasHeight)
+            // drawPosterText(ctx, poster, idx, canvasWidth, canvasHeight)
 
             // 6. 执行绘制并导出
             ctx.draw(false, () => {
@@ -436,7 +436,7 @@ function goBack() {
 <style scoped lang="scss">
 .poster-page {
   min-height: 100vh;
-  padding: 0 0 190rpx;
+  padding: 32px 0 190rpx;
   color: #16263c;
   background: linear-gradient(180deg, #f7faff, #edf3fd);
 }
