@@ -223,9 +223,10 @@ export default {
           this.hasScrolledToBottom = false
 
           // 如果内容不长，开始倒计时
-          if (!this.contentIsLong) {
-            this.startCountdown()
-          }
+          // if (!this.contentIsLong) {
+          //   this.startCountdown()
+          // }
+          this.startCountdown()
         } else {
           this.showToast('获取隐私政策失败')
         }

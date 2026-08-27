@@ -18,6 +18,7 @@ const { setInviteParams } = useGlobalState()
  * 供后续 trySilentLogin 时传入后端建立推荐关系。
  */
 function parseInviteParams(options: any) {
+  console.log(options);
   if (!options) return
 
   const query = options.query || {}
@@ -33,6 +34,18 @@ function parseInviteParams(options: any) {
   } else if (query.r) {
     referrerId = Number(query.r)
   }
+
+  let queryQ = options.q || ''
+  console.log(queryQ);
+
+  if (queryQ.indexOf('referrer_id') !== -1) {
+    const decodedQ = decodeURIComponent(queryQ);
+    referrerId = Number(decodedQ.split('referrer_id=')[1])
+  }
+
+
+  console.log(referrerId, '分享');
+
 
   if (query.enterprise_id) {
     enterpriseId = Number(query.enterprise_id)
