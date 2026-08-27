@@ -18,7 +18,6 @@ const { setInviteParams } = useGlobalState()
  * 供后续 trySilentLogin 时传入后端建立推荐关系。
  */
 function parseInviteParams(options: any) {
-  console.log(options);
   if (!options) return
 
   const query = options.query || {}
@@ -35,7 +34,7 @@ function parseInviteParams(options: any) {
     referrerId = Number(query.r)
   }
 
-  let queryQ = options.q || ''
+  let queryQ = query.q || ''
   console.log(queryQ);
 
   if (queryQ.indexOf('referrer_id') !== -1) {
@@ -79,6 +78,7 @@ function parseInviteParams(options: any) {
 
 onLaunch(async (options: any) => {
   console.log('App Launch', JSON.stringify(options?.query || {}))
+    
   // 1. 解析启动参数，提取邀请参数
   parseInviteParams(options)
   // 2. 尝试静默登录（自动从全局状态读取邀请参数）

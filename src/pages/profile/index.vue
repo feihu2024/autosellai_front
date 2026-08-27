@@ -164,7 +164,7 @@
     <!-- 邀请横幅 -->
     <view class="invite-banner" @click="goTo('/m/share')">
       <image class="invite-banner-bg"
-        src="https://mlcfjihuaqn.yxiaozhu.com/saas/ffc7144b712145c49d61bcc2b4d3afba.png?e=1787450837&token=8HYKX7kOi_0yI5lbCm9L15PD17ROW4bDVRCIXtCA:j8cPc3-d6pBPN3lUZ78n8kbRLIs="
+        src="https://mlcfjihuaqn.yxiaozhu.com/saas/0115af8f240e4136ad9f49555bdb6aef.png?e=4941426146&token=8HYKX7kOi_0yI5lbCm9L15PD17ROW4bDVRCIXtCA:Ls7Vc0KT0F-8rBJLX-n7oiROnOI="
         mode="aspectFill" />
     </view>
 

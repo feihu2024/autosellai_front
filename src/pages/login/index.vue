@@ -133,10 +133,7 @@
         <rich-text :nodes="privacyDialogContent"></rich-text>
       </scroll-view>
       <view class="privacy-dialog-footer">
-        <view class="scroll-hint" v-if="!canAgree && contentIsLong">
-          <text>请向下滚动阅读完整协议</text>
-        </view>
-        <view class="countdown-hint" v-if="!canAgree && !contentIsLong && countdown > 0">
+        <view class="countdown-hint" v-if="!canAgree && countdown > 0">
           <text>{{ countdown }}秒后可点击</text>
         </view>
         <button class="privacy-dialog-btn" :class="{ disabled: !canAgree }" :disabled="!canAgree" @click="agreePrivacy">
@@ -208,24 +205,14 @@ export default {
 
     async showPrivacyDialog() {
       try {
-        // 调用接口获取隐私政策内容
         const res = await getUserAgreements('privacy_policy')
         if (res.code === 200 && res.data) {
           this.privacyDialogTitle = res.data.title || '隐私政策'
           this.privacyDialogContent = res.data.privacy_policy || ''
 
-          // 判断内容是否很长（简单判断：字符数大于500）
-          this.contentIsLong = this.privacyDialogContent.length > 500
-
-          // 显示弹窗
           this.privacyDialogVisible = true
           this.canAgree = false
-          this.hasScrolledToBottom = false
-
-          // 如果内容不长，开始倒计时
-          // if (!this.contentIsLong) {
-          //   this.startCountdown()
-          // }
+          // 直接开始倒计时，不再判断内容长度
           this.startCountdown()
         } else {
           this.showToast('获取隐私政策失败')
