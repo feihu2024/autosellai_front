@@ -247,6 +247,7 @@ import { useShare } from "@/composables/useShare";
 import { useGlobalState } from "@/composables/useGlobalState";
 import { navigator } from "@/utils";
 import { getImageUrl } from "@/utils/image";
+import { onShow } from "@dcloudio/uni-app";
 
 // 注册页面分享：分享首页 + 自动携带邀请参数
 useShare();
@@ -506,6 +507,10 @@ async function init() {
     fetchProducts();
   }
 }
+
+onShow(() => {
+  init()
+})
 
 // 监听登录状态，登录完成后初始化页面
 watch(
