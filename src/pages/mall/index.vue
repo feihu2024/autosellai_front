@@ -154,6 +154,7 @@ import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
 import { useAdManager } from '@/composables/useAdManager'
 import { navigator } from '@/utils'
 import { getImageUrl } from '@/utils/image'
+import { onShow } from '@dcloudio/uni-app'
 
 const { isGoldTemplate, loadTemplateVariant } = useMiniappTemplate()
 const { shouldShowAdByScene, initFromConfig } = useAdManager()
@@ -260,7 +261,7 @@ function onBannerClick(banner: any) {
   if (banner.link_url) navigator.push(banner.link_url)
 }
 
-onMounted(async () => {
+onShow(async () => {
   loadTemplateVariant()
 
   // 初始化广告配置并显示插屏广告（场景ID 9）

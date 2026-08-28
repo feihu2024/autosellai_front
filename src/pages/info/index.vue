@@ -136,6 +136,7 @@ import LoginMarqueeBar from '@/components/LoginMarqueeBar.vue'
 import { useAdManager } from '@/composables/useAdManager'
 import { navigator, showToast } from '@/utils'
 import { getImageUrl } from '@/utils/image'
+import { onShow } from '@dcloudio/uni-app'
 
 const { isGoldTemplate } = useMiniappTemplate()
 const { shouldShowAdByScene, initFromConfig } = useAdManager()
@@ -221,7 +222,7 @@ function onAdClose() {
   console.log('资讯页模板广告关闭')
 }
 
-onMounted(async () => {
+onShow(async () => {
   // 获取广告配置
   try {
     // 先获取配置并初始化

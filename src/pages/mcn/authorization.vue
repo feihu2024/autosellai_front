@@ -189,6 +189,7 @@ import { getMcnStatus, getMcnAuthorization, bindMcn } from '@/api/miniapp'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
 import LoginMarqueeBar from '@/components/LoginMarqueeBar.vue'
 import { navigator, showToast } from '@/utils'
+import { onShow } from '@dcloudio/uni-app'
 
 const { isGoldTemplate, loadTemplateVariant } = useMiniappTemplate()
 
@@ -278,7 +279,7 @@ async function onBindMcn() {
   }
 }
 
-onMounted(() => {
+onShow(() => {
   loadTemplateVariant()
   loadStatus()
 })
