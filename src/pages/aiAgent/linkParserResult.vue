@@ -230,10 +230,11 @@ const toggleImageSelection = (idx: number) => {
 const handleDownloadGallery = () => {
   if (selectedImages.value.length === 0) return
 
-  selectedImages.value.forEach((idx) => {
+  selectedImages.value.forEach(async (idx) => {
     const url = gallery.value[idx]
+    const downloadUrl = await getDownloadUrl(url)
     uni.downloadFile({
-      url,
+      url: downloadUrl,
       success: (res) => {
         if (res.statusCode === 200) {
           uni.saveImageToPhotosAlbum({
