@@ -129,8 +129,10 @@
       "path": "pages/user/contacts",
       "style": {
         "navigationBarTitleText": "联系客服",
-        "usingComponents": {
-          "cell": "plugin://materialPlugin/cell"
+        "mp-weixin": {
+          "usingComponents": {
+            "cell": "plugin://materialPlugin/cell"
+          }
         }
       }
     },

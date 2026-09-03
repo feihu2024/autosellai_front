@@ -69,7 +69,7 @@
             <view class="g-use-btn" @click="goToChat(agent)"><text>使用</text></view>
           </view>
 
-          <!-- 在第二个智能体后插入模板广告 -->
+          <!-- 列表大于 1 时，插在第二条后面 -->
           <view v-if="index === 1 && templateAdUnit" class="g-ad-container">
             <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
               @close="onAdClose"></ad-custom>
@@ -82,6 +82,11 @@
         <text class="g-empty-desc">换一个关键词或分类试试</text>
       </view>
       <view v-if="loading" class="g-loading"><text>加载中...</text></view>
+      <!-- 列表长度 ≤ 1 时，广告显示在列表后面 -->
+      <view v-if="!loading && agents.length <= 1 && templateAdUnit" class="g-ad-container">
+        <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+          @close="onAdClose"></ad-custom>
+      </view>
     </template>
 
     <!-- 商品推荐占位 -->
@@ -181,7 +186,7 @@
             </button>
           </view>
 
-          <!-- 在第二个智能体后插入模板广告 -->
+          <!-- 列表大于 1 时，插在第二条后面 -->
           <view v-if="index === 1 && templateAdUnit" class="ad-container">
             <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
               @close="onAdClose"></ad-custom>
@@ -192,6 +197,11 @@
           没有找到相关智能体
         </view>
         <view v-if="loading" class="empty surface">加载中...</view>
+        <!-- 列表长度 ≤ 1 时，广告显示在列表后面 -->
+        <view v-if="!loading && agents.length <= 1 && templateAdUnit" class="ad-container">
+          <ad-custom :unit-id="templateAdUnit.ad_unit_id" @load="onAdLoad" @error="onAdError"
+            @close="onAdClose"></ad-custom>
+        </view>
       </view>
     </template>
 
