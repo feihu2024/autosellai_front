@@ -202,36 +202,7 @@ const sysInfo = uni.getSystemInfoSync()
 statusBarHeight.value = sysInfo.statusBarHeight || 0
 
 // 静态样例视频数据
-const sampleVideos = ref([
-  {
-    title: '产品介绍样例',
-    meta: '15秒 · 口播视频',
-    cover: '',
-    isArt: false,
-    colorClass: '',
-  },
-  {
-    title: '爆款开场样例',
-    meta: '10秒 · 强钩子',
-    isArt: true,
-    artText: '3秒<br/>抓住注意力',
-    colorClass: 'sample-purple',
-  },
-  {
-    title: '场景种草样例',
-    meta: '20秒 · 图文混剪',
-    isArt: true,
-    artIcon: true,
-    colorClass: 'sample-blue',
-  },
-  {
-    title: '成交转化样例',
-    meta: '30秒 · 带货脚本',
-    isArt: true,
-    artText: '卖点<br/>转化脚本',
-    colorClass: 'sample-orange',
-  },
-])
+const sampleVideos = ref<any[]>([])
 
 // 静态示例对话（预留，当前模板未使用）
 // const exampleConversations = ref([...])
@@ -244,8 +215,16 @@ function toggleFavorite() {
   isFavorite.value = !isFavorite.value
 }
 
-function playSample(_sample: any) {
-  showToast('正在播放样例', 'none')
+function playSample(sample: any) {
+  const url = getImageUrl(sample?.url || sample?.video_url || '')
+  if (!url) {
+    showToast('暂无视频', 'none')
+    return
+  }
+  const cover = getImageUrl(sample?.cover || '')
+  const title = sample?.title || '样例视频'
+  uni.setStorageSync('agentSamplePlayer', { url, cover, title })
+  navigator.push('/pages/agent/video-player')
 }
 
 function showMoreSamples() {
@@ -350,6 +329,7 @@ async function fetchAgentDetail() {
           title: v.title || '样例视频',
           meta: v.meta || '',
           cover: v.cover || v.cover_url || '',
+          url: v.url || v.video_url || v.video || v.file_url || '',
           isArt: false,
           colorClass: '',
         }))

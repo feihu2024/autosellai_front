@@ -128,7 +128,10 @@
     {
       "path": "pages/user/contacts",
       "style": {
-        "navigationBarTitleText": "联系客服"
+        "navigationBarTitleText": "联系客服",
+        "usingComponents": {
+          "cell": "plugin://materialPlugin/cell"
+        }
       }
     },
     {
@@ -149,6 +152,15 @@
       "style": {
         "navigationStyle": "custom",
         "navigationBarTitleText": "智能体对话"
+      }
+    },
+    {
+      "path": "pages/agent/video-player",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "样例视频",
+        "backgroundColor": "#000000",
+        "disableScroll": true
       }
     },
     {

@@ -43,6 +43,12 @@
       ]
     },
     "usingComponents": true,
+    "plugins": {
+      "materialPlugin": {
+        "version": "1.0.13",
+        "provider": "wx4d2deeab3aed6e5a"
+      }
+    },
     "permission": {
       "scope.userLocation": {
         "desc": "你的位置信息将用于配送服务"

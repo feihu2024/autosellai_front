@@ -19,6 +19,7 @@ export const ROUTES = {
   ORDER_DETAIL: '/pages/orders/detail',
   LOGISTICS: '/pages/orders/logistics',
   AGENT_CHAT: '/pages/agent/chat',
+  AGENT_VIDEO_PLAYER: '/pages/agent/video-player',
   AGENT_WORKBENCH: '/pages/agent/workbench',
   REFERRALS: '/pages/agent/referrals',
   MEMBER_DETAIL: '/pages/agent/member-detail',

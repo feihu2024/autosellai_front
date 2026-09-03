@@ -336,6 +336,7 @@ export function getComputeRecords(params?: { page?: number; page_size?: number }
 export function getPayments() { return request.get('/v1/miniapp/user/payments') }
 export function getContacts() { return request.get('/v1/miniapp/user/contacts') }
 export function getCustomerServices() { return request.get('/v1/miniapp/customer-services') }
+export function getCustomerServiceDetail() { return request.get(`/v1/miniapp/customer-service-wechat-groups`) }
 
 
 export function getWithdrawRecords() { return request.get('/v1/miniapp/user/withdraw-records') }
