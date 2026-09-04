@@ -44,6 +44,27 @@
           </view>
           <text class="copy-text-content">{{ mod.content }}</text>
         </view>
+
+        <!-- 微信群模块 -->
+        <view v-else-if="mod.type === 'wechat_group'" class="group-card-wrap">
+          <view class="group-card-flow"></view>
+          <view class="group-card">
+            <view class="group-icon">
+              <view class="ppl-head-l"></view>
+              <view class="ppl-head-r"></view>
+              <view class="ppl-body-l"></view>
+              <view class="ppl-body-r"></view>
+            </view>
+            <text class="group-name">{{ mod.group_name || '加入群聊' }}</text>
+            <text class="group-arrow">›</text>
+          </view>
+          <!-- #ifdef MP-WEIXIN -->
+          <view class="group-cell-hit">
+            <cell :url="pluginUrl(mod)" :contactText="mod.group_name || '加入群聊'" :contactTextBlod="true"
+              @startmessage="onStartMessage" @completemessage="onCompleteMessage" />
+          </view>
+          <!-- #endif -->
+        </view>
       </template>
 
       <!-- 如果存在锁定内容且未解锁，显示解锁栏 -->
@@ -68,6 +89,27 @@
               <view class="copy-btn" @click="copyText(mod.content)"><text>一键复制</text></view>
             </view>
             <text class="copy-text-content">{{ mod.content }}</text>
+          </view>
+
+          <!-- 微信群模块 -->
+          <view v-else-if="mod.type === 'wechat_group'" class="group-card-wrap">
+            <view class="group-card-flow"></view>
+            <view class="group-card">
+              <view class="group-icon">
+                <view class="ppl-head-l"></view>
+                <view class="ppl-head-r"></view>
+                <view class="ppl-body-l"></view>
+                <view class="ppl-body-r"></view>
+              </view>
+              <text class="group-name">{{ mod.group_name || '加入群聊' }}</text>
+              <text class="group-arrow">›</text>
+            </view>
+            <!-- #ifdef MP-WEIXIN -->
+            <view class="group-cell-hit">
+              <cell :url="pluginUrl(mod)" :contactText="mod.group_name || '加入群聊'" :contactTextBlod="true"
+                @startmessage="onStartMessage" @completemessage="onCompleteMessage" />
+            </view>
+            <!-- #endif -->
           </view>
         </template>
       </view>
@@ -353,6 +395,31 @@ function copyText(text: string) {
   copyToClipboard(text)
 }
 
+function pluginUrl(item: any) {
+  return item?.qr_code || item?.group_url || ''
+}
+
+function onStartMessage() {
+  // 插件开始处理入群
+}
+
+function onCompleteMessage(e: any) {
+  const payload = e?.detail || e || {}
+  const errcode = Number(payload.errcode)
+  const messages: Record<number, string> = {
+    0: '已发送入群邀请',
+    '-3002': '获取入群配置失败',
+    '-3004': '用户信息授权失败',
+    '-3005': '消息发送失败',
+    '-3006': '你已在群聊中',
+    '-3009': '群聊已满员',
+    '-3010': '群聊已解散',
+    '-3011': '无法加入该群聊',
+    '-3012': '你已在群中且群已满员',
+  }
+  showToast(messages[errcode] || '加入群聊失败', errcode === 0 ? 'success' : 'none')
+}
+
 function shareToTimeline() {
   sharePopupVisible.value = false
   showToast('请点击右上角···选择「分享到朋友圈」', 'none')
@@ -594,6 +661,127 @@ onLoad(async (options: any) => {
   color: #4d5b6e;
   font-size: 13px;
   line-height: 1.75;
+}
+
+.group-card-wrap {
+  margin: 16px 0 0;
+  padding: 3px;
+  border-radius: 14px;
+  position: relative;
+  overflow: hidden;
+}
+
+.group-card-flow {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  border-radius: 14px;
+  background: linear-gradient(120deg,
+      #ff4d4f, #ff9a3c, #ffd93c, #52c41a, #36cfc9, #1677ff, #722ed1, #eb2f96, #ff4d4f);
+  background-size: 300% 300%;
+  animation: group-flow-bg 4s linear infinite;
+}
+
+@keyframes group-flow-bg {
+  0% {
+    background-position: 0% 50%;
+  }
+
+  100% {
+    background-position: 300% 50%;
+  }
+}
+
+.group-card {
+  position: relative;
+  z-index: 1;
+  background: #fff;
+  border-radius: 11px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  padding: 16px 14px;
+}
+
+.group-icon {
+  width: 44px;
+  height: 44px;
+  border-radius: 8px;
+  flex-shrink: 0;
+  background: #2f7ef7;
+  position: relative;
+}
+
+.ppl-head-l {
+  position: absolute;
+  left: 10px;
+  top: 9px;
+  width: 11px;
+  height: 11px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.ppl-head-r {
+  position: absolute;
+  left: 22px;
+  top: 11px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: #fff;
+}
+
+.ppl-body-l {
+  position: absolute;
+  left: 7px;
+  top: 22px;
+  width: 17px;
+  height: 12px;
+  border-radius: 8px 8px 4px 4px;
+  background: #fff;
+}
+
+.ppl-body-r {
+  position: absolute;
+  left: 20px;
+  top: 23px;
+  width: 15px;
+  height: 11px;
+  border-radius: 7px 7px 3px 3px;
+  background: #fff;
+}
+
+.group-name {
+  flex: 1;
+  min-width: 0;
+  margin-left: 12px;
+  font-size: 17px;
+  font-weight: 700;
+  color: #1a1a1a;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.group-arrow {
+  margin-left: 8px;
+  color: #c0c4cc;
+  font-size: 20px;
+  line-height: 1;
+}
+
+.group-cell-hit {
+  position: absolute;
+  left: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 2;
+  opacity: 0;
+  overflow: hidden;
 }
 
 .empty-modules {
