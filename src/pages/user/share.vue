@@ -96,7 +96,7 @@
           <text class="preview-tip-text">{{ shareTarget === 'friend'
             ? '小程序中点击「微信好友」可直接转发；分享链接自动携带你的邀请码'
             : '点击右上角「···」→ 分享到朋友圈；分享链接自动携带你的邀请码'
-          }}</text>
+            }}</text>
         </view>
         <view class="wechat-card" :class="{ 'is-moments': shareTarget === 'moments' }">
           <template v-if="shareTarget === 'friend'">

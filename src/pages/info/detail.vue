@@ -217,6 +217,7 @@ function setTodayAdWatched() {
 useShare(() => ({
   // title: detail.value?.title || '快来看看这篇资讯',
   path: '/pages/info/detail',
+  imageUrl: detail.value?.share_image || '',
   pathParams: { id: infoId.value },
 }))
 

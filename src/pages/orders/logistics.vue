@@ -1,12 +1,12 @@
 ﻿<template>
   <view class="logistics-page" v-if="!loading && order">
-    <view class="page-head">
+    <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">物流详情</text>
-    </view>
+    </view> -->
 
     <!-- 微信小程序官方物流详情入口 -->
-    <view class="wx-entry-card" v-if="order.tracking_no && wxBusinessViewAvailable">
+    <!-- <view class="wx-entry-card" v-if="order.tracking_no && wxBusinessViewAvailable">
       <view class="wx-entry-body">
         <text class="wx-ico">📨</text>
         <view class="wx-entry-text">
@@ -16,7 +16,7 @@
       </view>
       <view class="wx-btn" @click="openWxLogistics"><text>查看官方物流</text></view>
       <text class="wx-tip" v-if="wxError">{{ wxError }}</text>
-    </view>
+    </view> -->
 
     <!-- 静态物流信息兜底 -->
     <view class="info-card">
@@ -58,22 +58,14 @@
       <!-- 查询失败/未配置 → 降级兜底 -->
       <view class="track-fallback" v-else-if="!track.available">
         <text class="fallback-tip">{{ track.reason || '暂未获取到实时轨迹' }}</text>
-        <view
-          class="online-btn"
-          v-if="track.online_url"
-          @click="openOnline(track.online_url)"
-        >
+        <view class="online-btn" v-if="track.online_url" @click="openOnline(track.online_url)">
           <text>去快递100查询</text>
         </view>
       </view>
 
       <!-- 时间轴 -->
       <view class="timeline" v-else-if="track.tracks && track.tracks.length">
-        <view
-          v-for="(item, idx) in track.tracks"
-          :key="idx"
-          :class="['timeline-item', { first: idx === 0 }]"
-        >
+        <view v-for="(item, idx) in track.tracks" :key="idx" :class="['timeline-item', { first: idx === 0 }]">
           <view class="timeline-dot"></view>
           <view class="timeline-content">
             <text class="timeline-time">{{ item.time || '—' }}</text>
@@ -272,6 +264,7 @@ onLoad((options: any) => {
   background: #f5f7fb;
   padding-bottom: 80px;
 }
+
 .page-head {
   position: sticky;
   top: 0;
@@ -283,6 +276,7 @@ onLoad((options: any) => {
   background: #fff;
   border-bottom: 1px solid #eef2f7;
 }
+
 .page-head .back {
   width: 36px;
   height: 36px;
@@ -290,10 +284,12 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .page-head .back text {
   font-size: 26px;
   color: #1e293b;
 }
+
 .page-title {
   flex: 1;
   font-size: 17px;
@@ -301,6 +297,7 @@ onLoad((options: any) => {
   text-align: center;
   padding-right: 36px;
 }
+
 /* 微信官方物流入口 */
 .wx-entry-card {
   margin: 12px;
@@ -309,29 +306,35 @@ onLoad((options: any) => {
   border-radius: 14px;
   box-shadow: 0 6px 18px rgba(7, 193, 96, 0.25);
 }
+
 .wx-entry-body {
   display: flex;
   align-items: center;
   gap: 12px;
   margin-bottom: 12px;
 }
+
 .wx-ico {
   font-size: 32px;
 }
+
 .wx-entry-text {
   display: flex;
   flex-direction: column;
 }
+
 .wx-entry-title {
   font-size: 15px;
   font-weight: 700;
   color: #fff;
   margin-bottom: 4px;
 }
+
 .wx-entry-desc {
   font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
 }
+
 .wx-btn {
   width: 100%;
   height: 40px;
@@ -341,17 +344,20 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .wx-btn text {
   color: #07c160;
   font-size: 14px;
   font-weight: 600;
 }
+
 .wx-tip {
   display: block;
   margin-top: 8px;
   font-size: 12px;
   color: rgba(255, 255, 255, 0.9);
 }
+
 /* 卡片通用 */
 .info-card,
 .goods-card,
@@ -362,20 +368,24 @@ onLoad((options: any) => {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(67, 109, 157, 0.05);
 }
+
 .card-title {
   display: flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 10px;
 }
+
 .title-ico {
   font-size: 16px;
 }
+
 .title-text {
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
 }
+
 .info-row {
   display: flex;
   justify-content: space-between;
@@ -384,26 +394,32 @@ onLoad((options: any) => {
   font-size: 13px;
   border-bottom: 1px dashed #f1f5f9;
 }
+
 .info-row:last-child {
   border-bottom: none;
 }
+
 .info-label {
   color: #64748b;
 }
+
 .info-value {
   color: #1e293b;
   font-weight: 500;
   text-align: right;
 }
+
 .info-value-copy {
   display: flex;
   align-items: center;
   gap: 4px;
 }
+
 .info-value-copy text {
   color: #6366f1;
   font-weight: 500;
 }
+
 .copy-badge {
   font-size: 11px;
   background: #e0e7ff;
@@ -412,6 +428,7 @@ onLoad((options: any) => {
   border-radius: 6px;
   font-weight: 500;
 }
+
 /* 物流轨迹 */
 .track-card {
   margin: 12px;
@@ -420,9 +437,11 @@ onLoad((options: any) => {
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(67, 109, 157, 0.05);
 }
+
 .track-card .card-title {
   justify-content: flex-start;
 }
+
 .refresh-btn {
   margin-left: auto;
   height: 26px;
@@ -434,13 +453,16 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .refresh-btn.disabled {
   opacity: 0.6;
 }
+
 .refresh-btn text {
   font-size: 12px;
   color: #475569;
 }
+
 .track-loading,
 .track-empty {
   padding: 18px 0;
@@ -448,6 +470,7 @@ onLoad((options: any) => {
   font-size: 13px;
   color: #94a3b8;
 }
+
 .track-fallback {
   padding: 14px;
   background: #fff7ed;
@@ -459,11 +482,13 @@ onLoad((options: any) => {
   align-items: center;
   gap: 10px;
 }
+
 .fallback-tip {
   font-size: 13px;
   color: #9a3412;
   line-height: 1.5;
 }
+
 .online-btn {
   height: 32px;
   padding: 0 16px;
@@ -473,20 +498,25 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .online-btn text {
   color: #fff;
   font-size: 13px;
 }
+
 .timeline {
   padding: 0;
 }
+
 .timeline-item {
   position: relative;
   padding: 0 0 16px 22px;
 }
+
 .timeline-item:last-child {
   padding-bottom: 0;
 }
+
 .timeline-item::before {
   content: '';
   position: absolute;
@@ -496,9 +526,11 @@ onLoad((options: any) => {
   width: 2px;
   background: #e2e8f0;
 }
+
 .timeline-item:last-child::before {
   display: none;
 }
+
 .timeline-dot {
   position: absolute;
   left: 0;
@@ -510,38 +542,46 @@ onLoad((options: any) => {
   border: 2px solid #fff;
   box-shadow: 0 0 0 1px #cbd5e1;
 }
+
 .timeline-item.first .timeline-dot {
   background: #6366f1;
   box-shadow: 0 0 0 1px #6366f1;
 }
+
 .timeline-item.first .timeline-context {
   color: #6366f1;
   font-weight: 600;
 }
+
 .timeline-content {
   display: flex;
   flex-direction: column;
 }
+
 .timeline-time {
   margin-bottom: 4px;
   font-size: 12px;
   color: #94a3b8;
 }
+
 .timeline-context {
   margin-bottom: 2px;
   font-size: 13px;
   color: #1e293b;
   line-height: 1.5;
 }
+
 .timeline-location {
   font-size: 11px;
   color: #94a3b8;
 }
+
 /* 商品 */
 .goods-row {
   display: flex;
   gap: 10px;
 }
+
 .goods-cover {
   width: 72px;
   height: 72px;
@@ -553,35 +593,42 @@ onLoad((options: any) => {
   justify-content: center;
   flex-shrink: 0;
 }
+
 .cover-img {
   width: 100%;
   height: 100%;
 }
+
 .cover-placeholder {
   font-size: 26px;
   color: #cbd5e1;
 }
+
 .goods-info {
   flex: 1;
   display: flex;
   flex-direction: column;
   justify-content: center;
 }
+
 .goods-name {
   margin-bottom: 4px;
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
 }
+
 .goods-sku {
   margin-bottom: 2px;
   font-size: 12px;
   color: #64748b;
 }
+
 .goods-qty {
   font-size: 12px;
   color: #94a3b8;
 }
+
 /* 地址 */
 .address-body .receiver {
   margin-bottom: 4px;
@@ -589,20 +636,24 @@ onLoad((options: any) => {
   align-items: center;
   gap: 10px;
 }
+
 .address-body .receiver .name {
   font-size: 14px;
   font-weight: 600;
   color: #1e293b;
 }
+
 .address-body .receiver .phone {
   font-size: 14px;
   color: #475569;
 }
+
 .address-body .addr {
   font-size: 13px;
   color: #475569;
   line-height: 1.5;
 }
+
 /* 提示卡 */
 .tip-card {
   margin: 12px;
@@ -614,15 +665,18 @@ onLoad((options: any) => {
   align-items: center;
   gap: 10px;
 }
+
 .tip-ico {
   font-size: 22px;
 }
+
 .tip-text {
   flex: 1;
   font-size: 13px;
   color: #9a3412;
   line-height: 1.5;
 }
+
 /* 底部 */
 .footer-bar {
   position: fixed;
@@ -637,6 +691,7 @@ onLoad((options: any) => {
   border-top: 1px solid #eef2f7;
   z-index: 20;
 }
+
 .footer-btn {
   flex: 1;
   height: 40px;
@@ -645,24 +700,30 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .footer-btn text {
   font-size: 14px;
   font-weight: 500;
 }
+
 .footer-btn.outline {
   background: #fff;
   border: 1px solid #cbd5e1;
 }
+
 .footer-btn.outline text {
   color: #475569;
 }
+
 .footer-btn.primary {
   background: #6366f1;
   border: 1px solid #6366f1;
 }
+
 .footer-btn.primary text {
   color: #fff;
 }
+
 /* 状态 */
 .loading-state,
 .empty-state {
@@ -674,6 +735,7 @@ onLoad((options: any) => {
   padding: 80px 16px;
   color: #94a3b8;
 }
+
 .back-btn {
   margin-top: 16px;
   height: 36px;
@@ -684,6 +746,7 @@ onLoad((options: any) => {
   align-items: center;
   justify-content: center;
 }
+
 .back-btn text {
   color: #fff;
   font-size: 13px;
