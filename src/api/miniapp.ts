@@ -281,6 +281,23 @@ export function getLogisticsTrack(orderId: number) {
   return request.get(`/v1/miniapp/mall/orders/${orderId}/logistics-track`)
 }
 
+/** 微信物流传运单，返回 waybill_token */
+export function traceWaybill(data: {
+  order_id?: number
+  waybill_id: string
+  trans_id: string
+  receiver_phone: string
+  order_detail_path: string
+  goods_info: {
+    detail_list: Array<{ goods_name: string; goods_img_url: string }>
+  }
+  sender_phone?: string
+  delivery_id?: string
+  openid?: string
+}) {
+  return request.post('/v1/miniapp/express/trace-waybill', data)
+}
+
 /** 物流公司列表 */
 export function getLogisticsCompanies() {
   return request.get('/v1/miniapp/mall/logistics-companies')

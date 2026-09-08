@@ -122,7 +122,7 @@
     <!-- 身份卡片 -->
     <view class="identity-card">
       <view class="profile-main">
-        <image class="avatar" :src="profile.avatar_url || '/static/images/robot.png'" mode="aspectFill" />
+        <image class="avatar" :src="profile.avatar_url || '/static/icons/common/robot.png'" mode="aspectFill" />
         <view class="profile-copy">
           <view class="nickname">{{ profile.nickname || '用户' }}</view>
           <view class="meta-row">
@@ -134,7 +134,7 @@
       </view>
 
       <view class="relation-card">
-        <image src="/static/images/robot.png" mode="aspectFill" />
+        <image src="/static/icons/common/robot.png" mode="aspectFill" />
         <view class="relation-name">
           <text>所属代理</text>
           <view>代理ID：{{ profile.agent_display_id || '无' }}</view>

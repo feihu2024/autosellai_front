@@ -14,3 +14,4 @@ declare const Page: any
 declare const Component: any
 declare const App: any
 declare const Behavior: any
+declare function requirePlugin(name: string): any

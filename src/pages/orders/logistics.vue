@@ -42,41 +42,17 @@
       </view>
     </view>
 
-    <!-- 物流轨迹 -->
+    <!-- 物流轨迹：对接微信官方物流查询 -->
     <view class="track-card" v-if="order.tracking_no">
       <view class="card-title">
         <text class="title-ico">📍</text>
         <text class="title-text">物流轨迹</text>
-        <view class="refresh-btn" :class="{ disabled: trackLoading }" @click="loadTrack">
-          <text>{{ trackLoading ? '刷新中...' : '刷新' }}</text>
-        </view>
       </view>
-
-      <!-- 加载中 -->
-      <view class="track-loading" v-if="trackLoading"><text>正在查询物流轨迹...</text></view>
-
-      <!-- 查询失败/未配置 → 降级兜底 -->
-      <view class="track-fallback" v-else-if="!track.available">
-        <text class="fallback-tip">{{ track.reason || '暂未获取到实时轨迹' }}</text>
-        <view class="online-btn" v-if="track.online_url" @click="openOnline(track.online_url)">
-          <text>去快递100查询</text>
-        </view>
+      <text class="wx-track-desc">通过微信官方物流查询实时轨迹</text>
+      <view class="wx-track-btn" :class="{ disabled: trackLoading }" @click="openWxTrack">
+        <text>{{ trackLoading ? '正在打开...' : '查看物流' }}</text>
       </view>
-
-      <!-- 时间轴 -->
-      <view class="timeline" v-else-if="track.tracks && track.tracks.length">
-        <view v-for="(item, idx) in track.tracks" :key="idx" :class="['timeline-item', { first: idx === 0 }]">
-          <view class="timeline-dot"></view>
-          <view class="timeline-content">
-            <text class="timeline-time">{{ item.time || '—' }}</text>
-            <text class="timeline-context">{{ item.context }}</text>
-            <text class="timeline-location" v-if="item.location">{{ item.location }}</text>
-          </view>
-        </view>
-      </view>
-
-      <!-- 有轨迹但为空 -->
-      <view class="track-empty" v-else><text>暂无轨迹信息</text></view>
+      <text class="wx-tip" v-if="wxError">{{ wxError }}</text>
     </view>
 
     <!-- 商品卡 -->
@@ -139,18 +115,39 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getMyMallOrderDetail, getLogisticsTrack } from '@/api/miniapp'
+import { getMyMallOrderDetail, traceWaybill } from '@/api/miniapp'
 import { navigator, showToast, copyToClipboard } from '@/utils'
+import { getImageUrl } from '@/utils/image'
 
 const orderId = ref(0)
 const order = ref<any>(null)
 const loading = ref(false)
 const wxBusinessViewAvailable = ref(false)
 const wxError = ref('')
-
-// 物流轨迹（对接快递100）
-const track = ref<any>({ available: false, tracks: [], reason: '' })
 const trackLoading = ref(false)
+const waybillToken = ref('')
+
+function openWaybillTracking(token: string): Promise<void> {
+  // #ifdef MP-WEIXIN
+  const plugin = requirePlugin('logisticsPlugin')
+  if (!plugin || typeof plugin.openWaybillTracking !== 'function') {
+    return Promise.reject(new Error('物流插件未就绪，请确认已添加 logisticsPlugin'))
+  }
+  return new Promise((resolve, reject) => {
+    plugin.openWaybillTracking({
+      waybillToken: token,
+      success: () => resolve(),
+      fail: (err: any) => {
+        console.log(err, 'err');
+        reject(new Error(err?.errMsg || err?.message || '打开物流组件失败'))
+      },
+    })
+  })
+  // #endif
+  // #ifndef MP-WEIXIN
+  return Promise.reject(new Error('请在微信小程序中查看物流'))
+  // #endif
+}
 
 function detectWxBusinessView() {
   // #ifdef MP-WEIXIN
@@ -193,7 +190,7 @@ async function loadData() {
     if (res.code === 200 || res.code === 0) {
       order.value = res.data
       if (order.value?.tracking_no) {
-        loadTrack()
+        prefetchWaybillToken()
       }
     }
   } catch {
@@ -203,30 +200,73 @@ async function loadData() {
   }
 }
 
-async function loadTrack() {
-  if (!orderId.value || !order.value?.tracking_no) return
-  trackLoading.value = true
+function buildTracePayload() {
+  const o = order.value || {}
+  const openid = o.openid || o.wx_openid || ''
+  const payload: Parameters<typeof traceWaybill>[0] = {
+    order_id: orderId.value,
+    waybill_id: o.tracking_no || o.waybill_id || '',
+    trans_id: o.wx_transaction_id || o.transaction_id || o.trans_id || '',
+    receiver_phone: o.receiver_phone || '',
+    order_detail_path: `/pages/orders/detail?id=${o.id || orderId.value}`,
+    goods_info: {
+      detail_list: [
+        {
+          goods_name: o.product_name || '商品',
+          goods_img_url: getImageUrl(o.product_image || o.goods_img_url || ''),
+        },
+      ],
+    },
+  }
+  if (o.sender_phone) payload.sender_phone = o.sender_phone
+  if (o.delivery_id || o.logistics_code) payload.delivery_id = o.delivery_id || o.logistics_code
+  if (openid) payload.openid = openid
+  return payload
+}
+
+async function prefetchWaybillToken() {
+  if (!orderId.value || !order.value?.tracking_no || waybillToken.value) return
   try {
-    const res: any = await getLogisticsTrack(orderId.value)
-    if (res.code === 200 || res.code === 0) {
-      track.value = res.data || { available: false, tracks: [], reason: '查询失败' }
-    } else {
-      track.value = { available: false, tracks: [], reason: res.message || '查询失败' }
-    }
-  } catch (e: any) {
-    track.value = { available: false, tracks: [], reason: e?.message || '网络异常' }
-  } finally {
-    trackLoading.value = false
+    const payload = buildTracePayload()
+    const res: any = await traceWaybill(payload)
+    const token = res?.data?.waybill_token || res?.data?.waybillToken || res?.waybill_token
+    if (!(res.code === 200 || res.code === 0) || !token) return
+    waybillToken.value = token
+  } catch {
+    // 点击时再试
   }
 }
 
-function openOnline(url: string) {
-  // #ifdef H5
-  window.open(url, '_blank')
-  // #endif
-  // #ifndef H5
-  copyToClipboard(url).then(() => showToast('链接已复制，请在浏览器中打开', 'success'))
-  // #endif
+async function openWxTrack() {
+  if (!orderId.value || trackLoading.value) return
+  wxError.value = ''
+
+  if (waybillToken.value) {
+    try {
+      await openWaybillTracking(waybillToken.value)
+    } catch (e: any) {
+      wxError.value = e?.message || '无法打开微信物流，请确认已开通物流服务并添加插件'
+    }
+    return
+  }
+
+  trackLoading.value = true
+  try {
+    const payload = buildTracePayload()
+    const res: any = await traceWaybill(payload)
+    const token = res?.data?.waybill_token || res?.data?.waybillToken || res?.waybill_token
+    if (!(res.code === 200 || res.code === 0) || !token) {
+      wxError.value = res?.message || res?.data?.errmsg || '获取物流信息失败'
+      return
+    }
+
+    waybillToken.value = token
+    await openWaybillTracking(token)
+  } catch (e: any) {
+    wxError.value = e?.message || '无法打开微信物流，请确认已开通物流服务并添加插件'
+  } finally {
+    trackLoading.value = false
+  }
 }
 
 async function copyText(text: string) {
@@ -442,138 +482,31 @@ onLoad((options: any) => {
   justify-content: flex-start;
 }
 
-.refresh-btn {
-  margin-left: auto;
-  height: 26px;
-  padding: 0 12px;
-  background: #f1f5f9;
-  border: 1px solid #e2e8f0;
-  border-radius: 13px;
+.wx-track-desc {
+  display: block;
+  margin: 8px 0 14px;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.wx-track-btn {
+  height: 40px;
+  border-radius: 20px;
+  background: #07c160;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.refresh-btn.disabled {
+.wx-track-btn.disabled {
   opacity: 0.6;
 }
 
-.refresh-btn text {
-  font-size: 12px;
-  color: #475569;
-}
-
-.track-loading,
-.track-empty {
-  padding: 18px 0;
-  text-align: center;
-  font-size: 13px;
-  color: #94a3b8;
-}
-
-.track-fallback {
-  padding: 14px;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  border-radius: 10px;
-  text-align: center;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 10px;
-}
-
-.fallback-tip {
-  font-size: 13px;
-  color: #9a3412;
-  line-height: 1.5;
-}
-
-.online-btn {
-  height: 32px;
-  padding: 0 16px;
-  background: #6366f1;
-  border-radius: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.online-btn text {
+.wx-track-btn text {
   color: #fff;
-  font-size: 13px;
-}
-
-.timeline {
-  padding: 0;
-}
-
-.timeline-item {
-  position: relative;
-  padding: 0 0 16px 22px;
-}
-
-.timeline-item:last-child {
-  padding-bottom: 0;
-}
-
-.timeline-item::before {
-  content: '';
-  position: absolute;
-  left: 5px;
-  top: 14px;
-  bottom: -2px;
-  width: 2px;
-  background: #e2e8f0;
-}
-
-.timeline-item:last-child::before {
-  display: none;
-}
-
-.timeline-dot {
-  position: absolute;
-  left: 0;
-  top: 4px;
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  background: #cbd5e1;
-  border: 2px solid #fff;
-  box-shadow: 0 0 0 1px #cbd5e1;
-}
-
-.timeline-item.first .timeline-dot {
-  background: #6366f1;
-  box-shadow: 0 0 0 1px #6366f1;
-}
-
-.timeline-item.first .timeline-context {
-  color: #6366f1;
+  font-size: 14px;
   font-weight: 600;
-}
-
-.timeline-content {
-  display: flex;
-  flex-direction: column;
-}
-
-.timeline-time {
-  margin-bottom: 4px;
-  font-size: 12px;
-  color: #94a3b8;
-}
-
-.timeline-context {
-  margin-bottom: 2px;
-  font-size: 13px;
-  color: #1e293b;
-  line-height: 1.5;
-}
-
-.timeline-location {
-  font-size: 11px;
-  color: #94a3b8;
 }
 
 /* 商品 */
