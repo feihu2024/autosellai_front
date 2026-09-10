@@ -19,7 +19,7 @@
           <view class="title-wrap">
             <text class="item-title">{{ item.type_text || typeText(item.type) }}</text>
           </view>
-          <text class="positive">+¥{{ formatAmount(item.amount) }}</text>
+          <text :class="Number(item.amount) < 0 ? 'negative' : 'positive'">{{ formatSignedAmount(item.amount) }}</text>
         </view>
         <view class="sub-row" v-if="item.out_trade_no || item.revenue_date">
           <text v-if="item.out_trade_no" class="sub-text">订单 {{ item.out_trade_no }}</text>
@@ -60,8 +60,10 @@ function typeText(t: string) {
   return map[t] || t
 }
 
-function formatAmount(n: number) {
-  return Number(n || 0).toFixed(2)
+function formatSignedAmount(n: number) {
+  const val = Number(n || 0)
+  const abs = Math.abs(val).toFixed(2)
+  return val < 0 ? `-¥${abs}` : `+¥${abs}`
 }
 
 function goWithdraw() {
@@ -200,6 +202,12 @@ onLoad(async () => {
 
 .positive {
   color: #10b981;
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.negative {
+  color: #ef4444;
   font-weight: 600;
   font-size: 14px;
 }

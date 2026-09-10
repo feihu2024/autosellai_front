@@ -136,10 +136,8 @@
       </view>
     </view>
 
-    <!-- 用于合成海报（隐藏） -->
-    <!-- 用于合成海报的隐藏 Canvas（微信小程序兼容） -->
-    <canvas canvas-id="posterCanvas" class="hidden-canvas"
-      style="position:fixed; left:0; top:0; width:750px; height:1334px; opacity:0; pointer-events:none;"></canvas>
+    <!-- 合成画布移出屏幕：微信原生 canvas 不吃 opacity，画完会出现在页面上撑变形 -->
+    <canvas canvas-id="posterCanvas" class="hidden-canvas"></canvas>
   </view>
 </template>
 
@@ -365,6 +363,8 @@ function composePosterImage(poster: any, idx: number): Promise<string> {
               setTimeout(() => {
                 uni.canvasToTempFilePath({
                   canvasId,
+                  destWidth: canvasWidth,
+                  destHeight: canvasHeight,
                   success: (res) => resolve(res.tempFilePath),
                   fail: (err) => reject(err),
                 })
@@ -933,5 +933,15 @@ function goBack() {
   color: #fff;
   font-size: 30rpx;
   font-weight: 600;
+}
+
+.hidden-canvas {
+  position: fixed;
+  left: -9999px;
+  top: -9999px;
+  width: 750px;
+  height: 1334px;
+  pointer-events: none;
+  z-index: -1;
 }
 </style>

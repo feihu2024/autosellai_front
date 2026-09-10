@@ -178,6 +178,13 @@
       }
     },
     {
+      "path": "pages/agent/team-workbench",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "团队工作台"
+      }
+    },
+    {
       "path": "pages/agent/referrals",
       "style": {
         "navigationStyle": "custom",

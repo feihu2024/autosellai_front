@@ -323,6 +323,10 @@ export function getAgentWorkbench() {
   return request.get('/v1/miniapp/agent-workbench')
 }
 
+export function getIdentityTeam() {
+  return request.get('/v1/miniapp/identity-team')
+}
+
 export function getAgentRevenue() {
   return request.get('/v1/miniapp/agent-revenue')
 }

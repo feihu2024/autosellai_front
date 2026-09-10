@@ -102,6 +102,9 @@
         <view class="g-feature-item" v-if="isAgent" @click="goTo('/m/agent-workbench')">
           <image src="/static/tpl-gold/feature-2.png" mode="aspectFit" /><text>代理工作台</text>
         </view>
+        <view class="g-feature-item" v-if="profile.second_identity_enabled" @click="goTo('/m/team-workbench')">
+          <image src="/static/tpl-gold/feature-team.png" mode="aspectFit" /><text>团队工作台</text>
+        </view>
         <view class="g-feature-item" @click="goTo('/m/referrals')">
           <image src="/static/tpl-gold/feature-6.png" mode="aspectFit" /><text>我的推荐</text>
         </view>
@@ -260,6 +263,11 @@
         <view v-if="isAgent" class="business-blue" @click="goTo('/m/agent-workbench')">
           <image src="/static/images/profile-workbench.png" mode="aspectFit" />
           <view><text>代理工作台</text><text>查看团队数据与代理收益</text></view>
+          <text>›</text>
+        </view>
+        <view v-if="profile.second_identity_enabled" class="business-teal" @click="goTo('/m/team-workbench')">
+          <image src="/static/images/profile-team-workbench.png" mode="aspectFit" />
+          <view><text>团队工作台</text><text>查看团队数据与成员</text></view>
           <text>›</text>
         </view>
         <view class="business-purple" @click="goTo('/m/referrals')">
@@ -811,6 +819,10 @@ onShow(async () => {
 
 .business-gold {
   background: linear-gradient(110deg, #fef7e6, #fffcf0);
+}
+
+.business-teal {
+  background: linear-gradient(110deg, #e8fbf8, #f4fffd);
 }
 
 /* ===== 金色模板样式（原样保留） ===== */

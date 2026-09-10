@@ -27,6 +27,7 @@ const ROUTE_MAP: Record<string, string> = {
   '/m/logistics/:order_id': '/pages/orders/logistics',
   '/m/agent/:id': '/pages/agent/chat',
   '/m/agent-workbench': '/pages/agent/workbench',
+  '/m/team-workbench': '/pages/agent/team-workbench',
   '/m/revenue-detail': '/pages/agent/revenue-detail',
   '/m/referrals': '/pages/agent/referrals',
   '/m/member-detail/:id': '/pages/agent/member-detail',

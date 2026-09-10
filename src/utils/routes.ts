@@ -21,6 +21,7 @@ export const ROUTES = {
   AGENT_CHAT: '/pages/agent/chat',
   AGENT_VIDEO_PLAYER: '/pages/agent/video-player',
   AGENT_WORKBENCH: '/pages/agent/workbench',
+  TEAM_WORKBENCH: '/pages/agent/team-workbench',
   REFERRALS: '/pages/agent/referrals',
   MEMBER_DETAIL: '/pages/agent/member-detail',
   REVENUE_DETAIL: '/pages/agent/revenue-detail',
