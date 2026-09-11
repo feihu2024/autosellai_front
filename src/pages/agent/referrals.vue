@@ -31,36 +31,22 @@
 
     <!-- 筛选 -->
     <scroll-view scroll-x class="filter-strip">
-      <view
-        class="tab"
-        :class="{ active: typeFilter === item }"
-        v-for="item in ['全部成员','推广者','普通成员']"
-        :key="item"
-        @click="typeFilter = item"
-      >
+      <view class="tab" :class="{ active: typeFilter === item }" v-for="item in ['全部成员', '推广者', '普通成员']" :key="item"
+        @click="typeFilter = item">
         <text>{{ item }}</text>
       </view>
     </scroll-view>
     <scroll-view scroll-x class="filter-strip" style="margin-top: -3px">
-      <view
-        class="tab"
-        :class="{ active: activeFilter === item }"
-        v-for="item in ['全部','活跃','未活跃']"
-        :key="item"
-        @click="activeFilter = item"
-      >
+      <view class="tab" :class="{ active: activeFilter === item }" v-for="item in ['全部', '活跃', '未活跃']" :key="item"
+        @click="activeFilter = item">
         <text>{{ item }}</text>
       </view>
     </scroll-view>
 
     <!-- 推荐成员列表 -->
     <view class="member-list">
-      <view
-        class="member-item"
-        v-for="item in filteredList"
-        :key="item.id"
-        @click="goMemberDetail(item.id)"
-      >
+      <view class="member-item" v-for="item in filteredList" :key="item.id" @click="goMemberDetail(item.id)">
+        <text class="corner-badge" v-if="item.is_leader">代理</text>
         <view class="avatar">
           <text>{{ (item.nickname || '').slice(0, 1) }}</text>
         </view>
@@ -244,6 +230,8 @@ onLoad(async () => {
 }
 
 .member-item {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -252,6 +240,24 @@ onLoad(async () => {
   border-radius: 16px;
   padding: 13px;
   box-shadow: 0 6px 20px rgba(75, 111, 150, 0.04);
+}
+
+/* 右上角「代理」角标：右上圆角与卡片圆角一致，左下做小圆角 */
+.corner-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(135deg, #3f86f6, #6aa6ff);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
+  padding: 6px 10px 7px;
+  border-radius: 0 16px 0 12px;
+  box-shadow: 0 2px 6px rgba(63, 134, 246, 0.28);
 }
 
 .avatar {

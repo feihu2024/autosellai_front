@@ -75,6 +75,7 @@
     <!-- 成员列表 -->
     <view class="member-list">
       <view class="member-item" v-for="item in filteredMembers" :key="item.id" @click="goMemberDetail(item.id)">
+        <text class="corner-badge" v-if="item.is_leader">代理</text>
         <view class="avatar member-avatar">
           <text>{{ (item.name || '').slice(0, 1) }}</text>
         </view>
@@ -362,6 +363,8 @@ onLoad(async () => {
 }
 
 .member-item {
+  position: relative;
+  overflow: hidden;
   display: flex;
   align-items: center;
   gap: 11px;
@@ -370,6 +373,24 @@ onLoad(async () => {
   border-radius: 16px;
   padding: 13px;
   box-shadow: 0 6px 20px rgba(75, 111, 150, 0.04);
+}
+
+/* 右上角「代理」角标：右上圆角与卡片圆角一致，左下做小圆角 */
+.corner-badge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  z-index: 2;
+  pointer-events: none;
+  background: linear-gradient(135deg, #3f86f6, #6aa6ff);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  line-height: 1;
+  padding: 6px 10px 7px;
+  border-radius: 0 16px 0 12px;
+  box-shadow: 0 2px 6px rgba(63, 134, 246, 0.28);
 }
 
 .member-avatar {

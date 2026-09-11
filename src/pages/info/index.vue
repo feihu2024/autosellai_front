@@ -94,12 +94,10 @@
       <template v-for="(item, index) in infoList" :key="item.id">
         <view class="article-card surface" @tap="goDetail(item)">
           <view class="article-copy">
-            <view class="article-title ellipsis">{{ item.title }}</view>
-            <view class="article-sub ellipsis">{{ item.summary || '点击查看详情' }}</view>
+            <view class="article-title">{{ item.title }}</view>
             <view class="article-meta">
               <text v-if="item.category" class="article-tag">{{ item.category }}</text>
               <text v-if="item.locked" class="lock-tag">🔒 {{ item.require_level }}</text>
-              <text class="article-date">▣ {{ (item.created_at || item.publish_date || '').slice(0, 10) }}</text>
             </view>
           </view>
           <view class="article-cover">
@@ -409,6 +407,11 @@ onUnmounted(() => {
 .article-title {
   font-size: 32rpx;
   font-weight: 750;
+  line-height: 1.4;
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
 }
 
 .article-sub {
@@ -418,7 +421,7 @@ onUnmounted(() => {
 }
 
 .article-meta {
-  margin-top: 20rpx;
+  margin-top: 12rpx;
   display: flex;
   align-items: center;
   flex-wrap: wrap;
