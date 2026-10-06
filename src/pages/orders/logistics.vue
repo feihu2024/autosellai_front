@@ -186,7 +186,7 @@ async function loadTrack(force = false) {
   try {
     const res: any = await getExpressTrack(orderId.value)
     if (res.code === 200 || res.code === 0) {
-      const data = res.data || {}
+      const data = res.data.tracks || {}
       trackStateText.value =
         data.state_text || data.status_text || data.stateText || data.statusText || mapExpressState(data.state ?? data.status)
       trackList.value = normalizeTrackList(data)
