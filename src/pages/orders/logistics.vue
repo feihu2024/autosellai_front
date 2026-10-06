@@ -1,21 +1,8 @@
-﻿<template>
+<template>
   <view class="logistics-page" v-if="!loading && order">
     <!-- <view class="page-head">
       <view class="back" @click="goBack"><text>‹</text></view>
       <text class="page-title">物流详情</text>
-    </view> -->
-
-    <!-- 微信小程序官方物流详情入口 -->
-    <!-- <view class="wx-entry-card" v-if="order.tracking_no && wxBusinessViewAvailable">
-      <view class="wx-entry-body">
-        <text class="wx-ico">📨</text>
-        <view class="wx-entry-text">
-          <text class="wx-entry-title">微信官方物流</text>
-          <text class="wx-entry-desc">点击下方按钮调起微信小程序官方物流详情</text>
-        </view>
-      </view>
-      <view class="wx-btn" @click="openWxLogistics"><text>查看官方物流</text></view>
-      <text class="wx-tip" v-if="wxError">{{ wxError }}</text>
     </view> -->
 
     <!-- 静态物流信息兜底 -->
@@ -42,17 +29,41 @@
       </view>
     </view>
 
-    <!-- 物流轨迹：对接微信官方物流查询 -->
+    <!-- 物流轨迹：接口实时查询 -->
     <view class="track-card" v-if="order.tracking_no">
       <view class="card-title">
         <text class="title-ico">📍</text>
         <text class="title-text">物流轨迹</text>
+        <text class="track-state" v-if="trackStateText">{{ trackStateText }}</text>
+        <text class="track-refresh" v-if="!trackLoading && trackList.length" @click="loadTrack(true)">刷新</text>
       </view>
-      <text class="wx-track-desc">通过微信官方物流查询实时轨迹</text>
-      <view class="wx-track-btn" :class="{ disabled: trackLoading }" @click="openWxTrack">
-        <text>{{ trackLoading ? '正在打开...' : '查看物流' }}</text>
+
+      <view class="track-loading" v-if="trackLoading">
+        <text>物流轨迹加载中...</text>
       </view>
-      <text class="wx-tip" v-if="wxError">{{ wxError }}</text>
+
+      <view class="track-empty" v-else-if="trackError || !trackList.length">
+        <text class="track-empty-text">{{ trackError || '暂无物流轨迹，请稍后刷新查看' }}</text>
+        <view class="track-retry-btn" @click="loadTrack(true)"><text>重新加载</text></view>
+      </view>
+
+      <view class="track-list" v-else>
+        <view
+          class="track-item"
+          v-for="(item, idx) in trackList"
+          :key="idx"
+          :class="{ active: idx === 0, last: idx === trackList.length - 1 }"
+        >
+          <view class="track-rail">
+            <view class="track-dot"></view>
+            <view class="track-line" v-if="idx !== trackList.length - 1"></view>
+          </view>
+          <view class="track-content">
+            <text class="track-context">{{ item.context }}</text>
+            <text class="track-time" v-if="item.time">{{ item.time }}</text>
+          </view>
+        </view>
+      </view>
     </view>
 
     <!-- 商品卡 -->
@@ -98,7 +109,7 @@
     <!-- 复制运单号去快递查询 -->
     <view class="footer-bar" v-if="order.tracking_no">
       <view class="footer-btn outline" @click="copyText(order.tracking_no)"><text>复制运单号</text></view>
-      <view class="footer-btn primary" v-if="!wxBusinessViewAvailable" @click="searchOnline"><text>在线查询</text></view>
+      <view class="footer-btn primary" @click="searchOnline"><text>在线查询</text></view>
     </view>
   </view>
 
@@ -115,71 +126,82 @@
 <script setup lang="ts">
 import { ref } from 'vue'
 import { onLoad } from '@dcloudio/uni-app'
-import { getMyMallOrderDetail, traceWaybill } from '@/api/miniapp'
+import { getExpressTrack, getMyMallOrderDetail } from '@/api/miniapp'
 import { navigator, showToast, copyToClipboard } from '@/utils'
-import { getImageUrl } from '@/utils/image'
 
 const orderId = ref(0)
 const order = ref<any>(null)
 const loading = ref(false)
-const wxBusinessViewAvailable = ref(false)
-const wxError = ref('')
 const trackLoading = ref(false)
-const waybillToken = ref('')
+const trackLoaded = ref(false)
+const trackError = ref('')
+const trackStateText = ref('')
+const trackList = ref<Array<{ context: string; time: string }>>([])
 
-function openWaybillTracking(token: string): Promise<void> {
-  // #ifdef MP-WEIXIN
-  const plugin = requirePlugin('logisticsPlugin')
-  if (!plugin || typeof plugin.openWaybillTracking !== 'function') {
-    return Promise.reject(new Error('物流插件未就绪，请确认已添加 logisticsPlugin'))
-  }
-  return new Promise((resolve, reject) => {
-    plugin.openWaybillTracking({
-      waybillToken: token,
-      success: () => resolve(),
-      fail: (err: any) => {
-        console.log(err, 'err');
-        reject(new Error(err?.errMsg || err?.message || '打开物流组件失败'))
-      },
-    })
-  })
-  // #endif
-  // #ifndef MP-WEIXIN
-  return Promise.reject(new Error('请在微信小程序中查看物流'))
-  // #endif
+/** 快递100 状态码映射（后端若未返回文本状态时兜底） */
+const EXPRESS_STATE_MAP: Record<string, string> = {
+  '0': '运输中',
+  '1': '已揽收',
+  '2': '疑难件',
+  '3': '已签收',
+  '4': '退签',
+  '5': '派件中',
+  '6': '退回中',
+  '14': '拒签',
 }
 
-function detectWxBusinessView() {
-  // #ifdef MP-WEIXIN
-  wxBusinessViewAvailable.value = true
-  // #endif
-  // #ifndef MP-WEIXIN
-  wxBusinessViewAvailable.value = false
-  // #endif
+function mapExpressState(state: unknown): string {
+  if (state === undefined || state === null || state === '') return ''
+  return EXPRESS_STATE_MAP[String(state)] || ''
 }
 
-function openWxLogistics() {
-  wxError.value = ''
-  // #ifdef MP-WEIXIN
-  const wxApi: any = (globalThis as any).wx
-  if (wxApi && typeof wxApi.openBusinessView === 'function') {
-    wxApi.openBusinessView({
-      businessType: 'logisticsDetail',
-      queryString: `tracking_no=${order.value?.tracking_no || ''}&logistics_company=${order.value?.logistics_company || ''}&order_no=${order.value?.order_no || ''}`,
-      success: () => {
-        showToast('已打开物流详情', 'success')
-      },
-      fail: (err: any) => {
-        wxError.value = err?.errMsg || '调起失败，请使用静态信息查看'
-      },
-    })
-  } else {
-    wxError.value = '当前微信版本不支持物流详情'
+/** 兼容多种后端返回结构，归一化为轨迹列表 */
+function normalizeTrackList(data: any): Array<{ context: string; time: string }> {
+  if (!data) return []
+  let raw: any[] = []
+  if (Array.isArray(data)) {
+    raw = data
+  } else if (Array.isArray(data.traces)) {
+    raw = data.traces
+  } else if (Array.isArray(data.list)) {
+    raw = data.list
+  } else if (Array.isArray(data.routes)) {
+    raw = data.routes
+  } else if (Array.isArray(data.data)) {
+    raw = data.data
   }
-  // #endif
-  // #ifndef MP-WEIXIN
-  wxError.value = '当前不在微信小程序环境'
-  // #endif
+  return raw
+    .map((it) => ({
+      context: it?.context || it?.status || it?.content || it?.desc || it?.action || '',
+      time: it?.time || it?.ftime || it?.datetime || it?.track_time || '',
+    }))
+    .filter((it) => it.context)
+}
+
+async function loadTrack(force = false) {
+  if (!orderId.value || trackLoading.value) return
+  if (trackLoaded.value && !force) return
+  trackLoading.value = true
+  trackError.value = ''
+  try {
+    const res: any = await getExpressTrack(orderId.value)
+    if (res.code === 200 || res.code === 0) {
+      const data = res.data || {}
+      trackStateText.value =
+        data.state_text || data.status_text || data.stateText || data.statusText || mapExpressState(data.state ?? data.status)
+      trackList.value = normalizeTrackList(data)
+      trackLoaded.value = true
+      if (!trackList.value.length) {
+        trackError.value = '暂无物流轨迹，请稍后刷新查看'
+      }
+    } else {
+      trackError.value = res.message || '物流轨迹获取失败'
+    }
+  } catch (e: any) {
+    trackError.value = e?.message || '物流轨迹获取失败'
+  } finally {
+    trackLoading.value = false
+  }
 }
 
 async function loadData() {
@@ -190,82 +212,13 @@ async function loadData() {
     if (res.code === 200 || res.code === 0) {
       order.value = res.data
       if (order.value?.tracking_no) {
-        prefetchWaybillToken()
+        loadTrack()
       }
     }
   } catch {
     order.value = null
   } finally {
     loading.value = false
-  }
-}
-
-function buildTracePayload() {
-  const o = order.value || {}
-  const openid = o.openid || o.wx_openid || ''
-  const payload: Parameters<typeof traceWaybill>[0] = {
-    order_id: orderId.value,
-    waybill_id: o.tracking_no || o.waybill_id || '',
-    trans_id: o.wx_transaction_id || o.transaction_id || o.trans_id || '',
-    receiver_phone: o.receiver_phone || '',
-    order_detail_path: `/pages/orders/detail?id=${o.id || orderId.value}`,
-    goods_info: {
-      detail_list: [
-        {
-          goods_name: o.product_name || '商品',
-          goods_img_url: getImageUrl(o.product_image || o.goods_img_url || ''),
-        },
-      ],
-    },
-  }
-  if (o.sender_phone) payload.sender_phone = o.sender_phone
-  if (o.delivery_id || o.logistics_code) payload.delivery_id = o.delivery_id || o.logistics_code
-  if (openid) payload.openid = openid
-  return payload
-}
-
-async function prefetchWaybillToken() {
-  if (!orderId.value || !order.value?.tracking_no || waybillToken.value) return
-  try {
-    const payload = buildTracePayload()
-    const res: any = await traceWaybill(payload)
-    const token = res?.data?.waybill_token || res?.data?.waybillToken || res?.waybill_token
-    if (!(res.code === 200 || res.code === 0) || !token) return
-    waybillToken.value = token
-  } catch {
-    // 点击时再试
-  }
-}
-
-async function openWxTrack() {
-  if (!orderId.value || trackLoading.value) return
-  wxError.value = ''
-
-  if (waybillToken.value) {
-    try {
-      await openWaybillTracking(waybillToken.value)
-    } catch (e: any) {
-      wxError.value = e?.message || '无法打开微信物流，请确认已开通物流服务并添加插件'
-    }
-    return
-  }
-
-  trackLoading.value = true
-  try {
-    const payload = buildTracePayload()
-    const res: any = await traceWaybill(payload)
-    const token = res?.data?.waybill_token || res?.data?.waybillToken || res?.waybill_token
-    if (!(res.code === 200 || res.code === 0) || !token) {
-      wxError.value = res?.message || res?.data?.errmsg || '获取物流信息失败'
-      return
-    }
-
-    waybillToken.value = token
-    await openWaybillTracking(token)
-  } catch (e: any) {
-    wxError.value = e?.message || '无法打开微信物流，请确认已开通物流服务并添加插件'
-  } finally {
-    trackLoading.value = false
   }
 }
 
@@ -293,7 +246,6 @@ function goBack() {
 
 onLoad((options: any) => {
   orderId.value = Number(options?.order_id || options?.id) || 0
-  detectWxBusinessView()
   loadData()
 })
 </script>
@@ -336,66 +288,6 @@ onLoad((options: any) => {
   font-weight: 600;
   text-align: center;
   padding-right: 36px;
-}
-
-/* 微信官方物流入口 */
-.wx-entry-card {
-  margin: 12px;
-  padding: 16px;
-  background: linear-gradient(135deg, #07c160, #10b981);
-  border-radius: 14px;
-  box-shadow: 0 6px 18px rgba(7, 193, 96, 0.25);
-}
-
-.wx-entry-body {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 12px;
-}
-
-.wx-ico {
-  font-size: 32px;
-}
-
-.wx-entry-text {
-  display: flex;
-  flex-direction: column;
-}
-
-.wx-entry-title {
-  font-size: 15px;
-  font-weight: 700;
-  color: #fff;
-  margin-bottom: 4px;
-}
-
-.wx-entry-desc {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.wx-btn {
-  width: 100%;
-  height: 40px;
-  background: #fff;
-  border-radius: 20px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.wx-btn text {
-  color: #07c160;
-  font-size: 14px;
-  font-weight: 600;
-}
-
-.wx-tip {
-  display: block;
-  margin-top: 8px;
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.9);
 }
 
 /* 卡片通用 */
@@ -482,31 +374,121 @@ onLoad((options: any) => {
   justify-content: flex-start;
 }
 
-.wx-track-desc {
-  display: block;
-  margin: 8px 0 14px;
+.track-state {
+  margin-left: 4px;
+  padding: 1px 8px;
+  font-size: 11px;
+  color: #6366f1;
+  background: #e0e7ff;
+  border-radius: 8px;
+}
+
+.track-refresh {
+  margin-left: auto;
+  font-size: 12px;
+  color: #6366f1;
+  padding: 2px 6px;
+}
+
+.track-loading,
+.track-empty {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.track-loading text {
   font-size: 13px;
-  color: #64748b;
+  color: #94a3b8;
+}
+
+.track-empty-text {
+  font-size: 13px;
+  color: #94a3b8;
+  text-align: center;
   line-height: 1.5;
 }
 
-.wx-track-btn {
-  height: 40px;
-  border-radius: 20px;
-  background: #07c160;
+.track-retry-btn {
+  margin-top: 10px;
+  height: 32px;
+  padding: 0 18px;
+  border-radius: 16px;
+  background: #6366f1;
   display: flex;
   align-items: center;
   justify-content: center;
 }
 
-.wx-track-btn.disabled {
-  opacity: 0.6;
+.track-retry-btn text {
+  color: #fff;
+  font-size: 12px;
 }
 
-.wx-track-btn text {
-  color: #fff;
-  font-size: 14px;
+.track-item {
+  display: flex;
+  align-items: stretch;
+}
+
+.track-rail {
+  width: 16px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  flex-shrink: 0;
+}
+
+.track-dot {
+  width: 8px;
+  height: 8px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: #cbd5e1;
+  flex-shrink: 0;
+}
+
+.track-item.active .track-dot {
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  background: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.15);
+}
+
+.track-line {
+  flex: 1;
+  width: 2px;
+  margin: 2px 0;
+  background: #e2e8f0;
+}
+
+.track-content {
+  flex: 1;
+  padding: 0 0 16px 8px;
+}
+
+.track-item.last .track-content {
+  padding-bottom: 0;
+}
+
+.track-context {
+  display: block;
+  font-size: 13px;
+  color: #64748b;
+  line-height: 1.5;
+}
+
+.track-item.active .track-context {
+  color: #1e293b;
   font-weight: 600;
+}
+
+.track-time {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #94a3b8;
 }
 
 /* 商品 */

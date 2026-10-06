@@ -281,6 +281,11 @@ export function getLogisticsTrack(orderId: number) {
   return request.get(`/v1/miniapp/mall/orders/${orderId}/logistics-track`)
 }
 
+/** 物流轨迹（express-track） */
+export function getExpressTrack(orderId: number) {
+  return request.get(`/v1/miniapp/mall/orders/${orderId}/express-track`)
+}
+
 /** 微信物流传运单，返回 waybill_token */
 export function traceWaybill(data: {
   order_id?: number
