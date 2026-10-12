@@ -39,6 +39,63 @@ export function getMiniAppId(): string | undefined {
 }
 
 /**
+ * 通过小程序 appid 反查企业 ID（公开接口，无需 token）
+ *
+ * 在静默登录前调用，为全局状态设置默认企业 ID。
+ * 使用原生 uni.request 而非 request 封装：
+ * 1. 该接口无需鉴权，且在登录前调用，不能触发 401 静默重登录逻辑
+ * 2. 查询失败时静默处理（wx-login 本身也会携带 appid，后端可再次反查）
+ *
+ * 并发去重：启动阶段多处调用只发起一次请求
+ */
+let enterpriseInitPromise: Promise<number | null> | null = null
+
+export function initEnterpriseId(): Promise<number | null> {
+  const { currentEnterpriseId, setEnterpriseId } = useGlobalState()
+
+  // 已有企业ID（storage 恢复或邀请参数带入）则直接复用
+  if (currentEnterpriseId.value) {
+    return Promise.resolve(currentEnterpriseId.value)
+  }
+  if (enterpriseInitPromise) return enterpriseInitPromise
+
+  enterpriseInitPromise = (async () => {
+    const appid = getMiniAppId()
+    if (!appid) return null
+
+    try {
+      const res = await new Promise<any>((resolve, reject) => {
+        uni.request({
+          url: `https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/enterprise-by-appid?appid=${encodeURIComponent(appid)}`,
+          method: 'GET',
+          timeout: 15000,
+          success: resolve,
+          fail: reject,
+        })
+      })
+
+      const body = res?.data
+      if (res.statusCode === 200 && body?.code === 200) {
+        // 兼容返回 { enterprise_id } / { id } / 纯数字 三种形式
+        const data = body.data
+        const eid = Number(data?.enterprise_id ?? data?.id ?? data)
+        if (!isNaN(eid) && eid > 0) {
+          setEnterpriseId(eid)
+          return eid
+        }
+      }
+    } catch {
+      // 静默失败，wx-login 仍会携带 appid 供后端反查
+    }
+    return null
+  })().finally(() => {
+    enterpriseInitPromise = null
+  })
+
+  return enterpriseInitPromise
+}
+
+/**
  * H5 端：发送短信验证码
  */
 export function sendSmsCode(phone: string): Promise<ApiResponse> {

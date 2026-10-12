@@ -20,7 +20,7 @@ const SK_PENDING_REFERRER = 'pending_referrer_id'
 
 // ===== 模块级单例状态 =====
 const currentUserId = ref<number | null>(null)
-const currentEnterpriseId = ref<number | null>(2)  // 默认企业ID
+const currentEnterpriseId = ref<number | null>(null) // 企业ID（启动时通过 appid 反查接口获取）
 const currentUserName = ref<string>('')
 const currentUserPhone = ref<string>('')
 const pendingReferrerId = ref<number | null>(null) // 待使用的邀请人ID
@@ -86,6 +86,16 @@ export function useGlobalState() {
     if (enterpriseId && !isNaN(Number(enterpriseId))) {
       currentEnterpriseId.value = Number(enterpriseId)
       storage.setItem(SK_ENTERPRISE_ID, String(enterpriseId))
+    }
+  }
+
+  /**
+   * 设置当前企业ID（启动时通过 appid 反查接口获取后调用）
+   */
+  function setEnterpriseId(id: number) {
+    if (id && !isNaN(Number(id))) {
+      currentEnterpriseId.value = Number(id)
+      storage.setItem(SK_ENTERPRISE_ID, String(id))
     }
   }
 
@@ -180,6 +190,7 @@ export function useGlobalState() {
     loginInitialized,
     setUserInfo,
     setInviteParams,
+    setEnterpriseId,
     consumePendingReferrer,
     getInviteQuery,
     getUserId,

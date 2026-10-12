@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onLaunch, onShow, onHide } from '@dcloudio/uni-app'
 import { useMiniappTemplate } from '@/composables/useMiniappTemplate'
-import { trySilentLogin } from '@/utils/auth'
+import { trySilentLogin, initEnterpriseId } from '@/utils/auth'
 import { useGlobalState } from '@/composables/useGlobalState'
 
 const { loadTemplateVariant } = useMiniappTemplate()
@@ -78,15 +78,17 @@ function parseInviteParams(options: any) {
 
 onLaunch(async (options: any) => {
   console.log('App Launch', JSON.stringify(options?.query || {}))
-    
-  // 1. 解析启动参数，提取邀请参数
+
+  // 1. 通过 appid 反查默认企业ID（公开接口，无需 token，失败静默）
+  await initEnterpriseId()
+  // 2. 解析启动参数，提取邀请参数（邀请链接携带的 enterprise_id 会覆盖默认值）
   parseInviteParams(options)
-  // 2. 尝试静默登录（自动从全局状态读取邀请参数）
+  // 3. 尝试静默登录（自动从全局状态读取邀请参数）
   await trySilentLogin()
-  // 3. 登录成功后，加载模板变体（需要 token）—— 等待完成后再标记初始化完成，
+  // 4. 登录成功后，加载模板变体（需要 token）—— 等待完成后再标记初始化完成，
   //    避免首页先渲染默认模板再切换导致的闪动
   await loadTemplateVariant()
-  // 4. 标记登录初始化完成
+  // 5. 标记登录初始化完成
   const { setLoginInitialized } = useGlobalState()
   setLoginInitialized()
 })
