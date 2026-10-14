@@ -7,6 +7,12 @@
 
 import request from '@/utils/request'
 import { createWebSocket, getWsToken } from '@/utils/ws'
+import { useGlobalState } from '@/composables/useGlobalState'
+
+/** 给上传 URL 拼接当前企业ID */
+function uploadUrl(path: string): string {
+  return useGlobalState().withEnterpriseId(`https://aiplatformsslapi.yxiaozhu.com/api${path}`)
+}
 
 // ========== 认证 ==========
 
@@ -29,7 +35,7 @@ export function updateMiniappProfile(data: { nickname?: string; avatar?: string 
 export function uploadFile(filePath: string) {
   return new Promise((resolve, reject) => {
     uni.uploadFile({
-      url: 'https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/auth/upload-avatar',
+      url: uploadUrl('/v1/miniapp/auth/upload-avatar'),
       filePath,
       name: 'file',
       header: {
@@ -62,7 +68,7 @@ export function uploadFile(filePath: string) {
 export function uploadChatImage(filePath: string) {
   return new Promise<string>((resolve, reject) => {
     uni.uploadFile({
-      url: 'https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/video/upload/',
+      url: uploadUrl('/v1/miniapp/video/upload/'),
       filePath,
       name: 'file',
       header: {

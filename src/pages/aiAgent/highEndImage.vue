@@ -132,7 +132,7 @@ import { ref, computed } from 'vue'
 import { postGenerateImage } from '@/api/miniapp'
 import { useGlobalState } from '@/composables/useGlobalState'
 
-const { getUserId } = useGlobalState()
+const { getUserId, withEnterpriseId } = useGlobalState()
 
 const activeTab = ref('text2img')
 const promptText = ref('')
@@ -191,7 +191,7 @@ const triggerImageUpload = () => {
       const uploadPromises = res.tempFilePaths.map((filePath: string) => {
         return new Promise((resolve, reject) => {
           uni.uploadFile({
-            url: 'https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/video/upload/',
+            url: withEnterpriseId('https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/video/upload/'),
             filePath: filePath,
             name: 'file',
             success: async (uploadFileRes: any) => {

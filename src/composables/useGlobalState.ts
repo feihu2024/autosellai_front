@@ -137,6 +137,22 @@ export function useGlobalState() {
   }
 
   /**
+   * 获取当前企业ID
+   */
+  function getEnterpriseId(): number | null {
+    return currentEnterpriseId.value
+  }
+
+  /**
+   * 给 URL 拼接 enterprise_id 查询参数
+   * 用于 uni.uploadFile / WebSocket 等绕过请求封装层的场景
+   */
+  function withEnterpriseId(url: string): string {
+    if (!currentEnterpriseId.value) return url
+    return url + (url.includes('?') ? '&' : '?') + `enterprise_id=${currentEnterpriseId.value}`
+  }
+
+  /**
    * 清除所有状态（登出时调用）
    */
   function clearAll() {
@@ -194,6 +210,8 @@ export function useGlobalState() {
     consumePendingReferrer,
     getInviteQuery,
     getUserId,
+    getEnterpriseId,
+    withEnterpriseId,
     clearAll,
     setLoginInitialized,
     setAddressSelectContext,

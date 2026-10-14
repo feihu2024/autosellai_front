@@ -61,6 +61,15 @@ const requestInterceptor: RequestInterceptor = (config) => {
     }
   }
 
+  // 统一注入当前企业ID（拼在 URL query 上，GET/POST 均生效；调用方显式传了则不覆盖）
+  const { currentEnterpriseId } = useGlobalState()
+  if (currentEnterpriseId.value && config.params?.enterprise_id === undefined) {
+    config.params = {
+      ...(config.params || {}),
+      enterprise_id: currentEnterpriseId.value,
+    }
+  }
+
   return config
 }
 

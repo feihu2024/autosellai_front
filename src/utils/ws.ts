@@ -7,6 +7,7 @@
  */
 
 import { storage } from './storage'
+import { useGlobalState } from '@/composables/useGlobalState'
 
 /**
  * 构建 WebSocket 基础 URL
@@ -57,6 +58,12 @@ export interface UniSocketTask {
 export function createWebSocket(path: string, token?: string, options?: WsOptions): UniSocketTask {
   const baseUrl = getWsBaseUrl()
   let url = `${baseUrl}${path}`
+  // 统一携带企业ID
+  const { getEnterpriseId } = useGlobalState()
+  const enterpriseId = getEnterpriseId()
+  if (enterpriseId) {
+    url += (url.includes('?') ? '&' : '?') + `enterprise_id=${enterpriseId}`
+  }
   if (token) {
     url += (url.includes('?') ? '&' : '?') + `token=${encodeURIComponent(token)}`
   }

@@ -127,6 +127,7 @@
 <script lang="ts" setup>
 import { ref } from 'vue'
 import { postVideoToPrompt } from '@/api/miniapp'
+import { useGlobalState } from '@/composables/useGlobalState'
 
 const isUploaded = ref(false)
 const showToast = ref(false)
@@ -161,7 +162,7 @@ const triggerUpload = () => {
       uni.showToast({ title: '正在上传...', icon: 'loading', duration: 30000 })
 
       uni.uploadFile({
-        url: 'https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/video/upload/',
+        url: useGlobalState().withEnterpriseId('https://aiplatformsslapi.yxiaozhu.com/api/v1/miniapp/video/upload/'),
         filePath: res.tempFilePath,
         name: 'file',
         success: async (uploadFileRes: any) => {
