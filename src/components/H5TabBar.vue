@@ -11,13 +11,8 @@
 <!-- #ifdef H5 -->
 <template>
   <view class="h5-tab-bar" :class="{ 'gold-theme': isGoldTemplate }">
-    <view
-      v-for="tab in tabs"
-      :key="tab.pagePath"
-      class="tab-item"
-      :class="{ active: currentPath === tab.pagePath }"
-      @click="onTabClick(tab)"
-    >
+    <view v-for="tab in tabs" :key="tab.pagePath" class="tab-item" :class="{ active: currentPath === tab.pagePath }"
+      @click="onTabClick(tab)">
       <view class="tab-icon-box">
         <image class="tab-icon icon-normal" :src="tab.iconPath" mode="aspectFit" />
         <image class="tab-icon icon-active" :src="tab.selectedIconPath" mode="aspectFit" />
@@ -39,7 +34,7 @@ const purpleTabs = [
   { pagePath: '/pages/home/index', text: '首页', iconPath: '/static/icons/nav/home.png', selectedIconPath: '/static/icons/nav/home-active.png' },
   { pagePath: '/pages/info/index', text: '信息', iconPath: '/static/icons/nav/news.png', selectedIconPath: '/static/icons/nav/news-active.png' },
   { pagePath: '/pages/mall/index', text: '商城', iconPath: '/static/icons/nav/shop.png', selectedIconPath: '/static/icons/nav/shop-active.png' },
-  { pagePath: '/pages/mcn/authorization', text: '授权', iconPath: '/static/icons/nav/auth.png', selectedIconPath: '/static/icons/nav/auth-active.png' },
+  { pagePath: '/pages/material/index', text: '素材', iconPath: '/static/icons/nav/material.png', selectedIconPath: '/static/icons/nav/material-active.png' },
   { pagePath: '/pages/profile/index', text: '我的', iconPath: '/static/icons/nav/profile.png', selectedIconPath: '/static/icons/nav/profile-active.png' },
 ]
 
@@ -48,7 +43,7 @@ const goldTabs = [
   { pagePath: '/pages/home/index', text: '首页', iconPath: '/static/tpl-gold/nav-home.png', selectedIconPath: '/static/tpl-gold/nav-home-active.png' },
   { pagePath: '/pages/info/index', text: '信息', iconPath: '/static/tpl-gold/nav-news.png', selectedIconPath: '/static/tpl-gold/nav-news-active.png' },
   { pagePath: '/pages/mall/index', text: '商城', iconPath: '/static/tpl-gold/nav-shop.png', selectedIconPath: '/static/tpl-gold/nav-shop-active.png' },
-  { pagePath: '/pages/mcn/authorization', text: '授权', iconPath: '/static/tpl-gold/nav-auth.png', selectedIconPath: '/static/tpl-gold/nav-auth-active.png' },
+  { pagePath: '/pages/material/index', text: '素材', iconPath: '/static/tpl-gold/nav-material.png', selectedIconPath: '/static/tpl-gold/nav-material-active.png' },
   { pagePath: '/pages/profile/index', text: '我的', iconPath: '/static/tpl-gold/nav-mine.png', selectedIconPath: '/static/tpl-gold/nav-mine-active.png' },
 ]
 
@@ -126,6 +121,7 @@ function onTabClick(tab: any) {
 .tab-item.active .icon-normal {
   display: none;
 }
+
 .tab-item.active .icon-active {
   display: block;
 }
@@ -141,6 +137,7 @@ function onTabClick(tab: any) {
     color: #6658f5;
     font-weight: 700;
   }
+
   .tab-icon-box {
     background: #efedff;
   }
@@ -151,18 +148,22 @@ function onTabClick(tab: any) {
   .tab-label {
     color: #777b82;
   }
+
   .tab-item.active {
     .tab-label {
       color: #f2a900;
     }
+
     .tab-icon-box {
       background: transparent;
     }
   }
+
   .tab-icon {
     width: 24px;
     height: 24px;
   }
+
   .tab-label {
     font-size: 11px;
   }

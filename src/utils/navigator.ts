@@ -18,6 +18,8 @@ const ROUTE_MAP: Record<string, string> = {
   '/m/mall': '/pages/mall/index',
   '/m/mall/checkout': '/pages/mall/checkout',
   '/m/mall/:id': '/pages/mall/detail',
+  '/m/material': '/pages/material/index',
+  '/m/material-detail': '/pages/material/detail',
   '/m/mcn-authorization': '/pages/mcn/authorization',
   '/m/mcn-tutorial': '/pages/mcn/tutorial',
   '/m/mcn-auth-webview': '/pages/mcn/auth-webview',
@@ -120,7 +122,7 @@ const TAB_BAR_PATHS = [
   '/pages/home/index',
   '/pages/info/index',
   '/pages/mall/index',
-  '/pages/mcn/authorization',
+  '/pages/material/index',
   '/pages/profile/index',
 ]
 

@@ -494,3 +494,20 @@ export async function postGenerateImageQuery(data: { userid: string }) {
 export function getAdUnits(id: number) {
   return request.get('/v1/miniapp/ad-units', { params: { enterprise_id: id } })
 }
+
+// ========== 素材中心 ==========
+
+/** 素材分类枚举 */
+export function getMaterialCategories() {
+  return request.get('/v1/miniapp/materials/categories')
+}
+
+/** 素材列表 */
+export function getMaterialList(params?: { category?: string; keyword?: string; page?: number; page_size?: number }) {
+  return request.get('/v1/miniapp/materials', { params })
+}
+
+/** 素材详情 */
+export function getMaterialDetail(materialId: number) {
+  return request.get(`/v1/miniapp/materials/${materialId}`)
+}

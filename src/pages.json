@@ -33,6 +33,20 @@
       }
     },
     {
+      "path": "pages/material/index",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "素材中心"
+      }
+    },
+    {
+      "path": "pages/material/detail",
+      "style": {
+        "navigationStyle": "custom",
+        "navigationBarTitleText": "素材详情"
+      }
+    },
+    {
       "path": "pages/mcn/authorization",
       "style": {
         "navigationStyle": "custom",
@@ -325,10 +339,10 @@
         "selectedIconPath": "static/icons/nav/shop-active.png"
       },
       {
-        "pagePath": "pages/mcn/authorization",
-        "text": "授权",
-        "iconPath": "static/icons/nav/auth.png",
-        "selectedIconPath": "static/icons/nav/auth-active.png"
+        "pagePath": "pages/material/index",
+        "text": "素材",
+        "iconPath": "static/icons/nav/material.png",
+        "selectedIconPath": "static/icons/nav/material-active.png"
       },
       {
         "pagePath": "pages/profile/index",
