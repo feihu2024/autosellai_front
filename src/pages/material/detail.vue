@@ -590,21 +590,21 @@ onLoad((options: any) => {
   font-size: 20rpx;
 }
 
+/* 下载图标：向下箭头 + 底部托盘 */
 .download-ico {
-  width: 20rpx;
+  width: 22rpx;
   height: 20rpx;
-  border-left: 3rpx solid #fff;
-  border-right: 3rpx solid #fff;
   position: relative;
+  border-bottom: 3rpx solid #fff;
 }
 
 .download-ico::before {
   content: '';
   position: absolute;
   left: 50%;
-  top: -8rpx;
+  top: -2rpx;
   width: 3rpx;
-  height: 16rpx;
+  height: 15rpx;
   background: #fff;
   transform: translateX(-50%);
 }
@@ -613,7 +613,7 @@ onLoad((options: any) => {
   content: '';
   position: absolute;
   left: 50%;
-  bottom: -2rpx;
+  top: 3rpx;
   width: 10rpx;
   height: 10rpx;
   border-right: 3rpx solid #fff;
