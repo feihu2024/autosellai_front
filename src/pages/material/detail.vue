@@ -310,7 +310,7 @@ onLoad((options: any) => {
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 700;
   color: #101114;
 }
@@ -321,7 +321,7 @@ onLoad((options: any) => {
   border-radius: 21rpx;
   box-shadow: 0 9rpx 22rpx rgba(36, 57, 81, 0.04);
   margin-bottom: 15rpx;
-  padding: 18rpx 24rpx;
+  padding: 22rpx 26rpx;
   box-sizing: border-box;
 }
 
@@ -334,7 +334,7 @@ onLoad((options: any) => {
 }
 
 .section-title {
-  font-size: 26rpx;
+  font-size: 28rpx;
   font-weight: 700;
   color: #101114;
   display: flex;
@@ -352,7 +352,7 @@ onLoad((options: any) => {
 }
 
 .muted {
-  font-size: 22rpx;
+  font-size: 24rpx;
   font-weight: 400;
   color: #626b7a;
   margin-left: 6rpx;
@@ -366,7 +366,7 @@ onLoad((options: any) => {
 .cover {
   position: relative;
   width: 100%;
-  height: 340rpx;
+  height: 380rpx;
   border-radius: 15rpx;
   overflow: hidden;
   background: #d2e1ed;
@@ -409,21 +409,21 @@ onLoad((options: any) => {
   color: #fff;
   border-radius: 20rpx;
   padding: 4rpx 14rpx;
-  font-size: 18rpx;
+  font-size: 20rpx;
 }
 
 .hero-title {
   display: block;
-  font-size: 30rpx;
+  font-size: 34rpx;
   font-weight: 700;
   color: #101114;
-  margin: 18rpx 0 6rpx;
+  margin: 20rpx 0 8rpx;
 }
 
 .hero-subtitle {
   display: block;
   color: #8c919d;
-  font-size: 22rpx;
+  font-size: 24rpx;
   line-height: 1.5;
 }
 
@@ -447,16 +447,16 @@ onLoad((options: any) => {
 }
 
 .tag {
-  font-size: 17rpx;
+  font-size: 20rpx;
   color: #4e75b4;
   background: #eaf2ff;
   border-radius: 20rpx;
-  padding: 6rpx 14rpx;
+  padding: 8rpx 16rpx;
   flex-shrink: 0;
 }
 
 .meta-date {
-  font-size: 18rpx;
+  font-size: 20rpx;
   color: #8d94a2;
   white-space: nowrap;
   flex-shrink: 0;
@@ -468,11 +468,13 @@ onLoad((options: any) => {
   align-items: center;
   gap: 8rpx;
   flex-shrink: 0;
+  font-size: 28rpx;
 }
 
 .link text {
-  font-size: 19rpx;
+  font-size: 28rpx;
   color: #287aff;
+  font-weight: 500;
 }
 
 .link-chevron {
@@ -490,7 +492,7 @@ onLoad((options: any) => {
 }
 
 .gallery-item {
-  height: 200rpx;
+  height: 230rpx;
   border-radius: 12rpx;
   overflow: hidden;
   background: #e8edf3;
@@ -503,7 +505,7 @@ onLoad((options: any) => {
 
 /* 文案内容 */
 .usage {
-  font-size: 16rpx;
+  font-size: 19rpx;
   color: #9299a8;
   text-align: right;
 }
@@ -518,7 +520,7 @@ onLoad((options: any) => {
 }
 
 .copy-text {
-  font-size: 19rpx;
+  font-size: 22rpx;
   line-height: 1.6;
   color: #535b69;
   white-space: pre-line;
@@ -526,17 +528,17 @@ onLoad((options: any) => {
 
 .copy-btn {
   display: inline-block;
-  margin-top: 14rpx;
-  color: #247aff;
-  background: #f9fbff;
-  border: 1rpx solid #fff;
-  box-shadow: 0 8rpx 20rpx rgba(43, 122, 255, 0.08);
-  padding: 10rpx 22rpx;
-  border-radius: 30rpx;
+  margin-top: 16rpx;
+  margin-left: 12rpx;
+  background: #287aff;
+  box-shadow: 0 8rpx 20rpx rgba(40, 122, 255, 0.28);
+  padding: 14rpx 30rpx;
+  border-radius: 34rpx;
 }
 
 .copy-btn text {
-  font-size: 20rpx;
+  color: #fff;
+  font-size: 24rpx;
   font-weight: 600;
 }
 
@@ -548,8 +550,8 @@ onLoad((options: any) => {
 }
 
 .mini-cover {
-  width: 165rpx;
-  height: 90rpx;
+  width: 185rpx;
+  height: 102rpx;
   border-radius: 11rpx;
   flex-shrink: 0;
   background: #e8edf3;
@@ -564,36 +566,37 @@ onLoad((options: any) => {
 }
 
 .file-name {
-  font-size: 19rpx;
+  font-size: 22rpx;
   font-weight: 600;
   color: #101114;
 }
 
 .file-meta {
-  font-size: 16rpx;
+  font-size: 19rpx;
   color: #969ead;
 }
 
 .download-btn {
   display: flex;
   align-items: center;
-  gap: 8rpx;
+  gap: 10rpx;
   background: #287aff;
-  border-radius: 35rpx;
-  padding: 16rpx 24rpx;
+  border-radius: 38rpx;
+  padding: 20rpx 32rpx;
   flex-shrink: 0;
-  box-shadow: 0 8rpx 20rpx rgba(40, 122, 255, 0.12);
+  box-shadow: 0 8rpx 24rpx rgba(40, 122, 255, 0.32);
 }
 
 .download-btn text {
   color: #fff;
-  font-size: 20rpx;
+  font-size: 24rpx;
+  font-weight: 600;
 }
 
 /* 下载图标：向下箭头 + 底部托盘 */
 .download-ico {
-  width: 22rpx;
-  height: 20rpx;
+  width: 24rpx;
+  height: 22rpx;
   position: relative;
   border-bottom: 3rpx solid #fff;
 }
@@ -604,7 +607,7 @@ onLoad((options: any) => {
   left: 50%;
   top: -2rpx;
   width: 3rpx;
-  height: 15rpx;
+  height: 16rpx;
   background: #fff;
   transform: translateX(-50%);
 }
@@ -614,8 +617,8 @@ onLoad((options: any) => {
   position: absolute;
   left: 50%;
   top: 3rpx;
-  width: 10rpx;
-  height: 10rpx;
+  width: 11rpx;
+  height: 11rpx;
   border-right: 3rpx solid #fff;
   border-bottom: 3rpx solid #fff;
   transform: translateX(-50%) rotate(45deg);
@@ -635,12 +638,12 @@ onLoad((options: any) => {
 .desc-row {
   display: flex;
   align-items: flex-start;
-  font-size: 18rpx;
+  font-size: 20rpx;
   line-height: 1.6;
 }
 
 .dt {
-  width: 130rpx;
+  width: 140rpx;
   flex-shrink: 0;
   color: #59616d;
 }
@@ -655,6 +658,6 @@ onLoad((options: any) => {
   text-align: center;
   padding: 120rpx 0;
   color: #8b94a2;
-  font-size: 24rpx;
+  font-size: 26rpx;
 }
 </style>

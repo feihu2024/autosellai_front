@@ -180,7 +180,7 @@ onShow(() => {
 }
 
 .nav-title {
-  font-size: 32rpx;
+  font-size: 34rpx;
   font-weight: 700;
   color: #101114;
 }
@@ -196,7 +196,7 @@ onShow(() => {
 .search {
   flex: 1;
   min-width: 0;
-  height: 64rpx;
+  height: 72rpx;
   border-radius: 40rpx;
   background: #f1f2f5;
   display: flex;
@@ -215,7 +215,7 @@ onShow(() => {
 .search-input {
   flex: 1;
   min-width: 0;
-  font-size: 24rpx;
+  font-size: 26rpx;
   color: #444;
 }
 
@@ -243,7 +243,7 @@ onShow(() => {
   flex-direction: column;
   align-items: center;
   gap: 4rpx;
-  font-size: 18rpx;
+  font-size: 20rpx;
   color: #5f6675;
 }
 
@@ -287,9 +287,9 @@ onShow(() => {
 }
 
 .chip {
-  font-size: 20rpx;
-  border-radius: 24rpx;
-  padding: 10rpx 20rpx;
+  font-size: 23rpx;
+  border-radius: 26rpx;
+  padding: 12rpx 24rpx;
   background: #edf3ff;
 }
 
@@ -315,17 +315,17 @@ onShow(() => {
 .card {
   display: flex;
   gap: 22rpx;
-  padding: 14rpx 16rpx;
+  padding: 18rpx 20rpx;
   border-radius: 25rpx;
   background: #fff;
   box-shadow: 0 8rpx 24rpx rgba(38, 57, 83, 0.05);
-  min-height: 174rpx;
+  min-height: 210rpx;
   box-sizing: border-box;
 }
 
 .thumb {
-  width: 263rpx;
-  height: 146rpx;
+  width: 300rpx;
+  height: 167rpx;
   border-radius: 14rpx;
   flex-shrink: 0;
   background: #e8edf3;
@@ -340,7 +340,7 @@ onShow(() => {
 }
 
 .card-title {
-  font-size: 27rpx;
+  font-size: 30rpx;
   font-weight: 650;
   color: #101114;
 }
@@ -348,7 +348,7 @@ onShow(() => {
 .subtitle {
   margin-top: 8rpx;
   color: #8c919d;
-  font-size: 21rpx;
+  font-size: 23rpx;
   line-height: 1.5;
 }
 
@@ -361,7 +361,7 @@ onShow(() => {
 }
 
 .date {
-  font-size: 18rpx;
+  font-size: 20rpx;
   color: #8d94a2;
   white-space: nowrap;
 }
@@ -370,23 +370,24 @@ onShow(() => {
   display: flex;
   align-items: center;
   gap: 8rpx;
-  border-radius: 30rpx;
-  background: #eaf2ff;
-  padding: 12rpx 18rpx;
+  border-radius: 32rpx;
+  background: #287aff;
+  padding: 14rpx 26rpx;
   flex-shrink: 0;
+  box-shadow: 0 8rpx 20rpx rgba(40, 122, 255, 0.28);
 }
 
 .detail-btn text {
-  color: #0064ff;
-  font-size: 20rpx;
+  color: #fff;
+  font-size: 22rpx;
   font-weight: 600;
 }
 
 .chevron {
   width: 12rpx;
   height: 12rpx;
-  border-top: 2rpx solid #0064ff;
-  border-right: 2rpx solid #0064ff;
+  border-top: 3rpx solid #fff;
+  border-right: 3rpx solid #fff;
   transform: rotate(45deg);
 }
 
@@ -395,13 +396,13 @@ onShow(() => {
   text-align: center;
   padding: 90rpx 0;
   color: #8b94a2;
-  font-size: 24rpx;
+  font-size: 26rpx;
 }
 
 .empty-btn {
   display: inline-block;
   margin-top: 24rpx;
-  font-size: 22rpx;
+  font-size: 24rpx;
   color: #287aff;
 }
 
