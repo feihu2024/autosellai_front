@@ -60,10 +60,10 @@ export function useGlobalState() {
       currentUserId.value = user.id
       storage.setItem(SK_USER_ID, String(user.id))
     }
-    if (user?.enterprise_id) {
-      currentEnterpriseId.value = user.enterprise_id
-      storage.setItem(SK_ENTERPRISE_ID, String(user.enterprise_id))
-    }
+    // if (user?.enterprise_id) {
+    //   currentEnterpriseId.value = user.enterprise_id
+    //   storage.setItem(SK_ENTERPRISE_ID, String(user.enterprise_id))
+    // }
     if (user?.nickname) {
       currentUserName.value = user.nickname
       storage.setItem(SK_USERNAME, user.nickname)

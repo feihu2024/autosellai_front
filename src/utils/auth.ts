@@ -46,6 +46,10 @@ export function getMiniAppId(): string | undefined {
  * 1. 该接口无需鉴权，且在登录前调用，不能触发 401 静默重登录逻辑
  * 2. 查询失败时静默处理（wx-login 本身也会携带 appid，后端可再次反查）
  *
+ * 缓存策略：每次启动都反查最新值并覆盖 storage 中的旧缓存（防止企业迁移后
+ * 一直使用旧 ID）；查询失败时回退缓存。邀请参数在 App.onLaunch 中随后
+ * 通过 parseInviteParams 覆盖，优先级不受影响。
+ *
  * 并发去重：启动阶段多处调用只发起一次请求
  */
 let enterpriseInitPromise: Promise<number | null> | null = null
@@ -53,15 +57,11 @@ let enterpriseInitPromise: Promise<number | null> | null = null
 export function initEnterpriseId(): Promise<number | null> {
   const { currentEnterpriseId, setEnterpriseId } = useGlobalState()
 
-  // 已有企业ID（storage 恢复或邀请参数带入）则直接复用
-  if (currentEnterpriseId.value) {
-    return Promise.resolve(currentEnterpriseId.value)
-  }
   if (enterpriseInitPromise) return enterpriseInitPromise
 
   enterpriseInitPromise = (async () => {
     const appid = getMiniAppId()
-    if (!appid) return null
+    if (!appid) return currentEnterpriseId.value
 
     try {
       const res = await new Promise<any>((resolve, reject) => {
@@ -80,14 +80,17 @@ export function initEnterpriseId(): Promise<number | null> {
         const data = body.data
         const eid = Number(data?.enterprise_id ?? data?.id ?? data)
         if (!isNaN(eid) && eid > 0) {
-          setEnterpriseId(eid)
+          // 与缓存不一致时更新（storage 可能残留旧企业ID，以反查结果为准）
+          if (eid !== currentEnterpriseId.value) {
+            setEnterpriseId(eid)
+          }
           return eid
         }
       }
     } catch {
-      // 静默失败，wx-login 仍会携带 appid 供后端反查
+      // 查询失败时回退缓存值
     }
-    return null
+    return currentEnterpriseId.value
   })().finally(() => {
     enterpriseInitPromise = null
   })
